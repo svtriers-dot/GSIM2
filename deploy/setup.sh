@@ -12,18 +12,40 @@ DB_NAME="gsim"
 DB_USER="gsim"
 NODE_VERSION="20"
 PG_VERSION="16"
+SWAP_SIZE_GB=2
 
 if [[ $EUID -ne 0 ]]; then
     echo "Этот скрипт должен запускаться от root: sudo bash $0"
     exit 1
 fi
 
-echo "==> 1/8 apt update + базовые пакеты"
+echo "==> 1/9 apt update + базовые пакеты"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq curl ca-certificates gnupg lsb-release ufw nginx git
 
-echo "==> 2/8 Node.js ${NODE_VERSION} (NodeSource)"
+echo "==> 2/9 swap-файл ${SWAP_SIZE_GB}G (для Vite build на VM с малым RAM)"
+TOTAL_RAM_GB=$(awk '/MemTotal/ {printf "%.0f", $2/1024/1024}' /proc/meminfo)
+if [[ $TOTAL_RAM_GB -lt 2 ]] && [[ ! -f /swapfile ]]; then
+    echo "    RAM = ${TOTAL_RAM_GB} GB — создаю swap"
+    fallocate -l ${SWAP_SIZE_GB}G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile >/dev/null
+    swapon /swapfile
+    if ! grep -q '/swapfile' /etc/fstab; then
+        echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    fi
+    # Снижаем агрессивность swap (по умолчанию 60 = охотно свопит)
+    sysctl vm.swappiness=10 >/dev/null
+    echo 'vm.swappiness=10' > /etc/sysctl.d/99-gsim2-swappiness.conf
+    free -h
+elif [[ -f /swapfile ]]; then
+    echo "    swap уже существует, пропускаю"
+else
+    echo "    RAM = ${TOTAL_RAM_GB} GB — swap не нужен"
+fi
+
+echo "==> 3/9 Node.js ${NODE_VERSION} (NodeSource)"
 if ! command -v node &>/dev/null || [[ "$(node -v | cut -d. -f1 | tr -d v)" -lt $NODE_VERSION ]]; then
     curl -fsSL "https://deb.nodesource.com/setup_${NODE_VERSION}.x" | bash -
     apt-get install -y -qq nodejs
@@ -31,14 +53,14 @@ fi
 node -v
 npm -v
 
-echo "==> 3/8 PostgreSQL ${PG_VERSION}"
+echo "==> 4/9 PostgreSQL ${PG_VERSION}"
 if ! command -v psql &>/dev/null; then
     apt-get install -y -qq postgresql-${PG_VERSION} postgresql-contrib-${PG_VERSION}
     systemctl enable postgresql
     systemctl start postgresql
 fi
 
-echo "==> 4/8 Создать БД и пользователя"
+echo "==> 5/9 Создать БД и пользователя"
 DB_PASS="$(openssl rand -hex 16)"
 sudo -u postgres psql <<SQL
 DO \$\$
@@ -56,7 +78,7 @@ if ! sudo -u postgres psql -lqt | cut -d \| -f 1 | grep -qw "${DB_NAME}"; then
     sudo -u postgres createdb -O "${DB_USER}" "${DB_NAME}"
 fi
 
-echo "==> 5/8 Системный пользователь ${APP_USER}"
+echo "==> 6/9 Системный пользователь ${APP_USER}"
 if ! id "${APP_USER}" &>/dev/null; then
     useradd --system --create-home --shell /usr/sbin/nologin "${APP_USER}"
 fi
@@ -64,7 +86,7 @@ fi
 mkdir -p "${APP_DIR}"
 chown "${APP_USER}:${APP_USER}" "${APP_DIR}"
 
-echo "==> 6/8 .env"
+echo "==> 7/9 .env"
 if [[ ! -f "${APP_DIR}/.env" ]]; then
     cat > "${APP_DIR}/.env" <<ENV
 DATABASE_URL=postgresql://${DB_USER}:${DB_PASS}@localhost:5432/${DB_NAME}
@@ -78,7 +100,7 @@ else
     echo "    .env уже существует — оставляю как есть"
 fi
 
-echo "==> 7/8 systemd unit + nginx"
+echo "==> 8/9 systemd unit + nginx"
 cp "$(dirname "$0")/gsim2.service" /etc/systemd/system/gsim2.service
 systemctl daemon-reload
 
@@ -89,7 +111,7 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t
 systemctl reload nginx
 
-echo "==> 8/8 firewall (ufw)"
+echo "==> 9/9 firewall (ufw)"
 ufw allow 22/tcp     >/dev/null
 ufw allow 80/tcp     >/dev/null
 ufw allow 443/tcp    >/dev/null
@@ -105,13 +127,12 @@ SETUP DONE.
 
 1. Положи код приложения в ${APP_DIR}:
    sudo -u ${APP_USER} git clone https://github.com/svtriers-dot/GSIM2.git ${APP_DIR}/src
-   # или скопируй содержимое (см. deploy/README.md)
 
 2. Сборка и миграции:
    cd ${APP_DIR}/src
    sudo -u ${APP_USER} npm ci
-   sudo -u ${APP_USER} npm run build
-   sudo -u ${APP_USER} npm run db:push
+   sudo -u ${APP_USER} npm run build       # ~1-2 мин на 1GB+swap
+   sudo -u ${APP_USER} npm run db:push     # отвечай 'y' на подтверждение
 
 3. Скопируй dist + node_modules в ${APP_DIR}:
    sudo cp -r ${APP_DIR}/src/dist ${APP_DIR}/dist
@@ -128,5 +149,6 @@ SETUP DONE.
 
 Логи приложения:  sudo journalctl -u gsim2 -f
 Логи nginx:       sudo tail -f /var/log/nginx/error.log
+Память:           free -h
 ============================================================
 DONE
