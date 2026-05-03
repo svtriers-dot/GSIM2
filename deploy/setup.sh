@@ -55,7 +55,8 @@ npm -v
 
 echo "==> 4/9 PostgreSQL ${PG_VERSION}"
 if ! command -v psql &>/dev/null; then
-    apt-get install -y -qq postgresql-${PG_VERSION} postgresql-contrib-${PG_VERSION}
+    # Default PG version в Ubuntu 22.04 = 14, в 24.04 = 16. Используем дефолтный пакет.
+    apt-get install -y -qq postgresql postgresql-contrib
     systemctl enable postgresql
     systemctl start postgresql
 fi
