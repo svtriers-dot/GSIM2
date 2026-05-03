@@ -5,7 +5,7 @@
 #   sudo bash setup.sh
 set -euo pipefail
 
-DOMAIN="${DOMAIN:-gsim.tesstech.ru}"
+DOMAIN="${DOMAIN:-toc.tesstech.ru}"
 APP_DIR="/opt/gsim2"
 APP_USER="gsim"
 DB_NAME="gsim"
@@ -105,7 +105,7 @@ cp "$(dirname "$0")/gsim2.service" /etc/systemd/system/gsim2.service
 systemctl daemon-reload
 
 cp "$(dirname "$0")/nginx.conf" /etc/nginx/sites-available/gsim2
-sed -i "s/gsim.tesstech.ru/${DOMAIN}/g" /etc/nginx/sites-available/gsim2
+sed -i "s/toc.tesstech.ru/${DOMAIN}/g" /etc/nginx/sites-available/gsim2
 ln -sf /etc/nginx/sites-available/gsim2 /etc/nginx/sites-enabled/gsim2
 rm -f /etc/nginx/sites-enabled/default
 nginx -t
