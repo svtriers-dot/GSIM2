@@ -19,7 +19,8 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Play, Pause, RotateCcw, Info, FastForward, ShoppingCart, Sun, Moon, Download, Plus, X } from 'lucide-react';
+import { Play, Pause, RotateCcw, Info, FastForward, ShoppingCart, Sun, Moon, Download, Plus, X, Home } from 'lucide-react';
+import { Link } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { queryClient } from '@/lib/queryClient';
@@ -696,13 +697,20 @@ export default function Game() {
           })}
         </div>
 
-        <div className="flex items-center gap-2 pt-1 border-t border-border/50">
-          <img src={tessLogo} alt="Tess Technology" className="w-7 h-7 opacity-80" />
-          <div className="leading-tight">
-            <div className="text-[11px] font-bold text-foreground/70">Tess Technology</div>
+        <Link
+          href="/"
+          data-testid="link-home"
+          className="flex items-center gap-2 pt-1 border-t border-border/50 hover:opacity-100 opacity-80 transition-opacity cursor-pointer"
+        >
+          <img src={tessLogo} alt="Tess Technology" className="w-7 h-7" />
+          <div className="leading-tight flex-1">
+            <div className="text-[11px] font-bold text-foreground/70 flex items-center gap-1">
+              <Home className="w-3 h-3" />
+              На главную
+            </div>
             <div className="text-[9px] text-muted-foreground">tesstech.ru</div>
           </div>
-        </div>
+        </Link>
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden relative min-w-0">
