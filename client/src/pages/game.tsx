@@ -19,7 +19,7 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Play, Pause, RotateCcw, Info, FastForward, ShoppingCart, Sun, Moon, Download, Plus, X, Home } from 'lucide-react';
+import { Play, Pause, RotateCcw, Info, FastForward, ShoppingCart, Sun, Moon, Download, Plus, X, Home, HelpCircle } from 'lucide-react';
 import { Link } from 'wouter';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -151,6 +151,7 @@ export default function Game() {
   const [purchaseRM, setPurchaseRM] = useState<string | null>(null);
   const [purchaseQty, setPurchaseQty] = useState('5');
   const [showInfo, setShowInfo] = useState(false);
+  const [showHowTo, setShowHowTo] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [resultSaved, setResultSaved] = useState(false);
   const [floorDark, setFloorDark] = useState(false);
@@ -638,6 +639,27 @@ export default function Game() {
           </Button>
         </div>
 
+        <Button
+          data-testid="button-howto"
+          size="sm"
+          variant="default"
+          onClick={() => setShowHowTo(true)}
+          className="w-full justify-start gap-2 text-xs"
+        >
+          <HelpCircle className="w-4 h-4" />
+          Как играть
+        </Button>
+        <Link href="/" data-testid="button-home">
+          <Button
+            size="sm"
+            variant="outline"
+            className="w-full justify-start gap-2 text-xs"
+          >
+            <Home className="w-4 h-4" />
+            На главную
+          </Button>
+        </Link>
+
         <div className="text-[12px] text-muted-foreground font-semibold">Станки</div>
         {MACHINE_TYPES.map(mt => (
           <div key={mt.color} className="flex flex-col gap-0.5">
@@ -1117,6 +1139,50 @@ export default function Game() {
             <Button data-testid="button-confirm-purchase" onClick={handleBuyRM}>
               Купить
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showHowTo} onOpenChange={setShowHowTo}>
+        <DialogContent data-testid="dialog-howto" className="max-h-[85vh] flex flex-col max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <HelpCircle className="w-5 h-5" />
+              Как играть
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 overflow-y-auto pr-1 text-sm">
+            <div className="bg-muted/50 rounded-md p-3 leading-relaxed">
+              <strong>Цель:</strong> заработать максимум денег за 5 рабочих дней. Каждую неделю списывается постоянка <span className="font-mono font-semibold">11 000 ₽</span> — её нужно покрыть и желательно перекрыть прибылью.
+            </div>
+
+            <div>
+              <div className="font-semibold mb-2">Шаги</div>
+              <ol className="space-y-2 list-decimal list-inside leading-relaxed">
+                <li><strong>Расставьте станки.</strong> Перетащите 8 машин 5 цветов на станции производственной линии. Каждый цвет может работать только на станциях своего типа. У всех машин разное время переналадки (от 0 до 120 секунд).</li>
+                <li><strong>Закупите сырьё.</strong> 4 типа сырья по 20 ₽. Кнопками <span className="font-mono">+5 / +10</span> добавляйте сырьё в очередь. Слишком мало — простой машин. Слишком много — заморозка денег.</li>
+                <li><strong>Запустите неделю.</strong> Кнопка <Play className="inline w-3 h-3" /> запускает симуляцию. <FastForward className="inline w-3 h-3" /> и <span className="font-mono">×10</span> ускоряют время. Следите за очередями перед станциями — там видно узкие места.</li>
+                <li><strong>Заработайте максимум.</strong> Производство → продажи → прибыль. В пятницу — итоговый расчёт и сравнение с другими игроками в рейтинге.</li>
+              </ol>
+            </div>
+
+            <div>
+              <div className="font-semibold mb-2">Подсказки по ТОС</div>
+              <ul className="space-y-1.5 list-disc list-inside text-muted-foreground leading-relaxed">
+                <li>Самая медленная станция определяет производительность всей системы — это <strong>узкое место</strong>.</li>
+                <li>Перед узким местом скапливается очередь сырья. Это и есть сигнал «тут теряются деньги».</li>
+                <li>Локальная оптимизация ≠ глобальная: загрузка не-узкой машины на 100% только увеличит запасы.</li>
+                <li>Считайте маржу не на единицу продукта, а <strong>на час работы узкого места</strong>.</li>
+                <li>Переналадка — это потеря времени. Если узкое место постоянно переключается — оно теряет ещё больше.</li>
+              </ul>
+            </div>
+
+            <div className="bg-muted/50 rounded-md p-3 text-xs text-muted-foreground">
+              Подробнее о механике, продуктах и станках — кнопка <Info className="inline w-3 h-3" /> «Информация об игре».
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setShowHowTo(false)} data-testid="button-howto-close">Понятно</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
