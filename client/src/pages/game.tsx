@@ -691,33 +691,7 @@ export default function Game() {
           </div>
         )}
 
-        <div className="mt-auto space-y-1.5">
-          <div className="text-[12px] text-muted-foreground font-semibold">Продано:</div>
-          {PRODUCTS.map(p => {
-            const sold = state.sold[p.id] || 0;
-            const pct = Math.min(100, Math.round((sold / p.weeklyDemand) * 100));
-            const isFull = sold >= p.weeklyDemand;
-            return (
-              <div key={p.id} data-testid={`sold-${p.id}`}>
-                <div className="flex justify-between gap-1 text-[11px] mb-0.5">
-                  <span className="text-muted-foreground">{p.name}</span>
-                  <span className="font-mono font-semibold" style={{ color: isFull ? '#32CD32' : undefined }}>
-                    {sold}/{p.weeklyDemand}
-                  </span>
-                </div>
-                <div className="h-2 rounded-sm bg-muted overflow-hidden">
-                  <div
-                    className="h-full rounded-sm transition-all duration-300"
-                    style={{
-                      width: `${pct}%`,
-                      background: isFull ? '#32CD32' : '#66aacc',
-                    }}
-                  />
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <div className="mt-auto" />
 
         <Link
           href="/"
