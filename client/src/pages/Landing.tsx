@@ -315,6 +315,10 @@ export default function Landing() {
               tesstech.ru
             </a>
             <span style={{ color: palette.border }}>·</span>
+            <Link href="/about">
+              <a className="transition-colors" style={{ color: palette.muted }}>О программе</a>
+            </Link>
+            <span style={{ color: palette.border }}>·</span>
             <span>Симулятор ТОС</span>
           </div>
         </div>
