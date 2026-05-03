@@ -1,0 +1,25 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { insertGameResultSchema } from "@shared/schema";
+
+export async function registerRoutes(
+  httpServer: Server,
+  app: Express
+): Promise<Server> {
+  app.post("/api/game-results", async (req, res) => {
+    const parsed = insertGameResultSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.message });
+    }
+    const result = await storage.saveGameResult(parsed.data);
+    res.json(result);
+  });
+
+  app.get("/api/game-results", async (_req, res) => {
+    const results = await storage.getTopGameResults(20);
+    res.json(results);
+  });
+
+  return httpServer;
+}
