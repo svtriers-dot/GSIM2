@@ -2,50 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LIGHT MODE */
+/* LIGHT MODE — палитра tesstech.ru */
 :root {
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
+  --button-outline: rgba(17,25,45, .10);
+  --badge-outline: rgba(17,25,45, .06);
   --opaque-button-border-intensity: -8;
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
-  --background: 0 0% 100%;
-  --foreground: 0 0% 9%;
-  --border: 0 0% 90%;
-  --card: 0 0% 98%;
-  --card-foreground: 0 0% 9%;
-  --card-border: 0 0% 94%;
-  --sidebar: 0 0% 96%;
-  --sidebar-foreground: 0 0% 9%;
-  --sidebar-border: 0 0% 92%;
-  --sidebar-primary: 217 91% 60%;
-  --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 0 0% 92%;
-  --sidebar-accent-foreground: 0 0% 9%;
-  --sidebar-ring: 217 91% 60%;
-  --popover: 0 0% 94%;
-  --popover-foreground: 0 0% 9%;
-  --popover-border: 0 0% 90%;
-  --primary: 217 91% 60%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 0 0% 90%;
-  --secondary-foreground: 0 0% 9%;
-  --muted: 0 0% 92%;
-  --muted-foreground: 0 0% 40%;
-  --accent: 217 10% 88%;
-  --accent-foreground: 0 0% 9%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 0 0% 98%;
-  --input: 0 0% 75%;
-  --ring: 217 91% 60%;
-  --chart-1: 217 91% 45%;
-  --chart-2: 173 58% 39%;
-  --chart-3: 197 37% 45%;
-  --chart-4: 43 74% 49%;
-  --chart-5: 27 87% 55%;
-  --font-sans: Open Sans, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
+  --elevate-1: rgba(17,25,45, .03);
+  --elevate-2: rgba(17,25,45, .08);
+  /* Палитра: bg #f0ebe0, fg #11192d, card #eae4d6, border #dcd5c4, primary #a8a25a (олива), accent индиго */
+  --background: 37 35% 91%;            /* #f0ebe0 тёплый бежевый */
+  --foreground: 222 47% 12%;           /* #11192d тёмный индиго */
+  --border: 40 25% 82%;                /* #dcd5c4 */
+  --card: 37 27% 88%;                  /* #eae4d6 */
+  --card-foreground: 222 47% 12%;
+  --card-border: 40 25% 82%;
+  --sidebar: 37 27% 88%;
+  --sidebar-foreground: 222 47% 12%;
+  --sidebar-border: 40 25% 82%;
+  --sidebar-primary: 222 47% 12%;
+  --sidebar-primary-foreground: 37 35% 91%;
+  --sidebar-accent: 37 35% 91%;
+  --sidebar-accent-foreground: 222 47% 12%;
+  --sidebar-ring: 54 32% 51%;
+  --popover: 37 27% 88%;
+  --popover-foreground: 222 47% 12%;
+  --popover-border: 40 25% 82%;
+  --primary: 222 47% 12%;              /* индиго для основных кнопок */
+  --primary-foreground: 37 35% 91%;
+  --secondary: 37 27% 88%;
+  --secondary-foreground: 222 47% 12%;
+  --muted: 37 27% 88%;
+  --muted-foreground: 220 15% 41%;     /* #5a6478 */
+  --accent: 54 32% 51%;                /* #a8a25a олива */
+  --accent-foreground: 222 47% 12%;
+  --destructive: 4 56% 51%;            /* #c8423a — красный для предупреждений */
+  --destructive-foreground: 37 35% 91%;
+  --input: 40 25% 82%;
+  --ring: 54 32% 51%;
+  --chart-1: 222 47% 12%;
+  --chart-2: 54 32% 51%;
+  --chart-3: 220 15% 41%;
+  --chart-4: 37 27% 70%;
+  --chart-5: 4 56% 51%;
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-serif: Playfair Display, Georgia, serif;
+  --font-mono: 'JetBrains Mono', Menlo, monospace;
   --radius: .5rem;
   --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
