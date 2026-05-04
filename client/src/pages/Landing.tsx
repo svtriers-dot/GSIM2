@@ -268,29 +268,45 @@ export default function Landing() {
           <h3 className="text-xl font-bold mb-8 text-center tracking-tight" style={{ fontFamily: fontSans, color: palette.fg }}>
             Пять фокусирующих шагов Голдратта
           </h3>
-          {/* #5 — стрелки между карточками на lg */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-9 gap-4 lg:gap-2 items-stretch">
-            {[
-              { num: 'I', title: 'Найти ограничение', text: 'Определить, что именно сдерживает производительность всей системы' },
-              { num: 'II', title: 'Использовать максимально', text: 'Выжать из узкого места всё, что возможно, без капитальных затрат' },
-              { num: 'III', title: 'Подчинить остальное', text: 'Все прочие ресурсы работают в темпе ограничения, не быстрее' },
-              { num: 'IV', title: 'Расширить ограничение', text: 'Если шагов II–III недостаточно — инвестировать в расширение узкого места' },
-              { num: 'V', title: 'Повторить с начала', text: 'Когда ограничение снято — найти новое и не дать инерции стать ограничением' },
-            ].map((step, i) => (
-              <Fragment key={i}>
-                <div className="lg:col-span-1 rounded-lg p-5 transition-shadow hover:shadow-md flex flex-col" style={{ background: palette.bg, border: `1px solid ${palette.border}`, gridColumn: 'auto / span 1', flex: 1 }}>
-                  <div className="text-3xl mb-2" style={{ fontFamily: fontSerif, color: palette.primary, fontWeight: 700 }}>{step.num}</div>
-                  <div className="font-semibold mb-2 text-sm">{step.title}</div>
-                  <p className="text-xs leading-relaxed" style={{ color: palette.muted }}>{step.text}</p>
+          {(() => {
+            const goldrattSteps = [
+              { num: 'I', title: 'Найти ограничение', text: 'Что сдерживает производительность всей системы' },
+              { num: 'II', title: 'Использовать максимально', text: 'Выжать из узкого места всё, без капитальных затрат' },
+              { num: 'III', title: 'Подчинить остальное', text: 'Все прочие ресурсы работают в темпе ограничения' },
+              { num: 'IV', title: 'Расширить ограничение', text: 'Если шагов II–III мало — инвестировать в его расширение' },
+              { num: 'V', title: 'Повторить с начала', text: 'Когда ограничение снято — найти новое' },
+            ];
+            const card = (step: typeof goldrattSteps[number]) => (
+              <div className="rounded-lg p-5 h-full flex flex-col" style={{ background: palette.bg, border: `1px solid ${palette.border}` }}>
+                <div className="text-3xl mb-2" style={{ fontFamily: fontSerif, color: palette.primary, fontWeight: 700 }}>{step.num}</div>
+                <div className="font-semibold mb-2 text-sm">{step.title}</div>
+                <p className="text-xs leading-relaxed" style={{ color: palette.muted }}>{step.text}</p>
+              </div>
+            );
+            return (
+              <>
+                {/* Desktop: flex с фикс-стрелками между карточками */}
+                <div className="hidden lg:flex items-stretch gap-3">
+                  {goldrattSteps.map((step, i) => (
+                    <Fragment key={i}>
+                      <div className="flex-1 min-w-0">{card(step)}</div>
+                      {i < 4 && (
+                        <div className="flex items-center" style={{ width: 24 }}>
+                          <ChevronRight className="h-6 w-6" style={{ color: palette.muted, opacity: 0.5 }} />
+                        </div>
+                      )}
+                    </Fragment>
+                  ))}
                 </div>
-                {i < 4 && (
-                  <div className="hidden lg:flex items-center justify-center" style={{ gridColumn: 'auto / span 1' }}>
-                    <ChevronRight className="h-6 w-6" style={{ color: palette.muted, opacity: 0.5 }} />
-                  </div>
-                )}
-              </Fragment>
-            ))}
-          </div>
+                {/* Mobile/tablet: обычный grid без стрелок */}
+                <div className="lg:hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {goldrattSteps.map((step, i) => (
+                    <div key={i}>{card(step)}</div>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
 
           <p className="text-center mt-10 text-sm" style={{ color: palette.muted }}>
             Симулятор воспроизводит классическую задачу <strong style={{ color: palette.fg }}>Product Mix Problem</strong> из курсов по ТОС — её решают на тренингах в крупных производственных компаниях с 1990-х годов.
@@ -379,28 +395,42 @@ export default function Landing() {
               Четыре шага — и вы у руля собственной фабрики
             </p>
           </div>
-          {/* Шаги + стрелки (на lg) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-8 lg:gap-3 items-start">
-            {[
+          {(() => {
+            const howSteps = [
               { num: '1', title: 'Расставьте станки', text: '8 машин 5 цветов. Каждая может работать на любой свободной станции, но переналадка требует времени.' },
               { num: '2', title: 'Закупите сырьё', text: '4 типа сырья по 20 ₽. Слишком мало — простой. Слишком много — заморозка денег.' },
               { num: '3', title: 'Запустите неделю', text: '5 рабочих дней по 8 минут реального времени. Можно ускорить ×10. Следите за очередями.' },
               { num: '4', title: 'Заработайте максимум', text: 'В пятницу — расчёт. Постоянка 11 000 ₽ списана. Сколько осталось? Больше — лучше.' },
-            ].map((step, i) => (
-              <Fragment key={i}>
-                <div className="lg:col-span-1" style={{ gridColumn: 'auto / span 1' }}>
-                  <div className="text-5xl mb-3" style={{ fontFamily: fontSerif, color: palette.primary, fontWeight: 700 }}>{step.num}</div>
-                  <h3 className="text-xl font-bold mb-2 tracking-tight" style={{ fontFamily: fontSans }}>{step.title}</h3>
-                  <p className="leading-relaxed text-sm" style={{ color: '#c8c0a8' }}>{step.text}</p>
+            ];
+            const stepCard = (step: typeof howSteps[number]) => (
+              <div>
+                <div className="text-5xl mb-3" style={{ fontFamily: fontSerif, color: palette.primary, fontWeight: 700 }}>{step.num}</div>
+                <h3 className="text-xl font-bold mb-2 tracking-tight" style={{ fontFamily: fontSans }}>{step.title}</h3>
+                <p className="leading-relaxed text-sm" style={{ color: '#c8c0a8' }}>{step.text}</p>
+              </div>
+            );
+            return (
+              <>
+                <div className="hidden lg:flex items-start gap-6">
+                  {howSteps.map((step, i) => (
+                    <Fragment key={i}>
+                      <div className="flex-1 min-w-0">{stepCard(step)}</div>
+                      {i < 3 && (
+                        <div className="flex items-center pt-7" style={{ width: 24 }}>
+                          <ChevronRight className="h-6 w-6" style={{ color: palette.primary, opacity: 0.6 }} />
+                        </div>
+                      )}
+                    </Fragment>
+                  ))}
                 </div>
-                {i < 3 && (
-                  <div className="hidden lg:flex items-center justify-center pt-7" style={{ gridColumn: 'auto / span 1' }}>
-                    <ChevronRight className="h-6 w-6" style={{ color: palette.primary, opacity: 0.6 }} />
-                  </div>
-                )}
-              </Fragment>
-            ))}
-          </div>
+                <div className="lg:hidden grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {howSteps.map((step, i) => (
+                    <div key={i}>{stepCard(step)}</div>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
         </div>
       </section>
 
