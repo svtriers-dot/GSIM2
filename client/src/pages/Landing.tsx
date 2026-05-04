@@ -192,7 +192,7 @@ export default function Landing() {
               <Target className="h-3.5 w-3.5" style={{ color: palette.primary }} />
               По методологии Голдратта
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl leading-tight mb-6" style={{ fontFamily: fontSerif, fontWeight: 700 }}>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl leading-[1.1] mb-6 tracking-tight" style={{ fontFamily: fontSans, fontWeight: 800, color: palette.fg }}>
               Освойте Теорию ограничений <span style={{ color: palette.primary }}>на практике</span>
             </h1>
             <p className="text-lg sm:text-xl leading-relaxed mb-8" style={{ color: palette.muted }}>
@@ -235,7 +235,7 @@ export default function Landing() {
           ].map((s, i) => (
             <div key={i} className="flex items-center gap-1 sm:gap-3">
               {i > 0 && <span className="opacity-40 px-1 sm:px-2">·</span>}
-              <span className="font-bold" style={{ color: palette.fg, fontFamily: fontSerif }}>{s.value}</span>
+              <span className="font-bold" style={{ color: palette.fg }}>{s.value}</span>
               <span className="opacity-80">{s.label}</span>
             </div>
           ))}
@@ -270,16 +270,16 @@ export default function Landing() {
           </h3>
           {(() => {
             const goldrattSteps = [
-              { num: 'I', title: 'Найти ограничение', text: 'Что сдерживает производительность всей системы' },
-              { num: 'II', title: 'Использовать максимально', text: 'Выжать из узкого места всё, без капитальных затрат' },
-              { num: 'III', title: 'Подчинить остальное', text: 'Все прочие ресурсы работают в темпе ограничения' },
-              { num: 'IV', title: 'Расширить ограничение', text: 'Если шагов II–III мало — инвестировать в его расширение' },
-              { num: 'V', title: 'Повторить с начала', text: 'Когда ограничение снято — найти новое' },
+              { title: 'Найти ограничение', text: 'Что сдерживает производительность всей системы' },
+              { title: 'Использовать максимально', text: 'Выжать из узкого места всё, без капитальных затрат' },
+              { title: 'Подчинить остальное', text: 'Все прочие ресурсы работают в темпе ограничения' },
+              { title: 'Расширить ограничение', text: 'Если предыдущих шагов мало — инвестировать в его расширение' },
+              { title: 'Повторить с начала', text: 'Когда ограничение снято — найти новое' },
             ];
             const card = (step: typeof goldrattSteps[number]) => (
               <div className="rounded-lg p-5 h-full flex flex-col" style={{ background: palette.bg, border: `1px solid ${palette.border}` }}>
-                <div className="text-3xl mb-2" style={{ fontFamily: fontSerif, color: palette.primary, fontWeight: 700 }}>{step.num}</div>
-                <div className="font-semibold mb-2 text-sm">{step.title}</div>
+                <div className="w-8 h-1 mb-4 rounded-full" style={{ background: palette.primary }} />
+                <div className="font-bold mb-2 text-sm tracking-tight" style={{ color: palette.fg }}>{step.title}</div>
                 <p className="text-xs leading-relaxed" style={{ color: palette.muted }}>{step.text}</p>
               </div>
             );
@@ -340,8 +340,8 @@ export default function Landing() {
                 }}>
                   {/* #8 — number badge 01 вместо «ГЛАВНОЕ» */}
                   {isFlag && (
-                    <div className="absolute -top-3 left-6 px-3 py-1 rounded text-xs font-bold tracking-wider" style={{ background: palette.primary, color: palette.fg, fontFamily: fontSerif }}>
-                      01
+                    <div className="absolute -top-3 left-6 px-3 py-1 rounded text-xs font-bold tracking-wider" style={{ background: palette.primary, color: palette.fg }}>
+                      ОСНОВА
                     </div>
                   )}
                   {/* #6 — для не-flagship иконки в индиго (не олива) для баланса */}
@@ -404,8 +404,8 @@ export default function Landing() {
             ];
             const stepCard = (step: typeof howSteps[number]) => (
               <div>
-                <div className="text-5xl mb-3" style={{ fontFamily: fontSerif, color: palette.primary, fontWeight: 700 }}>{step.num}</div>
-                <h3 className="text-xl font-bold mb-2 tracking-tight" style={{ fontFamily: fontSans }}>{step.title}</h3>
+                <div className="text-5xl mb-3 tracking-tighter" style={{ color: palette.primary, fontWeight: 800 }}>{step.num}</div>
+                <h3 className="text-xl font-bold mb-2 tracking-tight">{step.title}</h3>
                 <p className="leading-relaxed text-sm" style={{ color: '#c8c0a8' }}>{step.text}</p>
               </div>
             );
