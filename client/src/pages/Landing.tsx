@@ -270,15 +270,18 @@ export default function Landing() {
           </h3>
           {(() => {
             const goldrattSteps = [
-              { title: 'Найти ограничение', text: 'Что сдерживает производительность всей системы' },
-              { title: 'Использовать максимально', text: 'Выжать из узкого места всё, без капитальных затрат' },
-              { title: 'Подчинить остальное', text: 'Все прочие ресурсы работают в темпе ограничения' },
-              { title: 'Расширить ограничение', text: 'Если предыдущих шагов мало — инвестировать в его расширение' },
-              { title: 'Повторить с начала', text: 'Когда ограничение снято — найти новое' },
+              { n: 1, title: 'Найти ограничение', text: 'Что сдерживает производительность всей системы' },
+              { n: 2, title: 'Использовать максимально', text: 'Выжать из узкого места всё, без капитальных затрат' },
+              { n: 3, title: 'Подчинить остальное', text: 'Все прочие ресурсы работают в темпе ограничения' },
+              { n: 4, title: 'Расширить ограничение', text: 'Если предыдущих шагов мало — инвестировать в его расширение' },
+              { n: 5, title: 'Повторить с начала', text: 'Когда ограничение снято — найти новое' },
             ];
             const card = (step: typeof goldrattSteps[number]) => (
               <div className="rounded-lg p-5 h-full flex flex-col" style={{ background: palette.bg, border: `1px solid ${palette.border}` }}>
-                <div className="w-8 h-1 mb-4 rounded-full" style={{ background: palette.primary }} />
+                <div className="flex items-baseline gap-3 mb-3">
+                  <span className="text-3xl font-extrabold leading-none" style={{ color: palette.primary }}>{step.n}</span>
+                  <div className="h-px flex-1" style={{ background: palette.border }} />
+                </div>
                 <div className="font-bold mb-2 text-sm tracking-tight" style={{ color: palette.fg }}>{step.title}</div>
                 <p className="text-xs leading-relaxed" style={{ color: palette.muted }}>{step.text}</p>
               </div>
