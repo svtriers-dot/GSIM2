@@ -7,6 +7,9 @@ import NotFound from "@/pages/not-found";
 import Game from "@/pages/game";
 import Landing from "@/pages/Landing";
 import About from "@/pages/About";
+import Eula from "@/pages/Eula";
+import Oferta from "@/pages/Oferta";
+import Privacy from "@/pages/Privacy";
 
 function Router() {
   return (
@@ -14,6 +17,9 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/play" component={Game} />
       <Route path="/about" component={About} />
+      <Route path="/legal/eula" component={Eula} />
+      <Route path="/legal/oferta" component={Oferta} />
+      <Route path="/legal/privacy" component={Privacy} />
       <Route component={NotFound} />
     </Switch>
   );
