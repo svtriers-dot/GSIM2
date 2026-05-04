@@ -125,11 +125,11 @@ export const GAME_CONSTANTS = {
 };
 
 export const COLOR_MAP: Record<MachineColor, { fill: string; stroke: string; bg: string }> = {
-  lightblue: { fill: '#81D4FA', stroke: '#29B6F6', bg: '#E1F5FE' },
-  blue: { fill: '#1A47B8', stroke: '#0D2E7A', bg: '#C5CAE9' },
-  green: { fill: '#66BB6A', stroke: '#2E7D32', bg: '#E8F5E9' },
-  pink: { fill: '#F06292', stroke: '#C2185B', bg: '#FCE4EC' },
-  brown: { fill: '#A1887F', stroke: '#5D4037', bg: '#EFEBE9' },
+  lightblue: { fill: '#039BE5', stroke: '#01579B', bg: '#B3E5FC' },
+  blue:      { fill: '#1A237E', stroke: '#0D1B5C', bg: '#9FA8DA' },
+  green:     { fill: '#2E7D32', stroke: '#1B5E20', bg: '#A5D6A7' },
+  pink:      { fill: '#C2185B', stroke: '#880E4F', bg: '#F8BBD0' },
+  brown:     { fill: '#5D4037', stroke: '#3E2723', bg: '#BCAAA4' },
 };
 
 export function getStationPos(stationId: string): { x: number; y: number } {
