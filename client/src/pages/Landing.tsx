@@ -69,18 +69,19 @@ export default function Landing() {
             style={{ background: palette.card, color: palette.muted, border: `1px solid ${palette.border}` }}
           >
             <Target className="h-4 w-4" />
-            Симулятор Теории Ограничений
+            Симулятор по методологии Элияху Голдратта
           </div>
           <h1
             className="text-4xl sm:text-5xl lg:text-6xl leading-tight mb-6"
             style={{ fontFamily: fontSerif, fontWeight: 700 }}
           >
-            Заработайте максимум за 5 дней
+            Освойте Теорию ограничений Голдратта <span style={{ color: palette.primary }}>на практике</span>
           </h1>
           <p className="text-lg sm:text-xl mb-10 leading-relaxed" style={{ color: palette.muted }}>
-            Управляйте виртуальной фабрикой, расставляйте станки, выбирайте
-            продуктовый микс. Цель — максимум прибыли при ограниченных ресурсах
-            и времени. Учебная игра по методологии Элияху Голдратта.
+            Книгу «Цель» можно прочитать за неделю — но интуиция управленца
+            появляется только через опыт. Симулятор даёт этот опыт за одну партию:
+            вы управляете фабрикой, ищете узкое место и видите, как локальные
+            решения влияют на прибыль всей системы.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/play">
@@ -107,6 +108,58 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Что такое ТОС */}
+      <section className="py-20" style={{ background: palette.card, borderTop: `1px solid ${palette.border}`, borderBottom: `1px solid ${palette.border}` }}>
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: fontSerif, fontWeight: 700 }}>
+              Что такое Теория ограничений
+            </h2>
+            <p className="text-lg leading-relaxed max-w-3xl mx-auto" style={{ color: palette.muted }}>
+              Подход к управлению, разработанный физиком Элияху Голдраттом
+              в 1980-х. Изложен в его книге «Цель» (The Goal, 1984), переведённой
+              на 30 языков и проданной тиражом более 7 миллионов экземпляров.
+              Применяется в производстве, проектном управлении, разработке ПО,
+              медицине и логистике.
+            </p>
+          </div>
+
+          <div className="rounded-lg p-8 mb-10" style={{ background: palette.bg, border: `1px solid ${palette.border}` }}>
+            <p className="text-lg italic leading-relaxed text-center" style={{ color: palette.fg, fontFamily: fontSerif }}>
+              «Производительность системы ограничена производительностью её самого медленного звена. Чтобы улучшить систему, нужно улучшить ограничение. Всё остальное — потеря времени.»
+            </p>
+            <p className="text-sm text-center mt-3" style={{ color: palette.muted }}>
+              — Элияху Голдратт
+            </p>
+          </div>
+
+          <h3 className="text-xl mb-6 text-center" style={{ fontFamily: fontSerif, fontWeight: 700 }}>
+            Пять фокусирующих шагов Голдратта
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {[
+              { num: 'I', title: 'Найти ограничение', text: 'Определить, что именно сдерживает производительность всей системы' },
+              { num: 'II', title: 'Использовать его максимально', text: 'Выжать из узкого места всё, что возможно, без капитальных затрат' },
+              { num: 'III', title: 'Подчинить остальное', text: 'Все прочие ресурсы работают в темпе ограничения, не быстрее' },
+              { num: 'IV', title: 'Расширить ограничение', text: 'Если шагов II–III недостаточно — инвестировать в расширение узкого места' },
+              { num: 'V', title: 'Повторить с начала', text: 'Когда ограничение снято — найти новое и не дать инерции стать ограничением' },
+            ].map((step, i) => (
+              <div key={i} className="rounded-lg p-5" style={{ background: palette.bg, border: `1px solid ${palette.border}` }}>
+                <div className="text-3xl mb-2" style={{ fontFamily: fontSerif, color: palette.primary, fontWeight: 700 }}>
+                  {step.num}
+                </div>
+                <div className="font-semibold mb-2 text-sm">{step.title}</div>
+                <p className="text-xs leading-relaxed" style={{ color: palette.muted }}>{step.text}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-center mt-10 text-sm" style={{ color: palette.muted }}>
+            Симулятор воспроизводит классическую задачу <strong style={{ color: palette.fg }}>Product Mix Problem</strong> из курсов по ТОС — её решают на тренингах в крупных производственных компаниях с 1990-х годов.
+          </p>
+        </div>
+      </section>
+
       {/* Features — Что вы изучите */}
       <section className="py-20" style={{ background: palette.card, borderTop: `1px solid ${palette.border}`, borderBottom: `1px solid ${palette.border}` }}>
         <div className="max-w-6xl mx-auto px-6">
@@ -115,7 +168,7 @@ export default function Landing() {
               className="text-3xl sm:text-4xl mb-4"
               style={{ fontFamily: fontSerif, fontWeight: 700 }}
             >
-              Что вы изучите за одну партию
+              Что отрабатывается за партию
             </h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: palette.muted }}>
               Пять базовых концепций операционного менеджмента — на практике, а не в учебнике
