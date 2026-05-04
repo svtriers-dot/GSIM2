@@ -1,6 +1,5 @@
 import LegalPage from './LegalPage';
-import content from './legal/oferta.md?raw';
-
+import contentHtml from './legal/oferta.html?raw';
 export default function Oferta() {
-  return <LegalPage title="Публичная оферта" subtitle="на предоставление прав использования ПО «TessTOC»" content={content} />;
+  return <LegalPage title="Публичная оферта" subtitle="на предоставление прав использования ПО «TessTOC» · ООО «ТЕСС ТЕХНОЛОДЖИ»" contentHtml={contentHtml} />;
 }

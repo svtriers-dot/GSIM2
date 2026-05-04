@@ -1,6 +1,5 @@
 import LegalPage from './LegalPage';
-import content from './legal/eula.md?raw';
-
+import contentHtml from './legal/eula.html?raw';
 export default function Eula() {
-  return <LegalPage title="Лицензионное соглашение (EULA)" subtitle="программного обеспечения «TessTOC»" content={content} />;
+  return <LegalPage title="Лицензионное соглашение (EULA)" subtitle="программного обеспечения «TessTOC» · ООО «ТЕСС ТЕХНОЛОДЖИ»" contentHtml={contentHtml} />;
 }

@@ -8,112 +8,38 @@ const palette = {
   card: '#eae4d6',
   border: '#dcd5c4',
   primary: '#a8a25a',
-  accent: '#11192d',
   primaryFg: '#ffffff',
   muted: '#5a6478',
 };
 
 const fontSans = 'Inter, sans-serif';
 
-// Простой markdown → JSX рендер. Не полный markdown, но покрывает наши документы.
-function renderMarkdown(md: string): JSX.Element[] {
-  const lines = md.split('\n');
-  const elements: JSX.Element[] = [];
-  let listBuffer: string[] = [];
-  let listOrdered = false;
-
-  const flushList = (key: string) => {
-    if (listBuffer.length === 0) return;
-    const items = listBuffer.map((t, i) => (
-      <li key={i} className="leading-relaxed mb-2" style={{ color: palette.fg }}>
-        <span dangerouslySetInnerHTML={{ __html: inlineMd(t) }} />
-      </li>
-    ));
-    elements.push(
-      listOrdered
-        ? <ol key={key} className="list-decimal list-inside ml-2 my-3 space-y-1">{items}</ol>
-        : <ul key={key} className="list-disc list-inside ml-2 my-3 space-y-1">{items}</ul>
-    );
-    listBuffer = [];
-  };
-
-  function inlineMd(text: string): string {
-    return text
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/`(.+?)`/g, '<code class="px-1 rounded text-sm" style="background:#dcd5c4">$1</code>');
-  }
-
-  lines.forEach((raw, idx) => {
-    const line = raw.trimEnd();
-    const key = `l-${idx}`;
-
-    // Bullet list
-    if (/^- /.test(line) || /^\* /.test(line)) {
-      if (listOrdered) flushList(key + '-pre');
-      listOrdered = false;
-      listBuffer.push(line.replace(/^[-*]\s+/, ''));
-      return;
-    }
-    // Ordered list
-    if (/^\d+\.\s/.test(line)) {
-      if (!listOrdered) flushList(key + '-pre');
-      listOrdered = true;
-      listBuffer.push(line.replace(/^\d+\.\s+/, ''));
-      return;
-    }
-
-    flushList(key + '-pre');
-
-    if (line === '') return;
-
-    // Заголовки (markdown пишет ## или просто **bold** для заголовков)
-    if (/^#{1,6}\s/.test(line)) {
-      const lvl = line.match(/^(#+)\s/)?.[1].length || 2;
-      const text = line.replace(/^#+\s+/, '');
-      const cls = lvl === 1 ? 'text-3xl mt-10 mb-4 font-extrabold tracking-tight' :
-                  lvl === 2 ? 'text-xl mt-8 mb-3 font-bold tracking-tight' :
-                              'text-base mt-6 mb-2 font-bold tracking-tight';
-      elements.push(<h2 key={key} className={cls} style={{ color: palette.fg }}>{text}</h2>);
-      return;
-    }
-
-    // Bold-only line (markdown часто использует **TEXT** для центрированных заголовков)
-    const boldOnly = line.match(/^\*\*(.+)\*\*$/);
-    if (boldOnly) {
-      const txt = boldOnly[1];
-      // Распознаём «1. Общие положения» как h2
-      if (/^\d+\.\s/.test(txt)) {
-        elements.push(<h2 key={key} className="text-xl mt-8 mb-3 font-bold tracking-tight" style={{ color: palette.fg }}>{txt}</h2>);
-      } else if (txt.length < 80 && !txt.includes('.')) {
-        elements.push(<h3 key={key} className="text-base mt-6 mb-2 font-bold tracking-tight" style={{ color: palette.fg }}>{txt}</h3>);
-      } else {
-        elements.push(<p key={key} className="leading-relaxed my-3 font-bold" style={{ color: palette.fg }}>{txt}</p>);
-      }
-      return;
-    }
-
-    // Обычный параграф
-    elements.push(
-      <p key={key} className="leading-relaxed my-3" style={{ color: palette.fg }}>
-        <span dangerouslySetInnerHTML={{ __html: inlineMd(line) }} />
-      </p>
-    );
-  });
-
-  flushList('end');
-  return elements;
-}
-
 export interface LegalPageProps {
   title: string;
   subtitle?: string;
-  content: string;
+  contentHtml: string;
 }
 
-export default function LegalPage({ title, subtitle, content }: LegalPageProps) {
+export default function LegalPage({ title, subtitle, contentHtml }: LegalPageProps) {
   return (
     <div className="min-h-screen" style={{ background: palette.bg, color: palette.fg, fontFamily: fontSans }}>
+      <style>{`
+        .legal-content { font-size: 16px; line-height: 1.7; }
+        .legal-content h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; margin: 2rem 0 0.75rem; padding-top: 1rem; border-top: 1px solid ${palette.border}; }
+        .legal-content h2:first-child { padding-top: 0; border-top: none; margin-top: 0; }
+        .legal-content h3 { font-size: 18px; font-weight: 700; margin: 1.5rem 0 0.5rem; }
+        .legal-content p { margin: 0.75rem 0; color: ${palette.fg}; }
+        .legal-content ul, .legal-content ol { margin: 0.75rem 0; padding-left: 1.5rem; }
+        .legal-content li { margin: 0.4rem 0; }
+        .legal-content strong { font-weight: 700; }
+        .legal-content em { font-style: italic; }
+        .legal-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 14px; }
+        .legal-content table tr td { padding: 0.6rem 0.8rem; border: 1px solid ${palette.border}; vertical-align: top; }
+        .legal-content table tr:first-child td { background: ${palette.card}; font-weight: 700; }
+        .legal-content a { color: ${palette.primary}; text-decoration: underline; }
+        .legal-content a:hover { opacity: 0.7; }
+      `}</style>
+
       <header
         className="sticky top-0 z-10 backdrop-blur-md"
         style={{ background: `${palette.bg}f0`, borderBottom: `1px solid ${palette.border}` }}
@@ -129,10 +55,7 @@ export default function LegalPage({ title, subtitle, content }: LegalPageProps) 
             </a>
           </Link>
           <Link href="/">
-            <a
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm transition-opacity hover:opacity-70"
-              style={{ color: palette.muted }}
-            >
+            <a className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm transition-opacity hover:opacity-70" style={{ color: palette.muted }}>
               <ArrowLeft className="h-4 w-4" />
               На главную
             </a>
@@ -141,19 +64,12 @@ export default function LegalPage({ title, subtitle, content }: LegalPageProps) 
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-12">
-        <h1
-          className="text-3xl sm:text-4xl mb-2 font-extrabold tracking-tight"
-          style={{ color: palette.fg }}
-        >
+        <h1 className="text-3xl sm:text-4xl mb-2 font-extrabold tracking-tight" style={{ color: palette.fg }}>
           {title}
         </h1>
-        {subtitle && (
-          <p className="text-sm mb-10" style={{ color: palette.muted }}>{subtitle}</p>
-        )}
+        {subtitle && <p className="text-sm mb-10" style={{ color: palette.muted }}>{subtitle}</p>}
 
-        <article className="text-base">
-          {renderMarkdown(content)}
-        </article>
+        <article className="legal-content" dangerouslySetInnerHTML={{ __html: contentHtml }} />
       </main>
 
       <footer className="py-8 mt-16" style={{ background: palette.card, borderTop: `1px solid ${palette.border}` }}>
