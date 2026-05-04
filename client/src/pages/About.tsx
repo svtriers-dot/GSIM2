@@ -48,7 +48,7 @@ export default function About() {
         <section className="mb-10">
           <h2 className="text-xl mb-4" style={{ fontFamily: fontSerif, fontWeight: 700 }}>Описание</h2>
           <p className="leading-relaxed" style={{ color: palette.muted }}>
-            «TessTOC» — обучающий веб-симулятор Теории ограничений Голдратта, реализующий классическую задачу Product Mix Problem.
+            «TessTOC» — обучающий веб-симулятор Теории ограничений, реализующий классическую задачу Product Mix Problem.
             Игрок управляет виртуальной фабрикой в течение пяти рабочих дней, оптимизирует продуктовый микс и ищет узкое место производственной системы.
           </p>
         </section>

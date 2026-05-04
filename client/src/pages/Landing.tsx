@@ -75,7 +75,7 @@ export default function Landing() {
             className="text-4xl sm:text-5xl lg:text-6xl leading-tight mb-6"
             style={{ fontFamily: fontSerif, fontWeight: 700 }}
           >
-            Освойте Теорию ограничений Голдратта <span style={{ color: palette.primary }}>на практике</span>
+            Освойте Теорию ограничений <span style={{ color: palette.primary }}>на практике</span>
           </h1>
           <p className="text-lg sm:text-xl mb-10 leading-relaxed" style={{ color: palette.muted }}>
             Книгу «Цель» можно прочитать за неделю — но интуиция управленца

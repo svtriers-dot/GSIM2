@@ -436,7 +436,7 @@ export default function Game() {
     ctx.fillStyle = '#5a6a7a';
     ctx.font = 'italic 19px Georgia, serif';
     ctx.fillText('об успешном прохождении симулятора производства', W / 2, 182);
-    ctx.fillText('по Теории ограничений Голдратта', W / 2, 208);
+    ctx.fillText('по Теории ограничений', W / 2, 208);
 
     ctx.fillStyle = '#6a7a8a';
     ctx.font = '17px Georgia, serif';
