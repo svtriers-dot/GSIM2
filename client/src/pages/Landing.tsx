@@ -23,98 +23,137 @@ const palette = {
 const fontSerif = 'Playfair Display, Georgia, serif';
 const fontSans = 'Inter, sans-serif';
 
-// SVG-иллюстрация фабрики для hero (#1)
+// SVG-mockup игровой панели для hero (#1) — переработка
 function FactoryIllustration() {
+  // Цвета (только из палитры + 1 красный для warning)
+  const W = 520, H = 380;
+  const fg = palette.fg;
+  const bg = palette.bg;
+  const card = palette.card;
+  const border = palette.border;
+  const primary = palette.primary;
+  const muted = palette.muted;
+  const danger = '#c8423a';
+
   return (
-    <svg viewBox="0 0 480 360" className="w-full h-auto" style={{ maxWidth: 480 }} xmlns="http://www.w3.org/2000/svg">
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" style={{ maxWidth: 520 }} xmlns="http://www.w3.org/2000/svg">
+      {/* Browser-like frame с тенью */}
+      <rect x="6" y="8" width={W-12} height={H-12} rx="14" fill="white" stroke={border} strokeWidth="1" filter="url(#shadow)" />
       <defs>
-        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" stroke={palette.border} strokeWidth="0.5" opacity="0.4" />
-        </pattern>
-        <linearGradient id="floor" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={palette.bg} />
-          <stop offset="100%" stopColor={palette.card} />
-        </linearGradient>
+        <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%">
+          <feDropShadow dx="0" dy="4" stdDeviation="8" floodColor={fg} floodOpacity="0.08" />
+        </filter>
       </defs>
-      <rect width="480" height="360" fill="url(#floor)" rx="12" />
-      <rect width="480" height="360" fill="url(#grid)" rx="12" />
 
-      {/* Сырьё (вход) */}
-      <g transform="translate(20, 60)">
-        <text x="20" y="-8" fontSize="9" fill={palette.muted} fontFamily={fontSans}>Сырьё</text>
-        <rect width="40" height="40" rx="6" fill={palette.primary} opacity="0.25" stroke={palette.primary} strokeWidth="1" />
-        <text x="20" y="25" fontSize="14" textAnchor="middle" fill={palette.fg} fontWeight="bold">RM</text>
+      {/* Browser titlebar */}
+      <rect x="6" y="8" width={W-12} height="28" rx="14" fill={card} />
+      <rect x="6" y="22" width={W-12} height="14" fill={card} />
+      <circle cx="20" cy="22" r="4" fill="#e8b4b4" />
+      <circle cx="34" cy="22" r="4" fill="#e8d4a8" />
+      <circle cx="48" cy="22" r="4" fill="#b4d4b4" />
+      <rect x="120" y="14" width="180" height="16" rx="8" fill="white" stroke={border} />
+      <text x="210" y="25" fontSize="9" textAnchor="middle" fill={muted} fontFamily={fontSans}>toc.tesstech.ru/play</text>
+
+      {/* Top bar — день, время, касса */}
+      <g transform="translate(20, 50)">
+        <rect width={W-40} height="44" rx="8" fill={fg} />
+        <text x="20" y="18" fontSize="9" fill="#a8a395" fontFamily={fontSans} letterSpacing="1">ДЕНЬ</text>
+        <text x="20" y="36" fontSize="16" fill="white" fontWeight="700" fontFamily={fontSans}>3</text>
+
+        <text x="80" y="18" fontSize="9" fill="#a8a395" fontFamily={fontSans} letterSpacing="1">ВРЕМЯ</text>
+        <text x="80" y="36" fontSize="16" fill="white" fontWeight="700" fontFamily={fontSans}>04:32</text>
+
+        <text x="180" y="18" fontSize="9" fill="#a8a395" fontFamily={fontSans} letterSpacing="1">×СКОРОСТЬ</text>
+        <text x="180" y="36" fontSize="16" fill={primary} fontWeight="700" fontFamily={fontSans}>×10</text>
+
+        <text x="380" y="18" fontSize="9" fill="#a8a395" fontFamily={fontSans} letterSpacing="1" textAnchor="end">КАССА</text>
+        <text x="380" y="36" fontSize="16" fill="white" fontWeight="700" fontFamily={fontSans} textAnchor="end">22 480 ₽</text>
       </g>
 
-      {/* Станок 1 — зелёный с очередью */}
-      <g transform="translate(110, 50)">
-        <rect width="14" height="14" rx="2" fill="#66BB6A" x="-20" y="13" />
-        <rect width="14" height="14" rx="2" fill="#66BB6A" x="-38" y="13" />
-        <rect width="14" height="14" rx="2" fill="#66BB6A" x="-56" y="13" opacity="0.6" />
-        <rect width="60" height="50" rx="8" fill="#fff" stroke="#66BB6A" strokeWidth="2" />
-        <circle cx="30" cy="20" r="6" fill="#66BB6A" />
-        <text x="30" y="42" fontSize="9" textAnchor="middle" fill={palette.fg} fontWeight="600">A1</text>
+      {/* Заголовок секции "Производственная линия" */}
+      <text x="20" y="116" fontSize="9" fill={muted} fontFamily={fontSans} letterSpacing="1">ПРОИЗВОДСТВЕННАЯ ЛИНИЯ</text>
+
+      {/* Производственная цепочка — горизонтальная */}
+      <g transform="translate(20, 130)">
+        {/* Сырьё */}
+        <rect width="60" height="56" rx="8" fill="white" stroke={border} strokeWidth="1.5" strokeDasharray="3 2" />
+        <text x="30" y="22" fontSize="9" textAnchor="middle" fill={muted}>Сырьё</text>
+        <text x="30" y="40" fontSize="13" textAnchor="middle" fill={fg} fontWeight="700" fontFamily={fontSans}>RM</text>
+
+        {/* Стрелка */}
+        <line x1="68" y1="28" x2="92" y2="28" stroke={muted} strokeWidth="1.5" />
+        <polygon points="92,28 86,25 86,31" fill={muted} />
+
+        {/* Станок A1 — работает */}
+        <g transform="translate(100, 0)">
+          <rect width="80" height="56" rx="8" fill="white" stroke={primary} strokeWidth="2" />
+          <circle cx="40" cy="22" r="7" fill={primary} />
+          <text x="40" y="44" fontSize="11" textAnchor="middle" fill={fg} fontWeight="700" fontFamily={fontSans}>A1</text>
+        </g>
+
+        {/* Стрелка */}
+        <line x1="188" y1="28" x2="212" y2="28" stroke={muted} strokeWidth="1.5" />
+        <polygon points="212,28 206,25 206,31" fill={muted} />
+
+        {/* Станок B3 — узкое место */}
+        <g transform="translate(220, 0)">
+          <rect width="80" height="56" rx="8" fill="white" stroke={danger} strokeWidth="2.5" />
+          <circle cx="40" cy="22" r="7" fill={fg} />
+          <text x="40" y="44" fontSize="11" textAnchor="middle" fill={fg} fontWeight="700" fontFamily={fontSans}>B3</text>
+          {/* Очередь под станцией */}
+          <g transform="translate(0, 64)">
+            {[0,1,2,3,4,5,6].map((i) => (
+              <rect key={i} x={6 + i*10} y="0" width="8" height="8" rx="1.5" fill={fg} opacity={1 - i*0.1} />
+            ))}
+          </g>
+          {/* Подпись узкого места */}
+          <text x="40" y="-6" fontSize="9" textAnchor="middle" fill={danger} fontWeight="700" fontFamily={fontSans}>УЗКОЕ МЕСТО</text>
+        </g>
+
+        {/* Стрелка */}
+        <line x1="308" y1="28" x2="332" y2="28" stroke={muted} strokeWidth="1.5" strokeDasharray="2 2" opacity="0.5" />
+        <polygon points="332,28 326,25 326,31" fill={muted} opacity="0.5" />
+
+        {/* Станок F3 — простой */}
+        <g transform="translate(340, 0)">
+          <rect width="80" height="56" rx="8" fill={card} stroke={border} strokeWidth="1.5" strokeDasharray="3 2" />
+          <circle cx="40" cy="22" r="7" fill={muted} opacity="0.4" />
+          <text x="40" y="44" fontSize="11" textAnchor="middle" fill={muted} fontWeight="700" fontFamily={fontSans}>F3</text>
+        </g>
+
+        {/* Стрелка */}
+        <line x1="428" y1="28" x2="452" y2="28" stroke={muted} strokeWidth="1.5" />
+        <polygon points="452,28 446,25 446,31" fill={muted} />
+
+        {/* Выход — продукция */}
+        <rect x="460" width="20" height="56" rx="6" fill={primary} opacity="0.2" />
       </g>
 
-      {/* Соединитель */}
-      <path d="M 175 75 L 215 75" stroke={palette.muted} strokeWidth="1.5" strokeDasharray="3 2" />
+      {/* Заголовок продуктов */}
+      <text x="20" y="244" fontSize="9" fill={muted} fontFamily={fontSans} letterSpacing="1">ПРОДУКТЫ</text>
 
-      {/* Станок 2 — синий, узкое место */}
-      <g transform="translate(215, 50)">
-        <rect width="14" height="14" rx="2" fill="#1A47B8" x="-20" y="13" />
-        <rect width="14" height="14" rx="2" fill="#1A47B8" x="-38" y="13" />
-        <rect width="14" height="14" rx="2" fill="#1A47B8" x="-56" y="13" />
-        <rect width="14" height="14" rx="2" fill="#1A47B8" x="-74" y="13" />
-        <rect width="14" height="14" rx="2" fill="#1A47B8" x="-92" y="13" opacity="0.7" />
-        <rect width="60" height="50" rx="8" fill="#fff" stroke="#C00" strokeWidth="2.5" />
-        <circle cx="30" cy="20" r="6" fill="#1A47B8" />
-        <text x="30" y="42" fontSize="9" textAnchor="middle" fill={palette.fg} fontWeight="600">B3</text>
-        <text x="30" y="-5" fontSize="9" textAnchor="middle" fill="#C00" fontWeight="700">⚠ узкое место</text>
-      </g>
-
-      {/* Соединитель */}
-      <path d="M 280 75 L 320 75" stroke={palette.muted} strokeWidth="1.5" strokeDasharray="3 2" />
-
-      {/* Станок 3 — розовый, простаивает */}
-      <g transform="translate(320, 50)">
-        <rect width="60" height="50" rx="8" fill="#fff" stroke="#F06292" strokeWidth="2" />
-        <circle cx="30" cy="20" r="6" fill="#F06292" opacity="0.4" />
-        <text x="30" y="42" fontSize="9" textAnchor="middle" fill={palette.muted} fontWeight="600">F3</text>
-        <text x="30" y="68" fontSize="8" textAnchor="middle" fill={palette.muted}>простой</text>
-      </g>
-
-      {/* Касса */}
-      <g transform="translate(390, 60)">
-        <rect width="70" height="50" rx="8" fill={palette.fg} />
-        <text x="35" y="20" fontSize="9" textAnchor="middle" fill="#fff" opacity="0.7">КАССА</text>
-        <text x="35" y="38" fontSize="14" textAnchor="middle" fill="#fff" fontWeight="bold">10 000 ₽</text>
-      </g>
-
-      {/* Нижний ряд: продукты */}
-      <g transform="translate(40, 200)">
-        <text x="0" y="-10" fontSize="9" fill={palette.muted} fontFamily={fontSans}>Продукт A · 180 ₽</text>
-        <rect width="80" height="36" rx="6" fill={palette.primary} opacity="0.15" stroke={palette.primary} />
-        <text x="40" y="22" fontSize="11" textAnchor="middle" fill={palette.fg} fontWeight="600">A · 12/40</text>
-      </g>
-      <g transform="translate(150, 200)">
-        <text x="0" y="-10" fontSize="9" fill={palette.muted} fontFamily={fontSans}>Продукт D · 240 ₽</text>
-        <rect width="80" height="36" rx="6" fill={palette.fg} opacity="0.1" stroke={palette.fg} strokeOpacity="0.3" />
-        <text x="40" y="22" fontSize="11" textAnchor="middle" fill={palette.fg} fontWeight="600">D · 28/50</text>
-      </g>
-      <g transform="translate(260, 200)">
-        <text x="0" y="-10" fontSize="9" fill={palette.muted} fontFamily={fontSans}>Продукт F · 180 ₽</text>
-        <rect width="80" height="36" rx="6" fill={palette.primary} opacity="0.15" stroke={palette.primary} />
-        <text x="40" y="22" fontSize="11" textAnchor="middle" fill={palette.fg} fontWeight="600">F · 8/40</text>
-      </g>
-
-      {/* День / время */}
-      <g transform="translate(40, 280)">
-        <text x="0" y="0" fontSize="10" fill={palette.muted}>День</text>
-        <text x="0" y="20" fontSize="20" fill={palette.fg} fontWeight="bold" fontFamily={fontSerif}>3</text>
-        <text x="50" y="0" fontSize="10" fill={palette.muted}>Время</text>
-        <text x="50" y="20" fontSize="20" fill={palette.fg} fontWeight="bold" fontFamily={fontSerif}>04:32</text>
-        <text x="160" y="0" fontSize="10" fill={palette.muted}>Касса</text>
-        <text x="160" y="20" fontSize="20" fill="#2e7d32" fontWeight="bold" fontFamily={fontSerif}>+12 480 ₽</text>
+      {/* Продукты — равномерная сетка из 3 карточек */}
+      <g transform="translate(20, 256)">
+        {[
+          { id: 'A', price: '180 ₽', sold: 12, demand: 40, hl: false },
+          { id: 'D', price: '240 ₽', sold: 28, demand: 50, hl: true },
+          { id: 'F', price: '180 ₽', sold: 8, demand: 40, hl: false },
+        ].map((p, i) => {
+          const x = i * 160;
+          const pct = p.sold / p.demand;
+          return (
+            <g key={p.id} transform={`translate(${x}, 0)`}>
+              <rect width="150" height="80" rx="8" fill={p.hl ? fg : 'white'} stroke={p.hl ? fg : border} strokeWidth="1" />
+              <text x="14" y="22" fontSize="10" fill={p.hl ? '#a8a395' : muted} fontFamily={fontSans}>Продукт {p.id}</text>
+              <text x="136" y="22" fontSize="10" fill={p.hl ? '#a8a395' : muted} fontFamily={fontSans} textAnchor="end">{p.price}</text>
+              <text x="14" y="50" fontSize="20" fill={p.hl ? 'white' : fg} fontWeight="700" fontFamily={fontSans}>{p.sold}</text>
+              <text x="46" y="50" fontSize="12" fill={p.hl ? '#a8a395' : muted} fontFamily={fontSans}>/ {p.demand}</text>
+              {/* Прогресс */}
+              <rect x="14" y="60" width="122" height="4" rx="2" fill={p.hl ? '#3a4360' : palette.bg} />
+              <rect x="14" y="60" width={122 * pct} height="4" rx="2" fill={p.hl ? primary : primary} />
+            </g>
+          );
+        })}
       </g>
     </svg>
   );
