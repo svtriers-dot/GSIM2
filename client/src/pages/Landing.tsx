@@ -1,58 +1,160 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'wouter';
 import {
-  Target,
-  TrendingUp,
-  Factory,
-  Brain,
-  Users,
-  Briefcase,
-  GraduationCap,
-  ArrowRight,
-  Clock,
-  Wallet,
-  Package,
+  Target, TrendingUp, Factory, Brain, Users, Briefcase, GraduationCap,
+  ArrowRight, Clock, Wallet, Package, Quote, Building2, BookOpen,
+  CheckCircle2,
 } from 'lucide-react';
 import tessLogo from '@assets/tess_logo-final_152_1773757415772.png';
 
-// Палитра tesstech.ru
+// Палитра
 const palette = {
-  bg: '#f0ebe0',          // hsl(37 21% 93%)
-  fg: '#11192d',          // hsl(210 40% 12%)
-  card: '#eae4d6',        // hsl(37 18% 90%)
-  border: '#dcd5c4',      // hsl(37 15% 85%)
-  primary: '#a8a25a',     // hsl(61 32% 51%) оливковый
+  bg: '#f0ebe0',          // тёплый бежевый
+  fg: '#11192d',          // тёмный индиго (для CTA)
+  card: '#eae4d6',
+  border: '#dcd5c4',
+  primary: '#a8a25a',     // оливковый — для accent в типографике и иконках
+  accent: '#11192d',      // индиго для CTA
+  accentHover: '#1f2a48',
   primaryFg: '#ffffff',
-  muted: '#5a6478',       // hsl(210 20% 40%)
-  sidebar: '#7397b5',     // hsl(203 35% 55%) приглушённый синий
+  muted: '#5a6478',
 };
 
 const fontSerif = 'Playfair Display, Georgia, serif';
 const fontSans = 'Inter, sans-serif';
 
-export default function Landing() {
+// SVG-иллюстрация фабрики для hero (#1)
+function FactoryIllustration() {
   return (
-    <div
-      className="min-h-screen"
-      style={{ background: palette.bg, color: palette.fg, fontFamily: fontSans }}
-    >
-      {/* Header */}
+    <svg viewBox="0 0 480 360" className="w-full h-auto" style={{ maxWidth: 480 }} xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke={palette.border} strokeWidth="0.5" opacity="0.4" />
+        </pattern>
+        <linearGradient id="floor" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={palette.bg} />
+          <stop offset="100%" stopColor={palette.card} />
+        </linearGradient>
+      </defs>
+      <rect width="480" height="360" fill="url(#floor)" rx="12" />
+      <rect width="480" height="360" fill="url(#grid)" rx="12" />
+
+      {/* Сырьё (вход) */}
+      <g transform="translate(20, 60)">
+        <text x="20" y="-8" fontSize="9" fill={palette.muted} fontFamily={fontSans}>Сырьё</text>
+        <rect width="40" height="40" rx="6" fill={palette.primary} opacity="0.25" stroke={palette.primary} strokeWidth="1" />
+        <text x="20" y="25" fontSize="14" textAnchor="middle" fill={palette.fg} fontWeight="bold">RM</text>
+      </g>
+
+      {/* Станок 1 — зелёный с очередью */}
+      <g transform="translate(110, 50)">
+        <rect width="14" height="14" rx="2" fill="#66BB6A" x="-20" y="13" />
+        <rect width="14" height="14" rx="2" fill="#66BB6A" x="-38" y="13" />
+        <rect width="14" height="14" rx="2" fill="#66BB6A" x="-56" y="13" opacity="0.6" />
+        <rect width="60" height="50" rx="8" fill="#fff" stroke="#66BB6A" strokeWidth="2" />
+        <circle cx="30" cy="20" r="6" fill="#66BB6A" />
+        <text x="30" y="42" fontSize="9" textAnchor="middle" fill={palette.fg} fontWeight="600">A1</text>
+      </g>
+
+      {/* Соединитель */}
+      <path d="M 175 75 L 215 75" stroke={palette.muted} strokeWidth="1.5" strokeDasharray="3 2" />
+
+      {/* Станок 2 — синий, узкое место */}
+      <g transform="translate(215, 50)">
+        <rect width="14" height="14" rx="2" fill="#1A47B8" x="-20" y="13" />
+        <rect width="14" height="14" rx="2" fill="#1A47B8" x="-38" y="13" />
+        <rect width="14" height="14" rx="2" fill="#1A47B8" x="-56" y="13" />
+        <rect width="14" height="14" rx="2" fill="#1A47B8" x="-74" y="13" />
+        <rect width="14" height="14" rx="2" fill="#1A47B8" x="-92" y="13" opacity="0.7" />
+        <rect width="60" height="50" rx="8" fill="#fff" stroke="#C00" strokeWidth="2.5" />
+        <circle cx="30" cy="20" r="6" fill="#1A47B8" />
+        <text x="30" y="42" fontSize="9" textAnchor="middle" fill={palette.fg} fontWeight="600">B3</text>
+        <text x="30" y="-5" fontSize="9" textAnchor="middle" fill="#C00" fontWeight="700">⚠ узкое место</text>
+      </g>
+
+      {/* Соединитель */}
+      <path d="M 280 75 L 320 75" stroke={palette.muted} strokeWidth="1.5" strokeDasharray="3 2" />
+
+      {/* Станок 3 — розовый, простаивает */}
+      <g transform="translate(320, 50)">
+        <rect width="60" height="50" rx="8" fill="#fff" stroke="#F06292" strokeWidth="2" />
+        <circle cx="30" cy="20" r="6" fill="#F06292" opacity="0.4" />
+        <text x="30" y="42" fontSize="9" textAnchor="middle" fill={palette.muted} fontWeight="600">F3</text>
+        <text x="30" y="68" fontSize="8" textAnchor="middle" fill={palette.muted}>простой</text>
+      </g>
+
+      {/* Касса */}
+      <g transform="translate(390, 60)">
+        <rect width="70" height="50" rx="8" fill={palette.fg} />
+        <text x="35" y="20" fontSize="9" textAnchor="middle" fill="#fff" opacity="0.7">КАССА</text>
+        <text x="35" y="38" fontSize="14" textAnchor="middle" fill="#fff" fontWeight="bold">10 000 ₽</text>
+      </g>
+
+      {/* Нижний ряд: продукты */}
+      <g transform="translate(40, 200)">
+        <text x="0" y="-10" fontSize="9" fill={palette.muted} fontFamily={fontSans}>Продукт A · 180 ₽</text>
+        <rect width="80" height="36" rx="6" fill={palette.primary} opacity="0.15" stroke={palette.primary} />
+        <text x="40" y="22" fontSize="11" textAnchor="middle" fill={palette.fg} fontWeight="600">A · 12/40</text>
+      </g>
+      <g transform="translate(150, 200)">
+        <text x="0" y="-10" fontSize="9" fill={palette.muted} fontFamily={fontSans}>Продукт D · 240 ₽</text>
+        <rect width="80" height="36" rx="6" fill={palette.fg} opacity="0.1" stroke={palette.fg} strokeOpacity="0.3" />
+        <text x="40" y="22" fontSize="11" textAnchor="middle" fill={palette.fg} fontWeight="600">D · 28/50</text>
+      </g>
+      <g transform="translate(260, 200)">
+        <text x="0" y="-10" fontSize="9" fill={palette.muted} fontFamily={fontSans}>Продукт F · 180 ₽</text>
+        <rect width="80" height="36" rx="6" fill={palette.primary} opacity="0.15" stroke={palette.primary} />
+        <text x="40" y="22" fontSize="11" textAnchor="middle" fill={palette.fg} fontWeight="600">F · 8/40</text>
+      </g>
+
+      {/* День / время */}
+      <g transform="translate(40, 280)">
+        <text x="0" y="0" fontSize="10" fill={palette.muted}>День</text>
+        <text x="0" y="20" fontSize="20" fill={palette.fg} fontWeight="bold" fontFamily={fontSerif}>3</text>
+        <text x="50" y="0" fontSize="10" fill={palette.muted}>Время</text>
+        <text x="50" y="20" fontSize="20" fill={palette.fg} fontWeight="bold" fontFamily={fontSerif}>04:32</text>
+        <text x="160" y="0" fontSize="10" fill={palette.muted}>Касса</text>
+        <text x="160" y="20" fontSize="20" fill="#2e7d32" fontWeight="bold" fontFamily={fontSerif}>+12 480 ₽</text>
+      </g>
+    </svg>
+  );
+}
+
+export default function Landing() {
+  // #10 Sticky header реактивный — shrink при скролле
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return (
+    <div className="min-h-screen" style={{ background: palette.bg, color: palette.fg, fontFamily: fontSans }}>
+      {/* Header — реактивный (#10) */}
       <header
-        className="sticky top-0 z-10 backdrop-blur-sm"
-        style={{ background: `${palette.bg}cc`, borderBottom: `1px solid ${palette.border}` }}
+        className="sticky top-0 z-10 backdrop-blur-sm transition-all duration-200"
+        style={{
+          background: `${palette.bg}f5`,
+          borderBottom: `1px solid ${palette.border}`,
+          boxShadow: scrolled ? '0 4px 16px rgba(0,0,0,0.06)' : 'none',
+          paddingTop: scrolled ? '8px' : '16px',
+          paddingBottom: scrolled ? '8px' : '16px',
+        }}
       >
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={tessLogo} alt="Tess Technology" className="h-9 w-auto" />
-            <div className="hidden sm:block">
+            <img src={tessLogo} alt="Tess Technology" className="transition-all duration-200" style={{ height: scrolled ? 28 : 36 }} />
+            <div className={`hidden sm:block transition-opacity duration-200 ${scrolled ? 'opacity-0 sm:opacity-100' : ''}`}>
               <div className="text-sm font-semibold">Tess Technology</div>
-              <div className="text-xs" style={{ color: palette.muted }}>tesstech.ru</div>
+              {!scrolled && <div className="text-xs" style={{ color: palette.muted }}>tesstech.ru</div>}
             </div>
           </div>
           <Link href="/play">
             <a
               data-testid="header-cta"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-opacity hover:opacity-90"
-              style={{ background: palette.primary, color: palette.primaryFg }}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-semibold transition-all hover:-translate-y-0.5"
+              style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}
             >
               Играть
               <ArrowRight className="h-4 w-4" />
@@ -61,50 +163,106 @@ export default function Landing() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-20 pb-24 sm:pt-28 sm:pb-32">
-        <div className="text-center max-w-3xl mx-auto">
-          <div
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium mb-8"
-            style={{ background: palette.card, color: palette.muted, border: `1px solid ${palette.border}` }}
-          >
-            <Target className="h-4 w-4" />
-            Симулятор по методологии Элияху Голдратта
-          </div>
-          <h1
-            className="text-4xl sm:text-5xl lg:text-6xl leading-tight mb-6"
-            style={{ fontFamily: fontSerif, fontWeight: 700 }}
-          >
-            Освойте Теорию ограничений <span style={{ color: palette.primary }}>на практике</span>
-          </h1>
-          <p className="text-lg sm:text-xl mb-10 leading-relaxed" style={{ color: palette.muted }}>
-            Книгу «Цель» можно прочитать за неделю — но интуиция управленца
-            появляется только через опыт. Симулятор даёт этот опыт за одну партию:
-            вы управляете фабрикой, ищете узкое место и видите, как локальные
-            решения влияют на прибыль всей системы.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/play">
-              <a
-                data-testid="hero-cta"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-medium transition-opacity hover:opacity-90"
-                style={{ background: palette.primary, color: palette.primaryFg }}
-              >
-                Начать игру
-                <ArrowRight className="h-5 w-5" />
-              </a>
-            </Link>
-            <button
-              onClick={() => document.getElementById('how-to-play')?.scrollIntoView({ behavior: 'smooth' })}
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-medium transition-colors"
-              style={{ background: 'transparent', color: palette.fg, border: `1px solid ${palette.border}` }}
+      {/* Hero — двухколоночный с визуалом (#1) */}
+      <section className="max-w-6xl mx-auto px-6 pt-16 pb-12 sm:pt-20">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Левая колонка: текст */}
+          <div>
+            <div
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mb-6 tracking-wider uppercase"
+              style={{ background: palette.card, color: palette.primary, border: `1px solid ${palette.border}` }}
             >
-              Как играть
-            </button>
+              <Target className="h-3.5 w-3.5" />
+              Симулятор по методологии Голдратта
+            </div>
+            <h1
+              className="text-4xl sm:text-5xl lg:text-6xl leading-tight mb-6"
+              style={{ fontFamily: fontSerif, fontWeight: 700 }}
+            >
+              Освойте Теорию ограничений <span style={{ color: palette.primary }}>на практике</span>
+            </h1>
+            <p className="text-lg leading-relaxed mb-8" style={{ color: palette.muted }}>
+              Книгу «Цель» можно прочитать за неделю — но интуиция управленца появляется только через опыт. Симулятор даёт этот опыт за одну партию: вы управляете фабрикой, ищете узкое место и видите, как локальные решения влияют на прибыль всей системы.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Link href="/play">
+                <a
+                  data-testid="hero-cta"
+                  className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-semibold transition-all hover:-translate-y-0.5"
+                  style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 2px 6px rgba(17,25,45,0.2)' }}
+                >
+                  Начать игру
+                  <ArrowRight className="h-5 w-5" />
+                </a>
+              </Link>
+              <button
+                onClick={() => document.getElementById('how-to-play')?.scrollIntoView({ behavior: 'smooth' })}
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-semibold transition-colors"
+                style={{ background: 'transparent', color: palette.fg, border: `1px solid ${palette.border}` }}
+              >
+                Как играть
+              </button>
+            </div>
+            <p className="text-sm mt-6" style={{ color: palette.muted }}>
+              Бесплатно · Регистрация не нужна · 25–40 минут на партию
+            </p>
           </div>
-          <p className="text-sm mt-6" style={{ color: palette.muted }}>
-            Бесплатно · Регистрация не нужна · 25–40 минут на партию
+
+          {/* Правая колонка: SVG-иллюстрация */}
+          <div className="hidden lg:block">
+            <div className="relative">
+              <FactoryIllustration />
+              <div className="absolute -bottom-3 -right-3 px-3 py-1.5 rounded-md text-xs font-semibold shadow-md"
+                   style={{ background: palette.fg, color: palette.primaryFg }}>
+                ▶ интерактив
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Полоса статистики (#2) */}
+      <section className="max-w-6xl mx-auto px-6 mb-16">
+        <div className="rounded-xl p-6" style={{ background: palette.card, border: `1px solid ${palette.border}` }}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {[
+              { icon: Clock, value: '5 дней', sub: 'игровая неделя' },
+              { icon: Wallet, value: '10 000 ₽', sub: 'стартовый капитал' },
+              { icon: Factory, value: '8 машин', sub: '5 типов · 19 станций' },
+              { icon: Package, value: '3 продукта', sub: 'A · D · F' },
+            ].map((s, i) => (
+              <div key={i} className="text-center">
+                <s.icon className="h-5 w-5 mx-auto mb-2" style={{ color: palette.primary }} />
+                <div className="text-xl sm:text-2xl font-bold" style={{ color: palette.fg, fontFamily: fontSerif }}>{s.value}</div>
+                <div className="text-xs mt-1" style={{ color: palette.muted }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Social proof (#4) */}
+      <section className="max-w-6xl mx-auto px-6 mb-20">
+        <div className="text-center mb-10">
+          <p className="text-xs font-semibold tracking-widest uppercase mb-3" style={{ color: palette.muted }}>
+            Используется в обучении
           </p>
+          <p className="text-lg" style={{ color: palette.fg }}>
+            Применяется в мастер-классах <strong>Tess Technology</strong> для сотрудников производственных, логистических и консалтинговых компаний.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { icon: Factory, label: 'Производство' },
+            { icon: Building2, label: 'Логистика' },
+            { icon: BookOpen, label: 'Консалтинг' },
+            { icon: GraduationCap, label: 'L&D-департаменты' },
+          ].map((c, i) => (
+            <div key={i} className="text-center py-4 px-3 rounded-lg" style={{ background: palette.bg, border: `1px dashed ${palette.border}` }}>
+              <c.icon className="h-6 w-6 mx-auto mb-2" style={{ color: palette.muted, opacity: 0.7 }} />
+              <div className="text-sm font-medium" style={{ color: palette.fg }}>{c.label}</div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -112,42 +270,43 @@ export default function Landing() {
       <section className="py-20" style={{ background: palette.card, borderTop: `1px solid ${palette.border}`, borderBottom: `1px solid ${palette.border}` }}>
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl mb-4" style={{ fontFamily: fontSerif, fontWeight: 700 }}>
+            {/* #8 Inter Bold для h2 */}
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 tracking-tight" style={{ fontFamily: fontSans, color: palette.fg }}>
               Что такое Теория ограничений
             </h2>
             <p className="text-lg leading-relaxed max-w-3xl mx-auto" style={{ color: palette.muted }}>
-              Подход к управлению, разработанный физиком Элияху Голдраттом
-              в 1980-х. Изложен в его книге «Цель» (The Goal, 1984), переведённой
-              на 30 языков и проданной тиражом более 7 миллионов экземпляров.
-              Применяется в производстве, проектном управлении, разработке ПО,
-              медицине и логистике.
+              Подход к управлению, разработанный физиком Элияху Голдраттом в 1980-х. Изложен в его книге «Цель» (The Goal, 1984), переведённой на 30 языков и проданной тиражом более 7 миллионов экземпляров. Применяется в производстве, проектном управлении, разработке ПО, медицине и логистике.
             </p>
           </div>
 
-          <div className="rounded-lg p-8 mb-10" style={{ background: palette.bg, border: `1px solid ${palette.border}` }}>
-            <p className="text-lg italic leading-relaxed text-center" style={{ color: palette.fg, fontFamily: fontSerif }}>
-              «Производительность системы ограничена производительностью её самого медленного звена. Чтобы улучшить систему, нужно улучшить ограничение. Всё остальное — потеря времени.»
+          {/* #7 Quote upgrade — большая кавычка + dark background */}
+          <div className="relative rounded-xl p-10 md:p-12 mb-12 overflow-hidden" style={{ background: palette.fg }}>
+            <Quote className="absolute -top-2 -left-2 h-32 w-32" style={{ color: palette.primary, opacity: 0.15 }} />
+            <p className="relative text-xl md:text-2xl leading-relaxed text-center px-2" style={{ color: palette.primaryFg, fontFamily: fontSerif, fontStyle: 'italic' }}>
+              Производительность системы ограничена производительностью её самого медленного звена. Чтобы улучшить систему, нужно улучшить ограничение. Всё остальное — потеря времени.
             </p>
-            <p className="text-sm text-center mt-3" style={{ color: palette.muted }}>
-              — Элияху Голдратт
-            </p>
+            <div className="flex items-center justify-center mt-6 gap-3">
+              <div className="h-px w-8" style={{ background: palette.primary }} />
+              <p className="text-sm font-semibold tracking-wider uppercase" style={{ color: palette.primary }}>
+                Элияху Голдратт
+              </p>
+              <div className="h-px w-8" style={{ background: palette.primary }} />
+            </div>
           </div>
 
-          <h3 className="text-xl mb-6 text-center" style={{ fontFamily: fontSerif, fontWeight: 700 }}>
+          <h3 className="text-xl font-bold mb-6 text-center tracking-tight" style={{ fontFamily: fontSans, color: palette.fg }}>
             Пять фокусирующих шагов Голдратта
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {[
               { num: 'I', title: 'Найти ограничение', text: 'Определить, что именно сдерживает производительность всей системы' },
-              { num: 'II', title: 'Использовать его максимально', text: 'Выжать из узкого места всё, что возможно, без капитальных затрат' },
+              { num: 'II', title: 'Использовать максимально', text: 'Выжать из узкого места всё, что возможно, без капитальных затрат' },
               { num: 'III', title: 'Подчинить остальное', text: 'Все прочие ресурсы работают в темпе ограничения, не быстрее' },
               { num: 'IV', title: 'Расширить ограничение', text: 'Если шагов II–III недостаточно — инвестировать в расширение узкого места' },
               { num: 'V', title: 'Повторить с начала', text: 'Когда ограничение снято — найти новое и не дать инерции стать ограничением' },
             ].map((step, i) => (
-              <div key={i} className="rounded-lg p-5" style={{ background: palette.bg, border: `1px solid ${palette.border}` }}>
-                <div className="text-3xl mb-2" style={{ fontFamily: fontSerif, color: palette.primary, fontWeight: 700 }}>
-                  {step.num}
-                </div>
+              <div key={i} className="rounded-lg p-5 transition-shadow hover:shadow-md" style={{ background: palette.bg, border: `1px solid ${palette.border}` }}>
+                <div className="text-3xl mb-2" style={{ fontFamily: fontSerif, color: palette.primary, fontWeight: 700 }}>{step.num}</div>
                 <div className="font-semibold mb-2 text-sm">{step.title}</div>
                 <p className="text-xs leading-relaxed" style={{ color: palette.muted }}>{step.text}</p>
               </div>
@@ -160,49 +319,61 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features — Что вы изучите */}
-      <section className="py-20" style={{ background: palette.card, borderTop: `1px solid ${palette.border}`, borderBottom: `1px solid ${palette.border}` }}>
+      {/* Что отрабатывается — с иерархией (#6) */}
+      <section className="py-20">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-14">
-            <h2
-              className="text-3xl sm:text-4xl mb-4"
-              style={{ fontFamily: fontSerif, fontWeight: 700 }}
-            >
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 tracking-tight" style={{ fontFamily: fontSans, color: palette.fg }}>
               Что отрабатывается за партию
             </h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: palette.muted }}>
-              Пять базовых концепций операционного менеджмента — на практике, а не в учебнике
+              Шесть концепций ТОС и операционного менеджмента — не в учебнике, а в управленческих решениях по ходу игры
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: Target, title: 'Поиск узкого места', text: 'Производительность системы определяется самым медленным звеном. В игре вы увидите, как очереди скапливаются перед бутылочным горлышком и где теряются деньги' },
-              { icon: TrendingUp, title: 'Throughput vs прибыль', text: 'Постоянные расходы 11 000 ₽ в неделю списываются вне зависимости от выпуска. Учитесь считать маржу не на единицу продукта, а на час работы узкого места' },
-              { icon: Factory, title: 'Управление переналадкой', text: 'Каждое переключение машины на другой продукт — это потеря времени. От 0 до 120 секунд. Узнаете, когда выгоднее специализировать машину, а когда — переключать' },
-              { icon: Package, title: 'Продуктовый микс', text: 'Три продукта с разной ценой, спросом и стоимостью сырья. Какие выпускать в каком объёме? Интуитивный ответ почти всегда ошибочный — игра научит считать' },
-              { icon: Brain, title: 'Системное мышление', text: 'Локальная оптимизация не равна глобальной. Загруженная на 100 % машина в неправильном месте только увеличивает запасы и ухудшает итог. Игра показывает это наглядно' },
-              { icon: Wallet, title: 'Решения под прессом', text: 'Каждый день нужно докупать сырьё, переставлять машины, реагировать на очереди. Знакомое ощущение — как в реальном операционном управлении' },
-            ].map((f, i) => (
-              <div
-                key={i}
-                className="p-6 rounded-lg transition-shadow hover:shadow-md"
-                style={{ background: palette.bg, border: `1px solid ${palette.border}` }}
-              >
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
-                  style={{ background: palette.card }}
-                >
-                  <f.icon className="h-6 w-6" style={{ color: palette.primary }} />
+
+          {/* Flagship card */}
+          <div className="rounded-2xl p-8 md:p-10 mb-6 grid md:grid-cols-3 gap-8 items-center" style={{ background: palette.fg, color: palette.primaryFg }}>
+            <div className="md:col-span-2">
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded text-xs font-semibold mb-4" style={{ background: palette.primary, color: palette.fg }}>
+                ГЛАВНОЕ
+              </div>
+              <h3 className="text-2xl md:text-3xl font-bold mb-3 tracking-tight" style={{ fontFamily: fontSans }}>
+                Поиск узкого места
+              </h3>
+              <p className="text-base leading-relaxed" style={{ color: '#c8c0a8' }}>
+                Производительность системы определяется самым медленным звеном. В игре вы видите, как очереди скапливаются перед бутылочным горлышком — и где именно теряются деньги. Это базовый рефлекс, который ставит ТОС.
+              </p>
+            </div>
+            <div className="flex justify-center">
+              {/* Мини-визуализация bottleneck */}
+              <div className="relative">
+                <div className="flex gap-1 mb-3">
+                  {[1,2,3,4,5,6].map(i => <div key={i} className="w-3 h-3 rounded-sm" style={{ background: palette.primary, opacity: 0.5 + i*0.08 }} />)}
                 </div>
-                <h3
-                  className="text-xl mb-2"
-                  style={{ fontFamily: fontSerif, fontWeight: 700 }}
-                >
-                  {f.title}
-                </h3>
-                <p className="leading-relaxed" style={{ color: palette.muted }}>
-                  {f.text}
-                </p>
+                <div className="px-4 py-2 rounded-lg text-xs text-center font-semibold" style={{ background: palette.primary, color: palette.fg }}>
+                  Узкое место
+                </div>
+                <ArrowRight className="h-4 w-4 mx-auto my-2" style={{ color: '#c8c0a8' }} />
+                <div className="text-xs text-center" style={{ color: '#c8c0a8' }}>↓ медленнее ↓</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Остальные 5 features */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: TrendingUp, title: 'Throughput vs прибыль', text: 'Постоянные расходы 11 000 ₽ в неделю списываются вне зависимости от выпуска. Учитесь считать маржу не на единицу продукта, а на час работы узкого места.' },
+              { icon: Factory, title: 'Управление переналадкой', text: 'Каждое переключение машины на другой продукт — потеря времени от 0 до 120 секунд. Учитесь, когда специализировать машину, а когда переключать.' },
+              { icon: Package, title: 'Продуктовый микс', text: 'Три продукта с разной ценой, спросом и стоимостью сырья. Какие выпускать в каком объёме? Интуитивный ответ почти всегда ошибочный.' },
+              { icon: Brain, title: 'Системное мышление', text: 'Локальная оптимизация не равна глобальной. Загруженная на 100% машина в неправильном месте только увеличивает запасы.' },
+              { icon: Wallet, title: 'Решения под прессом', text: 'Каждый день нужно докупать сырьё, переставлять машины, реагировать на очереди. Знакомое ощущение операционного управления.' },
+            ].map((f, i) => (
+              <div key={i} className="p-6 rounded-lg transition-shadow hover:shadow-md" style={{ background: palette.card, border: `1px solid ${palette.border}` }}>
+                <div className="w-11 h-11 rounded-lg flex items-center justify-center mb-4" style={{ background: palette.bg }}>
+                  <f.icon className="h-5 w-5" style={{ color: palette.primary }} />
+                </div>
+                <h3 className="text-lg font-bold mb-2 tracking-tight" style={{ fontFamily: fontSans, color: palette.fg }}>{f.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: palette.muted }}>{f.text}</p>
               </div>
             ))}
           </div>
@@ -210,13 +381,10 @@ export default function Landing() {
       </section>
 
       {/* Для кого */}
-      <section className="py-20">
+      <section className="py-20" style={{ background: palette.card, borderTop: `1px solid ${palette.border}`, borderBottom: `1px solid ${palette.border}` }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-14">
-            <h2
-              className="text-3xl sm:text-4xl mb-4"
-              style={{ fontFamily: fontSerif, fontWeight: 700 }}
-            >
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 tracking-tight" style={{ fontFamily: fontSans, color: palette.fg }}>
               Для кого
             </h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: palette.muted }}>
@@ -225,46 +393,27 @@ export default function Landing() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { icon: Briefcase, title: 'Операционные директора и COO', text: 'Проверка интуиции на безопасной модели. Симулятор за час даёт то, что в реальном производстве доступно только годами проб и ошибок' },
-              { icon: GraduationCap, title: 'Бизнес-тренеры и преподаватели', text: 'Готовый инструмент для мастер-классов по ТОС, Lean и теории ограничений. Студенты не дочитывают «Цель» — но играют в фабрику с азартом' },
-              { icon: Users, title: 'Команды на стратегических сессиях', text: 'Соревнование между командами — кто заработает больше. Идеально для разогрева перед обсуждением своих узких мест в реальной компании' },
+              { icon: Briefcase, title: 'Операционные директора и COO', text: 'Проверка интуиции на безопасной модели. Симулятор за час даёт то, что в реальном производстве доступно только годами проб и ошибок.' },
+              { icon: GraduationCap, title: 'Бизнес-тренеры и преподаватели', text: 'Готовый инструмент для мастер-классов по ТОС, Lean и теории ограничений. Студенты не дочитывают «Цель» — но играют в фабрику с азартом.' },
+              { icon: Users, title: 'Команды на стратегических сессиях', text: 'Соревнование между командами — кто заработает больше. Идеально для разогрева перед обсуждением своих узких мест в реальной компании.' },
             ].map((a, i) => (
-              <div
-                key={i}
-                className="p-7 rounded-lg"
-                style={{ background: palette.card, border: `1px solid ${palette.border}` }}
-              >
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center mb-4"
-                  style={{ background: palette.bg }}
-                >
+              <div key={i} className="p-7 rounded-lg" style={{ background: palette.bg, border: `1px solid ${palette.border}` }}>
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-4" style={{ background: palette.card }}>
                   <a.icon className="h-6 w-6" style={{ color: palette.primary }} />
                 </div>
-                <h3
-                  className="text-lg mb-2"
-                  style={{ fontFamily: fontSerif, fontWeight: 700 }}
-                >
-                  {a.title}
-                </h3>
-                <p className="leading-relaxed" style={{ color: palette.muted }}>{a.text}</p>
+                <h3 className="text-lg font-bold mb-2 tracking-tight" style={{ fontFamily: fontSans, color: palette.fg }}>{a.title}</h3>
+                <p className="leading-relaxed text-sm" style={{ color: palette.muted }}>{a.text}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Как играть — тёмная плашка */}
-      <section
-        id="how-to-play"
-        className="py-20"
-        style={{ background: palette.fg, color: palette.bg }}
-      >
+      {/* Как играть */}
+      <section id="how-to-play" className="py-20" style={{ background: palette.fg, color: palette.bg }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-14">
-            <h2
-              className="text-3xl sm:text-4xl mb-4"
-              style={{ fontFamily: fontSerif, fontWeight: 700, color: palette.bg }}
-            >
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 tracking-tight" style={{ fontFamily: fontSans, color: palette.bg }}>
               Как играть
             </h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: '#c8c0a8' }}>
@@ -279,43 +428,9 @@ export default function Landing() {
               { num: '4', title: 'Заработайте максимум', text: 'В пятницу вечером — расчёт. Постоянка 11 000 ₽ списана. Сколько осталось на счёте? Больше — лучше' },
             ].map((s, i) => (
               <div key={i}>
-                <div
-                  className="text-5xl mb-3"
-                  style={{ fontFamily: fontSerif, color: palette.primary, fontWeight: 700 }}
-                >
-                  {s.num}
-                </div>
-                <h3
-                  className="text-xl mb-2"
-                  style={{ fontFamily: fontSerif, fontWeight: 700 }}
-                >
-                  {s.title}
-                </h3>
-                <p className="leading-relaxed" style={{ color: '#c8c0a8' }}>{s.text}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
-            {[
-              { icon: Clock, value: '5 дней', sub: 'по 8 минут' },
-              { icon: Wallet, value: '10 000 ₽', sub: 'старт' },
-              { icon: Factory, value: '8 машин', sub: '5 цветов' },
-              { icon: Package, value: '3', sub: 'продукта' },
-            ].map((s, i) => (
-              <div
-                key={i}
-                className="text-center p-4 rounded-lg"
-                style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}
-              >
-                <s.icon className="h-5 w-5 mx-auto mb-2" style={{ color: palette.primary }} />
-                <div
-                  className="text-2xl"
-                  style={{ fontFamily: fontSerif, fontWeight: 700 }}
-                >
-                  {s.value}
-                </div>
-                <div className="text-xs mt-1" style={{ color: '#a8a395' }}>{s.sub}</div>
+                <div className="text-5xl mb-3" style={{ fontFamily: fontSerif, color: palette.primary, fontWeight: 700 }}>{s.num}</div>
+                <h3 className="text-xl font-bold mb-2 tracking-tight" style={{ fontFamily: fontSans }}>{s.title}</h3>
+                <p className="leading-relaxed text-sm" style={{ color: '#c8c0a8' }}>{s.text}</p>
               </div>
             ))}
           </div>
@@ -325,10 +440,7 @@ export default function Landing() {
       {/* Final CTA */}
       <section className="py-20" style={{ background: palette.bg }}>
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2
-            className="text-3xl sm:text-4xl mb-4"
-            style={{ fontFamily: fontSerif, fontWeight: 700 }}
-          >
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4 tracking-tight" style={{ fontFamily: fontSans, color: palette.fg }}>
             Готовы попробовать
           </h2>
           <p className="text-lg mb-8" style={{ color: palette.muted }}>
@@ -337,8 +449,8 @@ export default function Landing() {
           <Link href="/play">
             <a
               data-testid="footer-cta"
-              className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-md text-base font-medium transition-opacity hover:opacity-90"
-              style={{ background: palette.primary, color: palette.primaryFg }}
+              className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-md text-base font-semibold transition-all hover:-translate-y-0.5"
+              style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 4px 12px rgba(17,25,45,0.25)' }}
             >
               Начать игру
               <ArrowRight className="h-5 w-5" />
@@ -347,32 +459,58 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer
-        className="py-8"
-        style={{ background: palette.card, borderTop: `1px solid ${palette.border}` }}
-      >
-        <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm" style={{ color: palette.muted }}>
-          <div className="flex items-center gap-3">
-            <img src={tessLogo} alt="Tess Technology" className="h-6 w-auto opacity-70" />
-            <span>© 2026 ООО «Тесс Технолоджи»</span>
+      {/* Footer — полный sitemap (#9) */}
+      <footer className="py-12" style={{ background: palette.card, borderTop: `1px solid ${palette.border}` }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <img src={tessLogo} alt="Tess Technology" className="h-7 w-auto" />
+                <div className="text-sm font-bold">Tess Technology</div>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: palette.muted }}>
+                Tess Technology делает аналитику, операционную эффективность и обучающие продукты для российских компаний.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold tracking-wider uppercase mb-3" style={{ color: palette.fg }}>Продукт</h4>
+              <ul className="space-y-2 text-sm" style={{ color: palette.muted }}>
+                <li><Link href="/"><a className="hover:underline">Главная</a></Link></li>
+                <li><Link href="/play"><a className="hover:underline">Играть</a></Link></li>
+                <li><Link href="/about"><a className="hover:underline">О программе</a></Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold tracking-wider uppercase mb-3" style={{ color: palette.fg }}>Юридическое</h4>
+              <ul className="space-y-2 text-sm" style={{ color: palette.muted }}>
+                <li><a href="/legal/eula" className="hover:underline">Лицензия (EULA)</a></li>
+                <li><a href="/legal/oferta" className="hover:underline">Публичная оферта</a></li>
+                <li><a href="/legal/privacy" className="hover:underline">Политика ПДн</a></li>
+                <li><a href="https://github.com/svtriers-dot/GSIM2/blob/main/LICENSE" className="hover:underline">Лицензия на код</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-xs font-bold tracking-wider uppercase mb-3" style={{ color: palette.fg }}>Связаться</h4>
+              <ul className="space-y-2 text-sm" style={{ color: palette.muted }}>
+                <li><a href="mailto:mail@tesstech.ru" className="hover:underline">mail@tesstech.ru</a></li>
+                <li><a href="tel:+79167290716" className="hover:underline">+7 (916) 729-07-16</a></li>
+                <li><a href="https://tesstech.ru" className="hover:underline">tesstech.ru</a></li>
+              </ul>
+            </div>
           </div>
-          <div className="flex items-center gap-6">
-            <a
-              href="https://tesstech.ru"
-              className="transition-colors"
-              style={{ color: palette.muted }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = palette.fg)}
-              onMouseLeave={(e) => (e.currentTarget.style.color = palette.muted)}
-            >
-              tesstech.ru
-            </a>
-            <span style={{ color: palette.border }}>·</span>
-            <Link href="/about">
-              <a className="transition-colors" style={{ color: palette.muted }}>О программе</a>
-            </Link>
-            <span style={{ color: palette.border }}>·</span>
-            <span>Симулятор ТОС</span>
+
+          <div className="pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-xs" style={{ borderColor: palette.border, color: palette.muted }}>
+            <div className="flex flex-col sm:flex-row sm:gap-3 gap-1 text-center sm:text-left">
+              <span>© 2026 ООО «ТЕСС ТЕХНОЛОДЖИ»</span>
+              <span className="hidden sm:inline">·</span>
+              <span>ОГРН 1177746806181</span>
+              <span className="hidden sm:inline">·</span>
+              <span>ИНН 7702421130</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-3.5 w-3.5" style={{ color: palette.primary }} />
+              <span>Готовится к подаче в Реестр ОТЛ ПО (класс 04.13)</span>
+            </div>
           </div>
         </div>
       </footer>
