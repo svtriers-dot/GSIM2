@@ -10,6 +10,8 @@ import {
   attachTeamSocket,
   detachTeamSocket,
   applyTeamAction,
+  applyTeamMetrics,
+  applyTeamGameOver,
 } from "../services/orchestrator";
 
 // WebSocket endpoints:
@@ -102,15 +104,27 @@ async function handleTeam(ws: WebSocket, url: URL): Promise<void> {
   ws.on("message", async (msg) => {
     try {
       const parsed = JSON.parse(msg.toString());
-      if (parsed?.type === "ping") {
+      const t = parsed?.type;
+      if (t === "ping") {
         ws.send(JSON.stringify({ type: "pong" }));
         return;
       }
-      if (parsed?.type === "team:action") {
+      if (t === "team:action") {
         const { actionType, payload } = parsed.payload || {};
         if (typeof actionType === "string") {
           await applyTeamAction(session.id, team.id, actionType, payload || {});
         }
+        return;
+      }
+      if (t === "team:metrics") {
+        // payload — это сами метрики (см. SessionMetrics из gameEngine)
+        await applyTeamMetrics(session.id, team.id, parsed.payload || {});
+        return;
+      }
+      if (t === "team:game_over") {
+        const { snapshot, metrics } = parsed.payload || {};
+        await applyTeamGameOver(session.id, team.id, snapshot || {}, metrics || {});
+        return;
       }
     } catch (e) {
       console.error("team ws message error:", e);

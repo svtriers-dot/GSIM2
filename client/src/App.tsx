@@ -28,7 +28,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Landing} />
-      <Route path="/play" component={Game} />
+      <Route path="/play">{() => <Game />}</Route>
       <Route path="/play/join" component={PlayJoin} />
       <Route path="/play/lobby" component={PlayLobby} />
       <Route path="/play/session" component={PlaySessionGame} />

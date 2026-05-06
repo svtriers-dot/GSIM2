@@ -74,6 +74,19 @@ export interface GameSnapshot {
   totalRMCost: number;
 }
 
+// MVP-2: краткий срез для тренерского live-дашборда (отправляется каждые 2с по WS)
+export interface SessionMetrics {
+  cash: number;
+  throughput: number;          // totalRevenue - totalRMCost (рублей за всю игру)
+  inventory: number;           // суммарный WIP во всех буферах
+  operatingExpense: number;    // totalRMCost (затраты на сырьё, аналог OE)
+  bottleneckStationId: string | null;  // самая загруженная станция с очередью
+  day: number;
+  timeInDay: number;
+  running: boolean;
+  gameOver: boolean;
+}
+
 export class GoldrattEngine {
   running = false;
   pace = 1;
@@ -482,6 +495,38 @@ export class GoldrattEngine {
       dayEndSummary: this.dayEndSummary ? { ...this.dayEndSummary } : null,
       totalRevenue: this.totalRevenue,
       totalRMCost: this.totalRMCost,
+    };
+  }
+
+  // MVP-2: краткий срез для тренерского дашборда
+  getMetrics(): SessionMetrics {
+    // Inventory = сумма всех буферов
+    let inventory = 0;
+    for (const v of Object.values(this.buffers)) inventory += v;
+
+    // Bottleneck: станция с непустой очередью (буфером перед ней) И с самой высокой загрузкой
+    // Простая эвристика: ищем станцию с самым большим буфером before-process среди занятых
+    let bottleneckStationId: string | null = null;
+    let maxQueue = 0;
+    for (const [stationId, st] of Object.entries(this.stationStates)) {
+      // буфер для этой станции — bufferKey совпадает с stationId
+      const queue = this.buffers[stationId] || 0;
+      if (queue > maxQueue && (st.status === 'prod' || st.status === 'setup' || st.status === 'idle')) {
+        maxQueue = queue;
+        bottleneckStationId = stationId;
+      }
+    }
+
+    return {
+      cash: Math.round(this.cash),
+      throughput: Math.round(this.totalRevenue - this.totalRMCost),
+      inventory,
+      operatingExpense: Math.round(this.totalRMCost),
+      bottleneckStationId,
+      day: this.day,
+      timeInDay: this.timeInDay,
+      running: this.running,
+      gameOver: this.gameOver,
     };
   }
 }

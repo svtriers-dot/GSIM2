@@ -13,6 +13,7 @@ import {
   sessions,
   teams,
   teamMembers,
+  teamRoundResults,
   rounds,
   decisions,
   type Session,
@@ -266,7 +267,7 @@ export async function applyTeamAction(
   if (!team) return;
   if (!a.currentRound || a.currentRound.status !== "running") return;
 
-  // Append-only журнал
+  // Append-only журнал решений (для replay в MVP-2.B)
   await db.insert(decisions).values({
     teamId,
     roundId: a.currentRound.id,
@@ -274,15 +275,104 @@ export async function applyTeamAction(
     payload,
   });
 
-  // TODO MVP-1.5b: применить action к factoryState через gameEngine.
-  // Сейчас просто сохраняем raw payload для простоты:
-  team.factoryState = { ...team.factoryState, lastAction: { actionType, payload } };
+  // Помечаем lastAction в factoryState (для тренера видно сразу)
+  team.factoryState = { ...team.factoryState, lastAction: { actionType, payload, ts: Date.now() } };
+}
 
-  // Шлём тренеру обновление метрик команды
+// MVP-2.A1: команда раз в 2с шлёт реальные метрики
+export async function applyTeamMetrics(
+  sessionId: string,
+  teamId: string,
+  metrics: Partial<OrchestratedTeam["metrics"]> & { day?: number; timeInDay?: number; running?: boolean; gameOver?: boolean },
+): Promise<void> {
+  const a = await ensureActive(sessionId);
+  const team = a.teams.get(teamId);
+  if (!team) return;
+
+  // Применяем только известные поля метрик — типобезопасно
+  team.metrics = {
+    cash: typeof metrics.cash === "number" ? metrics.cash : team.metrics.cash,
+    throughput: typeof metrics.throughput === "number" ? metrics.throughput : team.metrics.throughput,
+    inventory: typeof metrics.inventory === "number" ? metrics.inventory : team.metrics.inventory,
+    operatingExpense:
+      typeof metrics.operatingExpense === "number" ? metrics.operatingExpense : team.metrics.operatingExpense,
+    bottleneckStationId:
+      "bottleneckStationId" in metrics ? (metrics.bottleneckStationId ?? null) : team.metrics.bottleneckStationId,
+  };
+  team.lastSeenAt = new Date();
+
   broadcastToTrainers(a, {
     type: "team.metric_update",
     payload: { teamId, metrics: team.metrics },
   });
+}
+
+// MVP-2.A1: команда сообщает что игровое время закончилось — фиксируем snapshot factoryState
+export async function applyTeamGameOver(
+  sessionId: string,
+  teamId: string,
+  snapshot: Record<string, unknown>,
+  metrics: Partial<OrchestratedTeam["metrics"]>,
+): Promise<void> {
+  const a = await ensureActive(sessionId);
+  const team = a.teams.get(teamId);
+  if (!team) return;
+
+  // Сохраняем полный snapshot для reconnect и snapshots тренера
+  team.factoryState = { ...team.factoryState, snapshot };
+  if (typeof metrics.cash === "number") team.metrics.cash = metrics.cash;
+  if (typeof metrics.throughput === "number") team.metrics.throughput = metrics.throughput;
+  if (typeof metrics.inventory === "number") team.metrics.inventory = metrics.inventory;
+  if (typeof metrics.operatingExpense === "number") team.metrics.operatingExpense = metrics.operatingExpense;
+
+  broadcastToTrainers(a, {
+    type: "team.metric_update",
+    payload: { teamId, metrics: team.metrics },
+  });
+  broadcastToTrainers(a, {
+    type: "team.game_over",
+    payload: { teamId },
+  });
+}
+
+// MVP-2.A5: при end сессии — фиксируем результаты раунда в team_round_results
+export async function finalizeRoundResults(sessionId: string, roundId: string): Promise<void> {
+  const a = await ensureActive(sessionId);
+  const teamsArr = Array.from(a.teams.values());
+  // Сортировка по cash desc
+  const sorted = [...teamsArr].sort((x, y) => y.metrics.cash - x.metrics.cash);
+  for (let i = 0; i < sorted.length; i++) {
+    const team = sorted[i];
+    try {
+      // upsert: если строка есть — обновляем, иначе вставляем
+      const existing = await db
+        .select()
+        .from(teamRoundResults)
+        .where(and(eq(teamRoundResults.teamId, team.id), eq(teamRoundResults.roundId, roundId)))
+        .limit(1);
+      const row = {
+        teamId: team.id,
+        roundId,
+        finalCash: team.metrics.cash,
+        throughput: team.metrics.throughput,
+        inventory: team.metrics.inventory,
+        operatingExpense: team.metrics.operatingExpense,
+        bottleneckStationId: team.metrics.bottleneckStationId ?? null,
+        rankInRound: i + 1,
+        stateSnapshot: team.factoryState,
+      };
+      if (existing.length > 0) {
+        await db
+          .update(teamRoundResults)
+          .set(row)
+          .where(and(eq(teamRoundResults.teamId, team.id), eq(teamRoundResults.roundId, roundId)));
+      } else {
+        await db.insert(teamRoundResults).values(row);
+      }
+    } catch (e) {
+      console.error(`finalizeRoundResults team=${team.id}:`, e);
+    }
+  }
 }
 
 // --- helpers ---

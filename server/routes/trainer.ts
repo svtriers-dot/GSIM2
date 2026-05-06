@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
 import {
   trainerRegisterSchema,
@@ -23,6 +24,7 @@ import {
   notifyTeamJoined,
   broadcastMessage,
   annotateStation,
+  finalizeRoundResults,
 } from "../services/orchestrator";
 import {
   createSession,
@@ -167,6 +169,12 @@ trainerRouter.post(
   requireTrainer,
   withErrorHandler(async (req, res) => {
     const session = await endSession((req.params.id as string), req.trainer!.sub);
+    // Финализируем результаты ТЕКУЩЕГО раунда (если был) до изменения статуса в БД
+    const allRounds = await db.select().from(rounds).where(eq(rounds.sessionId, session.id));
+    const lastRound = allRounds.sort((a, b) => b.roundNumber - a.roundNumber)[0];
+    if (lastRound) {
+      await finalizeRoundResults(session.id, lastRound.id);
+    }
     await notifySessionStateChange(session.id);
     res.json({ session });
   }),
@@ -177,6 +185,14 @@ trainerRouter.post(
   requireTrainer,
   withErrorHandler(async (req, res) => {
     const round = await resetRound((req.params.id as string), req.trainer!.sub);
+    // Финализируем предыдущий раунд (тот что был ended в resetRound)
+    const prevRounds = await db.select().from(rounds).where(eq(rounds.sessionId, (req.params.id as string)));
+    const prevEnded = prevRounds
+      .filter((r) => r.status === "ended")
+      .sort((a, b) => b.roundNumber - a.roundNumber)[0];
+    if (prevEnded) {
+      await finalizeRoundResults((req.params.id as string), prevEnded.id);
+    }
     await notifySessionStateChange((req.params.id as string));
     res.json({ round });
   }),
@@ -200,7 +216,7 @@ trainerRouter.post(
 // Здесь только запись в trainer_actions для журнала.
 
 import { db } from "../db";
-import { trainerActions } from "@shared/schema";
+import { trainerActions, rounds } from "@shared/schema";
 
 trainerRouter.post(
   "/sessions/:id/broadcast",

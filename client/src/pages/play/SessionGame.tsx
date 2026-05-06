@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import {
   teamJson,
@@ -7,39 +7,56 @@ import {
   clearTeamSession,
 } from "@/lib/auth";
 import { TeamSocket } from "@/lib/teamSocket";
-import Game from "@/pages/game";
+import Game, { type GameSessionMode } from "@/pages/game";
+import type { GameSnapshot, SessionMetrics } from "@/lib/gameEngine";
 
 interface MeResponse {
-  team: { id: string; name: string; color: string; sessionId: string };
+  team: {
+    id: string;
+    name: string;
+    color: string;
+    sessionId: string;
+    factoryState?: Record<string, unknown>;
+  };
   members: { id: string; fullName: string }[];
   session: { name: string; accessCode: string; status: string } | null;
 }
 
-// MVP-1: оборачивает существующий компонент <Game />, добавляет overlay таймера
-// и broadcast-сообщений от тренера. Действия игроков (place_machine и т.д.) пока
-// синхронизируются in-memory — реальная связка с gameEngine для команды — MVP-2.
 export default function PlaySessionGame() {
   const [, navigate] = useLocation();
   const [me, setMe] = useState<MeResponse | null>(null);
-  const [paused, setPaused] = useState(false);
+  const [paused, setPaused] = useState(true); // по умолчанию пауза до timer_event "running"
   const [ended, setEnded] = useState(false);
   const [annotation, setAnnotation] = useState<{ stationId: string; text: string } | null>(null);
   const [broadcast, setBroadcast] = useState<{ message: string; ts: number } | null>(null);
+  const [restoreSnapshot, setRestoreSnapshot] = useState<GameSnapshot | null>(null);
   const meta = getTeamMeta();
+  const wsRef = useRef<TeamSocket | null>(null);
 
   useEffect(() => {
     if (!getDeviceToken()) {
       navigate("/play/join");
       return;
     }
+
     teamJson<MeResponse>("/api/teams/me")
       .then((data) => {
         setMe(data);
         if (data.session?.status === "lobby" || data.session?.status === "draft") {
           navigate("/play/lobby");
+          return;
         }
         if (data.session?.status === "ended" || data.session?.status === "archived") {
           navigate("/play/result");
+          return;
+        }
+        if (data.session?.status === "running") setPaused(false);
+        if (data.session?.status === "paused") setPaused(true);
+
+        // Reconnect: восстанавливаем engine state из БД
+        const fs = data.team.factoryState;
+        if (fs && typeof fs === "object" && "snapshot" in fs) {
+          setRestoreSnapshot((fs as any).snapshot as GameSnapshot);
         }
       })
       .catch((e) => {
@@ -51,14 +68,17 @@ export default function PlaySessionGame() {
 
     const ws = new TeamSocket();
     ws.connect();
+    wsRef.current = ws;
     ws.on((event) => {
       if (event.type === "game.timer_event") {
         const status = event.payload?.status;
         if (status === "paused") setPaused(true);
-        else if (status === "running") setPaused(false);
-        else if (status === "ended" || status === "archived") {
+        else if (status === "running") {
+          setPaused(false);
+          setEnded(false);
+        } else if (status === "ended" || status === "archived") {
           setEnded(true);
-          setTimeout(() => navigate("/play/result"), 1200);
+          setTimeout(() => navigate("/play/result"), 1500);
         } else if (status === "lobby") {
           navigate("/play/lobby");
         }
@@ -68,41 +88,67 @@ export default function PlaySessionGame() {
         setAnnotation({ stationId: event.payload.stationId, text: event.payload.text });
         const dur = event.payload.durationMs || 10000;
         setTimeout(() => setAnnotation(null), dur);
+      } else if (event.type === "game.state_sync") {
+        // Сервер прислал текущий state команды (при первом подключении / reconnect)
+        const fs = event.payload?.team?.factoryState;
+        if (fs && typeof fs === "object" && "snapshot" in fs) {
+          setRestoreSnapshot((fs as any).snapshot as GameSnapshot);
+        }
       }
     });
 
-    return () => ws.close();
+    return () => {
+      ws.close();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Стабильный sessionMode props (предотвращает лишние перезапуски useEffect в Game)
+  const sessionMode = useMemo<GameSessionMode>(
+    () => ({
+      isPaused: paused,
+      isEnded: ended,
+      restoreSnapshot,
+      onMetricsUpdate: (m: SessionMetrics) => {
+        wsRef.current?.send("team:metrics", m as unknown as Record<string, unknown>);
+      },
+      onAction: (actionType, payload) => {
+        wsRef.current?.send("team:action", { actionType, payload });
+      },
+      onGameEnd: (snapshot, metrics) => {
+        wsRef.current?.send("team:game_over", { snapshot, metrics });
+      },
+    }),
+    [paused, ended, restoreSnapshot],
+  );
 
   if (!me) return <div className="p-8 text-center">Загрузка...</div>;
 
   return (
     <div className="relative min-h-screen">
-      {/* Бейдж команды в левом верхнем углу */}
+      {/* Бейдж команды */}
       <div className="fixed top-2 left-2 z-30 bg-card border border-border rounded-lg px-3 py-1.5 shadow-sm text-xs">
         <span
           className="inline-block w-2 h-2 rounded-full mr-1.5"
           style={{ background: meta?.color || me.team.color }}
         />
         <span className="font-semibold">{me.team.name}</span>
-        <span className="text-muted-foreground">
-          {" "}
-          · {me.members.length} участн.
-        </span>
+        <span className="text-muted-foreground"> · {me.members.length} участн.</span>
       </div>
 
-      {/* Сама игра */}
-      <Game />
+      {/* Игра в режиме сессии */}
+      <Game sessionMode={sessionMode} />
 
       {/* Overlay паузы */}
-      {paused && (
+      {paused && !ended && (
         <div className="fixed inset-0 z-40 bg-black/50 flex items-center justify-center">
           <div className="bg-card border border-border rounded-xl p-8 text-center max-w-md">
             <div className="text-5xl mb-3">⏸</div>
-            <h2 className="text-xl font-semibold mb-2">Тренер поставил паузу</h2>
+            <h2 className="text-xl font-semibold mb-2">
+              {me.session?.status === "lobby" ? "Ждём старта от тренера" : "Тренер поставил паузу"}
+            </h2>
             <p className="text-sm text-muted-foreground">
-              Игра возобновится, когда тренер продолжит сессию.
+              Игра пойдёт, когда тренер запустит/возобновит сессию.
             </p>
           </div>
         </div>
@@ -135,7 +181,7 @@ export default function PlaySessionGame() {
         </div>
       )}
 
-      {/* Annotation на станции */}
+      {/* Annotation подсветка станции */}
       {annotation && (
         <div className="fixed top-16 left-1/2 -translate-x-1/2 z-30 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg">
           <span className="font-mono mr-2">📍 {annotation.stationId}</span>

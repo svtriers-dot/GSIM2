@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { GoldrattEngine, type GameSnapshot, type MachineState } from '@/lib/gameEngine';
+import { GoldrattEngine, type GameSnapshot, type MachineState, type SessionMetrics } from '@/lib/gameEngine';
 import {
   STATIONS,
   CONNECTIONS,
@@ -144,7 +144,23 @@ function MachineSquare({
   );
 }
 
-export default function Game() {
+// MVP-2: режим сессии — Game становится управляемым тренером.
+// Если sessionMode задан — кнопки Play/Pause/Reset скрываются (глобальным таймером управляет тренер),
+// engine.tick игнорируется при isPaused/isEnded, метрики и действия отправляются через callbacks.
+export interface GameSessionMode {
+  isPaused: boolean;
+  isEnded: boolean;
+  // Восстановление состояния при reconnect (опционально, MVP-2.A4)
+  restoreSnapshot?: GameSnapshot | null;
+  // Раз в N миллисекунд (по умолчанию 2000) — отправляется текущий срез метрик
+  onMetricsUpdate?: (m: SessionMetrics) => void;
+  // На каждое значимое действие игрока (place_machine / remove_machine / buy_rm / set_pace / reset)
+  onAction?: (actionType: string, payload: Record<string, unknown>) => void;
+  // На завершение игрового времени (totalDays закончились) — отдаём финальный snapshot
+  onGameEnd?: (snapshot: GameSnapshot, metrics: SessionMetrics) => void;
+}
+
+export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } = {}) {
   const engineRef = useRef(new GoldrattEngine());
   const [state, setState] = useState<GameSnapshot>(engineRef.current.getSnapshot());
   const [selectedMachine, setSelectedMachine] = useState<string | null>(null);
@@ -237,22 +253,82 @@ export default function Game() {
   useEffect(() => {
     let lastTime = performance.now();
     let lastRender = 0;
+    let lastMetricsSent = 0;
     let animId: number;
 
     const loop = (now: number) => {
       const dt = Math.min((now - lastTime) / 1000, 0.1);
       lastTime = now;
-      engineRef.current.tick(dt);
+
+      // Session-mode: тренер управляет таймером
+      const blockedBySession = sessionMode && (sessionMode.isPaused || sessionMode.isEnded);
+      if (!blockedBySession) {
+        engineRef.current.tick(dt);
+      }
+
       if (now - lastRender > 80) {
         updateState();
         lastRender = now;
       }
+
+      // Session-mode: каждые 2 сек отправляем метрики
+      if (sessionMode?.onMetricsUpdate && now - lastMetricsSent > 2000) {
+        try {
+          sessionMode.onMetricsUpdate(engineRef.current.getMetrics());
+        } catch (e) {
+          console.error("metrics callback error:", e);
+        }
+        lastMetricsSent = now;
+      }
+
       animId = requestAnimationFrame(loop);
     };
 
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [updateState]);
+  }, [updateState, sessionMode]);
+
+  // Session-mode: восстановление состояния при reconnect
+  useEffect(() => {
+    if (sessionMode?.restoreSnapshot) {
+      try {
+        const snap = sessionMode.restoreSnapshot;
+        const engine = engineRef.current;
+        // Простое восстановление ключевых полей. Полный rehydrate — V2.
+        engine.cash = snap.cash;
+        engine.day = snap.day;
+        engine.timeInDay = snap.timeInDay;
+        engine.totalRevenue = snap.totalRevenue;
+        engine.totalRMCost = snap.totalRMCost;
+        engine.buffers = { ...snap.buffers };
+        engine.machines = snap.machines.map(m => ({ ...m }));
+        engine.stationStates = Object.fromEntries(
+          Object.entries(snap.stationStates).map(([k, v]) => [k, { ...v }]),
+        );
+        engine.sold = { ...snap.sold };
+        engine.demandRemaining = { ...snap.demandRemaining };
+        engine.dailyRevenue = snap.dailyRevenue;
+        engine.dailyRMCost = snap.dailyRMCost;
+        engine.gameOver = snap.gameOver;
+        setState(engine.getSnapshot());
+      } catch (e) {
+        console.error("restoreSnapshot error:", e);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionMode?.restoreSnapshot]);
+
+  // Session-mode: при isEnded — финализация
+  useEffect(() => {
+    if (sessionMode?.isEnded && sessionMode.onGameEnd) {
+      try {
+        sessionMode.onGameEnd(engineRef.current.getSnapshot(), engineRef.current.getMetrics());
+      } catch (e) {
+        console.error("onGameEnd error:", e);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionMode?.isEnded]);
 
   const showNotif = (msg: string) => {
     setNotification(msg);
@@ -263,6 +339,7 @@ export default function Game() {
     if (!selectedMachine) return;
     const result = engineRef.current.placeMachine(selectedMachine, stationId);
     if (result.success) {
+      sessionMode?.onAction?.("place_machine", { machineId: selectedMachine, stationId });
       setSelectedMachine(null);
       showNotif(result.message);
     } else {
@@ -282,6 +359,7 @@ export default function Game() {
 
     if (machine.assignedTo) {
       engineRef.current.removeMachine(machineId);
+      sessionMode?.onAction?.("remove_machine", { machineId });
       setSelectedMachine(null);
       updateState();
       showNotif('Станок снят');
@@ -301,6 +379,7 @@ export default function Game() {
     const result = engineRef.current.buyRawMaterial(purchaseRM, qty);
     showNotif(result.message);
     if (result.success) {
+      sessionMode?.onAction?.("buy_rm", { rmId: purchaseRM, qty });
       setPurchaseRM(null);
       setPurchaseQty('5');
     }
@@ -309,11 +388,15 @@ export default function Game() {
 
   const handleQuickBuyRM = (rmId: string, qty: number) => {
     const result = engineRef.current.buyRawMaterial(rmId, qty);
+    if (result.success) {
+      sessionMode?.onAction?.("buy_rm", { rmId, qty });
+    }
     showNotif(result.message);
     updateState();
   };
 
   const handleToggle = () => {
+    if (sessionMode) return; // в session-mode таймер контролирует тренер
     engineRef.current.toggleRunning();
     updateState();
   };
@@ -330,6 +413,7 @@ export default function Game() {
   };
 
   const handleReset = () => {
+    if (sessionMode) return; // в session-mode reset делает тренер через reset-round
     engineRef.current.resetGame();
     setSelectedMachine(null);
     setResultSaved(false);
