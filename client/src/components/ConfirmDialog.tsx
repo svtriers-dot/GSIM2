@@ -20,6 +20,7 @@ interface ConfirmOptions {
   promptLabel?: string;
   promptPlaceholder?: string;
   promptOptional?: boolean;
+  promptType?: "text" | "password"; // type=password маскирует ввод
 }
 
 interface ConfirmResult {
@@ -122,12 +123,13 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
                 )}
               </label>
               <input
-                type="text"
+                type={opts.promptType === "password" ? "password" : "text"}
                 value={promptValue}
                 onChange={(e) => setPromptValue(e.target.value)}
                 placeholder={opts.promptPlaceholder}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
                 autoFocus
+                autoComplete={opts.promptType === "password" ? "new-password" : "off"}
               />
             </div>
           )}

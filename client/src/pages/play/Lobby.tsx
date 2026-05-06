@@ -239,7 +239,7 @@ export default function PlayLobby() {
                   )}
                 </div>
               ))}
-              {draft.length < 10 && (
+              {draft.length < 5 && (
                 <button
                   type="button"
                   onClick={() => setDraft((d) => [...d, ""])}

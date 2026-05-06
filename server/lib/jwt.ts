@@ -1,11 +1,12 @@
 import jwt from "jsonwebtoken";
 
+// MVP-2 Security: в production без JWT_SECRET — fail-fast (атакующий не подпишет токены)
+if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) {
+  console.error("[FATAL] JWT_SECRET не задан в production!");
+  process.exit(1);
+}
 const SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const EXPIRES_IN = "1h"; // MVP-2 Security: окно компрометации 1 час, auto-refresh через /auth/me
-
-if (process.env.NODE_ENV === "production" && SECRET === "dev-secret-change-me") {
-  console.error("[FATAL] JWT_SECRET не задан в production!");
-}
 
 export type TrainerRole = "pending" | "active" | "suspended" | "rejected" | "super_admin";
 

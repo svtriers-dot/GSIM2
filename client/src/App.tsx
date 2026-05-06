@@ -1,69 +1,80 @@
 import { Switch, Route } from "wouter";
+import { lazy, Suspense } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ConfirmDialogProvider } from "@/components/ConfirmDialog";
+import { SkeletonCard } from "@/components/Skeleton";
 
+// Eager: лендинг, юр.страницы, login, простые экраны
 import NotFound from "@/pages/not-found";
-import Game from "@/pages/game";
 import Landing from "@/pages/Landing";
 import About from "@/pages/About";
 import Eula from "@/pages/Eula";
 import Oferta from "@/pages/Oferta";
 import Privacy from "@/pages/Privacy";
-
-// Trainer mode (ADR-002)
 import TrainerLogin from "@/pages/trainer/Login";
-import TrainerDashboard from "@/pages/trainer/Dashboard";
-import NewSession from "@/pages/trainer/NewSession";
-import TrainerSession from "@/pages/trainer/Session";
 import TrainerPending from "@/pages/trainer/Pending";
-import TrainerReplay from "@/pages/trainer/Replay";
-
-// Admin
-import AdminDashboard from "@/pages/admin/AdminDashboard";
-import AdminTrainers from "@/pages/admin/AdminTrainers";
-import AdminSessions from "@/pages/admin/AdminSessions";
-import AdminAuditLog from "@/pages/admin/AdminAuditLog";
-
-// Play (session-mode)
 import PlayJoin from "@/pages/play/Join";
 import PlayLobby from "@/pages/play/Lobby";
-import PlaySessionGame from "@/pages/play/SessionGame";
 import PlayResult from "@/pages/play/Result";
+
+// Lazy: тяжёлые страницы, отдельные chunks
+const Game = lazy(() => import("@/pages/game"));
+const PlaySessionGame = lazy(() => import("@/pages/play/SessionGame"));
+const TrainerDashboard = lazy(() => import("@/pages/trainer/Dashboard"));
+const NewSession = lazy(() => import("@/pages/trainer/NewSession"));
+const TrainerSession = lazy(() => import("@/pages/trainer/Session"));
+const TrainerReplay = lazy(() => import("@/pages/trainer/Replay"));
+const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
+const AdminTrainers = lazy(() => import("@/pages/admin/AdminTrainers"));
+const AdminSessions = lazy(() => import("@/pages/admin/AdminSessions"));
+const AdminAuditLog = lazy(() => import("@/pages/admin/AdminAuditLog"));
+
+function PageFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-6">
+      <div className="w-full max-w-2xl">
+        <SkeletonCard />
+      </div>
+    </div>
+  );
+}
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Landing} />
-      <Route path="/play">{() => <Game />}</Route>
-      <Route path="/play/join" component={PlayJoin} />
-      <Route path="/play/lobby" component={PlayLobby} />
-      <Route path="/play/session" component={PlaySessionGame} />
-      <Route path="/play/result" component={PlayResult} />
-      <Route path="/about" component={About} />
-      <Route path="/legal/eula" component={Eula} />
-      <Route path="/legal/oferta" component={Oferta} />
-      <Route path="/legal/privacy" component={Privacy} />
+    <Suspense fallback={<PageFallback />}>
+      <Switch>
+        <Route path="/" component={Landing} />
+        <Route path="/play">{() => <Game />}</Route>
+        <Route path="/play/join" component={PlayJoin} />
+        <Route path="/play/lobby" component={PlayLobby} />
+        <Route path="/play/session" component={PlaySessionGame} />
+        <Route path="/play/result" component={PlayResult} />
+        <Route path="/about" component={About} />
+        <Route path="/legal/eula" component={Eula} />
+        <Route path="/legal/oferta" component={Oferta} />
+        <Route path="/legal/privacy" component={Privacy} />
 
-      {/* Trainer */}
-      <Route path="/trainer/login" component={TrainerLogin} />
-      <Route path="/trainer" component={TrainerDashboard} />
-      <Route path="/trainer/pending" component={TrainerPending} />
-      <Route path="/trainer/sessions/new" component={NewSession} />
-      <Route path="/trainer/sessions/:id" component={TrainerSession} />
-      <Route path="/trainer/sessions/:sessionId/replay/:teamId" component={TrainerReplay} />
+        {/* Trainer */}
+        <Route path="/trainer/login" component={TrainerLogin} />
+        <Route path="/trainer" component={TrainerDashboard} />
+        <Route path="/trainer/pending" component={TrainerPending} />
+        <Route path="/trainer/sessions/new" component={NewSession} />
+        <Route path="/trainer/sessions/:id" component={TrainerSession} />
+        <Route path="/trainer/sessions/:sessionId/replay/:teamId" component={TrainerReplay} />
 
-      {/* Admin */}
-      <Route path="/admin" component={AdminDashboard} />
-      <Route path="/admin/trainers" component={AdminTrainers} />
-      <Route path="/admin/sessions" component={AdminSessions} />
-      <Route path="/admin/audit-log" component={AdminAuditLog} />
+        {/* Admin */}
+        <Route path="/admin" component={AdminDashboard} />
+        <Route path="/admin/trainers" component={AdminTrainers} />
+        <Route path="/admin/sessions" component={AdminSessions} />
+        <Route path="/admin/audit-log" component={AdminAuditLog} />
 
-      <Route component={NotFound} />
-    </Switch>
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 

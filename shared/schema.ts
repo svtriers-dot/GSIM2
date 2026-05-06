@@ -541,7 +541,7 @@ export const teamJoinSchema = z.object({
   members: z
     .array(z.object({ fullName: z.string().min(2).max(255) }))
     .min(1)
-    .max(10),
+    .max(5),  // Лимит 5 человек на команду (физически за одним монитором)
 });
 export type TeamJoinInput = z.infer<typeof teamJoinSchema>;
 
@@ -549,7 +549,7 @@ export const teamMembersUpdateSchema = z.object({
   members: z
     .array(z.object({ fullName: z.string().min(2).max(255) }))
     .min(1)
-    .max(10),
+    .max(5),  // Лимит 5 человек на команду
 });
 
 export const gameActionSchema = z.object({

@@ -214,7 +214,7 @@ export default function PlayJoin() {
                   </div>
                 ))}
               </div>
-              {members.length < 10 && (
+              {members.length < 5 && (
                 <button
                   type="button"
                   onClick={addMember}

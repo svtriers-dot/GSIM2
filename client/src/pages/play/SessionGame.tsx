@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth";
 import { TeamSocket, type TeamConnectionStatus } from "@/lib/teamSocket";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
+import { MobileBlock } from "@/components/MobileBlock";
 import Game, { type GameSessionMode } from "@/pages/game";
 import type { GameSnapshot, SessionMetrics } from "@/lib/gameEngine";
 
@@ -205,8 +206,10 @@ export default function PlaySessionGame() {
         </div>
       )}
 
-      {/* Игра в режиме сессии */}
-      <Game sessionMode={sessionMode} />
+      {/* Игра в режиме сессии — на мобильных показываем блок */}
+      <MobileBlock>
+        <Game sessionMode={sessionMode} />
+      </MobileBlock>
 
       {/* Overlay паузы */}
       {paused && !ended && (

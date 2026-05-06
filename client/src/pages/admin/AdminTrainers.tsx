@@ -87,6 +87,7 @@ export default function AdminTrainers() {
       description: "Минимум 8 символов. Старый пароль перестанет работать.",
       promptLabel: "Новый пароль",
       promptPlaceholder: "Минимум 8 символов",
+      promptType: "password",
       confirmLabel: "Сбросить",
       destructive: true,
     });
