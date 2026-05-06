@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 
 const SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
-const EXPIRES_IN = "7d";
+const EXPIRES_IN = "1h"; // MVP-2 Security: окно компрометации 1 час, auto-refresh через /auth/me
 
 if (process.env.NODE_ENV === "production" && SECRET === "dev-secret-change-me") {
   console.error("[FATAL] JWT_SECRET не задан в production!");

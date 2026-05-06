@@ -10,11 +10,27 @@ export class TeamSocket {
   private reconnectTimer: number | null = null;
   private closed = false;
 
-  connect() {
+  async connect() {
     const token = getDeviceToken();
     if (!token) return;
+
+    // MVP-2 Security: получаем ws-ticket вместо device_token в URL
+    let ticket: string | null = null;
+    try {
+      const res = await fetch("/api/teams/ws-ticket", {
+        method: "POST",
+        headers: { "X-Device-Token": token },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        ticket = data.ticket as string;
+      }
+    } catch {}
+
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
-    const url = `${proto}//${location.host}/ws/team?deviceToken=${encodeURIComponent(token)}`;
+    const url = ticket
+      ? `${proto}//${location.host}/ws/team?ticket=${encodeURIComponent(ticket)}`
+      : `${proto}//${location.host}/ws/team?deviceToken=${encodeURIComponent(token)}`;
     this.ws = new WebSocket(url);
 
     this.ws.addEventListener("message", (e) => {
@@ -26,7 +42,7 @@ export class TeamSocket {
 
     this.ws.addEventListener("close", () => {
       if (this.closed) return;
-      this.reconnectTimer = window.setTimeout(() => this.connect(), 3000);
+      this.reconnectTimer = window.setTimeout(() => { void this.connect(); }, 3000);
     });
 
     this.ws.addEventListener("error", () => {

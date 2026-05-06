@@ -173,3 +173,14 @@ teamsRouter.post("/leave", async (req, res) => {
   await db.delete(teams).where(eq(teams.id, team.id));
   res.json({ ok: true });
 });
+
+// MVP-2 Security: одноразовый ws-ticket для команды (вместо device_token в URL)
+import { issueTeamTicket } from "../services/wsTickets";
+
+teamsRouter.post("/ws-ticket", async (req, res) => {
+  const team = await teamFromHeader(req);
+  if (!team) return res.status(404).json({ error: "team_not_found" });
+  const ticket = issueTeamTicket(team.id);
+  res.json({ ticket, expiresInSeconds: 60 });
+});
+

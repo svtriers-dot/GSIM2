@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { Link } from 'wouter';
 import { ArrowLeft } from 'lucide-react';
 import tessLogo from '@assets/tess_logo-final_152_1773757415772.png';
@@ -69,7 +70,7 @@ export default function LegalPage({ title, subtitle, contentHtml }: LegalPagePro
         </h1>
         {subtitle && <p className="text-sm mb-10" style={{ color: palette.muted }}>{subtitle}</p>}
 
-        <article className="legal-content" dangerouslySetInnerHTML={{ __html: contentHtml }} />
+        <article className="legal-content" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(contentHtml, { USE_PROFILES: { html: true } }) }} />
       </main>
 
       <footer className="py-8 mt-16" style={{ background: palette.card, borderTop: `1px solid ${palette.border}` }}>

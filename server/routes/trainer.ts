@@ -605,10 +605,32 @@ trainerRouter.get(
 
 // MVP-2.C3 — обновление настроек сессии (white-label, конфиг)
 import { z as zPatch } from "zod";
+// MVP-2 Security: валидация logoUrl — только https, не localhost/private IPs
+const logoUrlSchema = zPatch
+  .string()
+  .url()
+  .max(500)
+  .refine((u) => u.startsWith("https://"), { message: "только https://" })
+  .refine(
+    (u) => {
+      try {
+        const host = new URL(u).hostname.toLowerCase();
+        // Блокируем localhost/частные IP (защита от SSRF/phishing)
+        if (host === "localhost" || host.startsWith("127.") || host.startsWith("10.")) return false;
+        if (host.startsWith("192.168.") || host.startsWith("169.254.")) return false;
+        if (/^172\.(1[6-9]|2\d|3[01])\./.test(host)) return false;
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    { message: "запрещённый хост" },
+  );
+
 const sessionPatchSchema = zPatch.object({
   configOverrides: zPatch
     .object({
-      logoUrl: zPatch.string().url().max(500).optional().nullable(),
+      logoUrl: logoUrlSchema.optional().nullable(),
       primaryColor: zPatch.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
       orgName: zPatch.string().max(255).optional().nullable(),
     })
@@ -698,6 +720,21 @@ trainerRouter.get(
     if (!session) throw new SessionNotFoundError();
     const events = await db.select().from(forcedEvents).where(eq(forcedEvents.sessionId, sessionId)).orderBy(desc(forcedEvents.triggeredAt));
     res.json({ events });
+  }),
+);
+
+// MVP-2 Security: одноразовый ticket для WebSocket (вместо JWT в URL)
+import { issueTrainerTicket } from "../services/wsTickets";
+
+trainerRouter.post(
+  "/sessions/:id/ws-ticket",
+  requireActiveTrainer,
+  withErrorHandler(async (req, res) => {
+    const sessionId = req.params.id as string;
+    const session = await getSessionForTrainer(sessionId, req.trainer!.sub);
+    if (!session) throw new SessionNotFoundError();
+    const ticket = issueTrainerTicket(req.trainer!.sub, sessionId);
+    res.json({ ticket, expiresInSeconds: 60 });
   }),
 );
 

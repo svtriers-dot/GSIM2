@@ -33,11 +33,28 @@ export class TrainerSocket {
 
   constructor(private sessionId: string) {}
 
-  connect() {
+  async connect() {
     const token = getTrainerToken();
     if (!token) return;
+
+    // MVP-2 Security: получаем ws-ticket вместо передачи JWT в URL
+    let ticket: string | null = null;
+    try {
+      const res = await fetch(`/api/trainer/sessions/${this.sessionId}/ws-ticket`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        ticket = data.ticket as string;
+      }
+    } catch {}
+
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
-    const url = `${proto}//${location.host}/ws/trainer?token=${encodeURIComponent(token)}&sessionId=${encodeURIComponent(this.sessionId)}`;
+    const url = ticket
+      ? `${proto}//${location.host}/ws/trainer?ticket=${encodeURIComponent(ticket)}`
+      : // Fallback на legacy если ticket не получили (деплой ещё не подхватил)
+        `${proto}//${location.host}/ws/trainer?token=${encodeURIComponent(token)}&sessionId=${encodeURIComponent(this.sessionId)}`;
     this.ws = new WebSocket(url);
 
     this.ws.addEventListener("message", (e) => {
@@ -49,7 +66,7 @@ export class TrainerSocket {
 
     this.ws.addEventListener("close", () => {
       if (this.closed) return;
-      this.reconnectTimer = window.setTimeout(() => this.connect(), 3000);
+      this.reconnectTimer = window.setTimeout(() => { void this.connect(); }, 3000);
     });
 
     this.ws.addEventListener("error", () => {

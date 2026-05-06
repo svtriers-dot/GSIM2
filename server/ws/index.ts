@@ -2,6 +2,10 @@ import { WebSocketServer, type WebSocket } from "ws";
 import type { Server as HttpServer, IncomingMessage } from "http";
 import { URL } from "url";
 import { verifyTrainerToken } from "../lib/jwt";
+import { consumeTicket } from "../services/wsTickets";
+import { db } from "../db";
+import { teams as teamsTable } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { getTeamByDeviceToken } from "../services/sessions";
 import { getSessionForTrainer, getSession } from "../services/sessions";
 import {
@@ -65,25 +69,44 @@ async function handleConnection(ws: WebSocket, req: IncomingMessage, url: URL): 
 // --- TRAINER channel ------------------------------------------------------
 
 async function handleTrainer(ws: WebSocket, url: URL): Promise<void> {
-  const token = url.searchParams.get("token");
-  const sessionId = url.searchParams.get("sessionId");
-  if (!token || !sessionId) {
-    ws.close(4400, "missing_params");
-    return;
+  const ticketNonce = url.searchParams.get("ticket");
+  let trainerSub: string;
+  let sessionIdFromAuth: string;
+
+  if (ticketNonce) {
+    // Новый flow: одноразовый ticket
+    const t = consumeTicket(ticketNonce);
+    if (!t || t.kind !== "trainer") {
+      ws.close(4401, "invalid_ticket");
+      return;
+    }
+    trainerSub = t.trainerId;
+    sessionIdFromAuth = t.sessionId;
+  } else {
+    // Legacy fallback: JWT в URL (для совместимости с старыми клиентами)
+    const token = url.searchParams.get("token");
+    const sessionId = url.searchParams.get("sessionId");
+    if (!token || !sessionId) {
+      ws.close(4400, "missing_params");
+      return;
+    }
+    const payload = verifyTrainerToken(token);
+    if (!payload) {
+      ws.close(4401, "invalid_token");
+      return;
+    }
+    trainerSub = payload.sub;
+    sessionIdFromAuth = sessionId;
   }
-  const payload = verifyTrainerToken(token);
-  if (!payload) {
-    ws.close(4401, "invalid_token");
-    return;
-  }
-  const session = await getSessionForTrainer(sessionId, payload.sub);
+
+  const session = await getSessionForTrainer(sessionIdFromAuth, trainerSub);
   if (!session) {
     ws.close(4404, "session_not_found");
     return;
   }
-  await attachTrainerSocket(sessionId, ws);
-  ws.on("close", () => detachTrainerSocket(sessionId, ws));
-  ws.on("error", () => detachTrainerSocket(sessionId, ws));
+  await attachTrainerSocket(sessionIdFromAuth, ws);
+  ws.on("close", () => detachTrainerSocket(sessionIdFromAuth, ws));
+  ws.on("error", () => detachTrainerSocket(sessionIdFromAuth, ws));
   ws.on("message", (msg) => {
     // MVP-1: тренер управляет через REST. WS только для подписки на state.
     // Будущее: можно пушить trainer:timer.start и т.д. через WS.
@@ -97,12 +120,34 @@ async function handleTrainer(ws: WebSocket, url: URL): Promise<void> {
 // --- TEAM channel ---------------------------------------------------------
 
 async function handleTeam(ws: WebSocket, url: URL): Promise<void> {
-  const deviceToken = url.searchParams.get("deviceToken");
-  if (!deviceToken) {
-    ws.close(4400, "missing_device_token");
-    return;
+  const ticketNonce = url.searchParams.get("ticket");
+  let teamId: string;
+
+  if (ticketNonce) {
+    const t = consumeTicket(ticketNonce);
+    if (!t || t.kind !== "team") {
+      ws.close(4401, "invalid_ticket");
+      return;
+    }
+    teamId = t.teamId;
+  } else {
+    // Legacy fallback: device_token в URL (для совместимости со старыми клиентами)
+    const deviceToken = url.searchParams.get("deviceToken");
+    if (!deviceToken) {
+      ws.close(4400, "missing_device_token");
+      return;
+    }
+    const t = await getTeamByDeviceToken(deviceToken);
+    if (!t) {
+      ws.close(4404, "team_not_found");
+      return;
+    }
+    teamId = t.id;
   }
-  const team = await getTeamByDeviceToken(deviceToken);
+
+  // Re-fetch team чтобы получить полную инфу (sessionId)
+  const teamData = await db.select().from(teamsTable).where(eq(teamsTable.id, teamId)).limit(1);
+  const team = teamData[0];
   if (!team) {
     ws.close(4404, "team_not_found");
     return;
