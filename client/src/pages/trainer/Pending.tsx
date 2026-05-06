@@ -37,21 +37,15 @@ export default function TrainerPending() {
 
   async function poll() {
     try {
-      const data = await authJson<MeResponse>("/api/trainer/auth/me");
+      const data = await authJson<MeResponse & { token?: string }>("/api/trainer/auth/me");
       setMe(data.trainer);
-      // Если стал active или super_admin — обновляем профиль и редиректим
+      // /auth/me возвращает свежий token — обновим localStorage
+      if (data.token) {
+        setTrainerToken(data.token, data.trainer as any);
+      }
+      // Если стал active или super_admin — редиректим в кабинет
       if (data.trainer.role === "active" || data.trainer.role === "super_admin") {
-        const old = getTrainerProfile();
-        if (old) {
-          // Обновляем localStorage профиль
-          const token = getTrainerToken()!;
-          setTrainerToken(token, { ...old, ...data.trainer } as any);
-        }
-        // Перелогин чтобы JWT включал свежую роль
-        // Простейший путь: logout → редирект на login с подсказкой
-        alert("Ваша заявка одобрена! Войдите снова, чтобы обновить сессию.");
-        logoutTrainer();
-        navigate("/trainer/login");
+        navigate("/trainer");
       }
     } catch (e: any) {
       if (String(e.message).startsWith("401") || String(e.message).startsWith("403")) {

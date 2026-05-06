@@ -46,13 +46,15 @@ export default function TrainerDashboard() {
       return;
     }
     // Проверяем актуальную роль (могла измениться после апрува/саспенда)
-    authJson<{ trainer: { id: string; email: string; name: string; organization: string | null; role: TrainerRole } }>(
-      "/api/trainer/auth/me",
-    )
+    authJson<{
+      trainer: { id: string; email: string; name: string; organization: string | null; role: TrainerRole };
+      token?: string;
+    }>("/api/trainer/auth/me")
       .then((data) => {
         const role = data.trainer.role;
-        // Обновляем профиль в localStorage
-        const tok = getTrainerToken()!;
+        // Обновляем профиль в localStorage. /auth/me возвращает СВЕЖИЙ token —
+        // используем его чтобы заменить stale-JWT (например, токен без role после миграции).
+        const tok = data.token ?? getTrainerToken()!;
         setTrainerToken(tok, data.trainer);
         if (role === "pending" || role === "suspended") {
           navigate("/trainer/pending");

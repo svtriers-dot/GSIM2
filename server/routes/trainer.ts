@@ -86,7 +86,16 @@ trainerRouter.post("/auth/login", async (req, res) => {
 trainerRouter.get("/auth/me", requireTrainer, async (req, res) => {
   const trainer = await getTrainerById(req.trainer!.sub);
   if (!trainer) return res.status(404).json({ error: "not_found" });
-  res.json({ trainer });
+  // Возвращаем СВЕЖИЙ токен с актуальной ролью — фронт перезапишет localStorage.
+  // Это решает проблему stale-JWT после смены роли (approve / reject / suspend)
+  // или после миграции, когда старые токены могли не содержать поля role.
+  const { signTrainerToken } = await import("../lib/jwt");
+  const token = signTrainerToken({
+    id: trainer.id,
+    email: trainer.email,
+    role: (trainer.role ?? "pending") as any,
+  });
+  res.json({ trainer, token });
 });
 
 // --- SESSIONS -------------------------------------------------------------
