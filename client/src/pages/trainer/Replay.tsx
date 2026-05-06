@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useRoute } from "wouter";
 import { authJson, getTrainerToken } from "@/lib/auth";
+import { SkeletonCard, ErrorRetry } from "@/components/Skeleton";
 
 interface RoundDTO {
   id: string;
@@ -112,12 +113,14 @@ export default function TrainerReplay() {
   }, [decisions]);
 
   if (!sessionId || !teamId) return <div className="p-8">Невалидная ссылка</div>;
-  if (loading) return <div className="p-8 text-center">Загрузка...</div>;
+  if (loading) return <div className="max-w-5xl mx-auto p-6 space-y-4"><SkeletonCard /><SkeletonCard /></div>;
   if (error)
     return (
-      <div className="p-8">
+      <div className="max-w-5xl mx-auto p-6">
         <Link href={`/trainer/sessions/${sessionId}`}>← К сессии</Link>
-        <div className="mt-4 text-red-600">{error}</div>
+        <div className="mt-4">
+          <ErrorRetry message={error} onRetry={() => void load()} />
+        </div>
       </div>
     );
 

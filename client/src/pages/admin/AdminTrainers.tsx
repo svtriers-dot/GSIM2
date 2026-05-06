@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { authFetch, authJson, getTrainerToken } from "@/lib/auth";
 import { confirmDialog, confirmAction } from "@/components/ConfirmDialog";
+import { SkeletonTable, ErrorRetry } from "@/components/Skeleton";
 import { useToast } from "@/hooks/use-toast";
 
 interface TrainerRow {
@@ -202,11 +203,9 @@ export default function AdminTrainers() {
           </button>
         </div>
 
-        {loading && <div className="text-sm text-muted-foreground">Загрузка...</div>}
+        {loading && <SkeletonTable rows={5} cols={6} />}
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-            {error}
-          </div>
+          <ErrorRetry message={error} onRetry={() => void load(filterRole, search, offset)} />
         )}
         {!loading && !error && rows.length === 0 && (
           <div className="text-center py-12 border border-dashed border-border rounded-xl text-muted-foreground">
@@ -239,7 +238,38 @@ export default function AdminTrainers() {
         )}
 
         {!loading && rows.length > 0 && (
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <>
+            {/* Mobile: cards */}
+            <div className="md:hidden space-y-3">
+              {rows.map((t) => (
+                <div key={t.id} className="bg-card border border-border rounded-xl p-4">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/admin/trainers/${t.id}`} className="font-medium hover:underline block truncate">
+                        {t.name}
+                      </Link>
+                      <div className="text-xs text-muted-foreground truncate">{t.email}</div>
+                      {t.organization && <div className="text-xs text-muted-foreground truncate">{t.organization}</div>}
+                    </div>
+                    <span className={`inline-block px-2 py-1 rounded text-xs whitespace-nowrap ${ROLE_COLORS[t.role] || ""}`}>
+                      {ROLE_LABELS[t.role]}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mb-2">
+                    {new Date(t.createdAt).toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                  </div>
+                  <ActionButtons
+                    trainer={t}
+                    busy={busy === t.id}
+                    onAction={(op) => action(t.id, op)}
+                    onResetPassword={() => setPassword(t.id, t.name)}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: table */}
+            <div className="hidden md:block bg-card border border-border rounded-xl overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-elevate-1 text-left">
                 <tr>
@@ -282,7 +312,8 @@ export default function AdminTrainers() {
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         )}
       </main>
     </div>

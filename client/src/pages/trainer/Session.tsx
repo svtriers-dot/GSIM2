@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useRoute } from "wouter";
+import { getAllMachineIds, getAllProductIds } from "@/lib/gameConfig";
 import { authJson, getTrainerToken } from "@/lib/auth";
 import { TrainerSocket, type SessionLiveState, type ConnectionStatus as WsStatus } from "@/lib/trainerSocket";
 import { confirmAction, promptAction } from "@/components/ConfirmDialog";
@@ -798,7 +799,70 @@ function DebriefTab({
         </p>
       )}
 
-      <div className="bg-card border border-border rounded-xl overflow-hidden">
+      {/* Mobile: simplified cards */}
+      <div className="md:hidden space-y-3">
+        {teamsByRank.map((t, i) => {
+          const prev = prevResults.find((r) => r.teamId === t.id);
+          const last = lastResults.find((r) => r.teamId === t.id);
+          const dt = prev && last ? last.throughput - prev.throughput : null;
+          return (
+            <div
+              key={t.id}
+              className="bg-card border border-border rounded-xl p-4"
+              style={{ borderLeftColor: t.color, borderLeftWidth: 4 }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <span className="font-mono mr-2">
+                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
+                  </span>
+                  <span className="font-semibold">{t.name}</span>
+                </div>
+                {last?.bottleneckStationId && (
+                  <span className="text-xs text-amber-600 font-mono">⚠ {last.bottleneckStationId}</span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <div className="text-xs text-muted-foreground">Cash R{lastRound.roundNumber}</div>
+                  <div className={`font-mono font-semibold ${(last?.finalCash ?? 0) < 0 ? "text-red-600" : ""}`}>
+                    ${(last?.finalCash ?? 0).toLocaleString("en-US")}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Throughput R{lastRound.roundNumber}</div>
+                  <div className="font-mono font-semibold">{last?.throughput.toLocaleString("en-US") ?? "—"}</div>
+                </div>
+                {prevRound && dt != null && (
+                  <div className="col-span-2">
+                    <div className="text-xs text-muted-foreground">Δ throughput</div>
+                    <div
+                      className={`font-mono ${dt > 0 ? "text-green-700" : dt < 0 ? "text-red-600" : "text-muted-foreground"}`}
+                    >
+                      {dt > 0 ? "+" : ""}
+                      {dt.toLocaleString("en-US")}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="text-xs text-muted-foreground mt-2 truncate">
+                {t.members.join(", ")}
+              </div>
+              <div className="mt-2">
+                <Link
+                  href={`/trainer/sessions/${sessionId}/replay/${t.id}`}
+                  className="text-primary hover:underline text-xs"
+                >
+                  Replay →
+                </Link>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop: comparison table */}
+      <div className="hidden md:block bg-card border border-border rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-elevate-1 text-left">
             <tr>
@@ -1284,9 +1348,9 @@ function ForcedEventsPanel({
     }
   }
 
-  // Список машин — для выбора что сломать. Берём из gameConfig (статично известно)
-  const machineIds = ["m_lightblue_0", "m_lightblue_1", "m_blue_0", "m_green_0", "m_green_1", "m_pink_0", "m_pink_1", "m_brown_0"];
-  const productIds = ["A", "D", "F"];
+  // Список машин и продуктов — динамически из gameConfig
+  const machineIds = getAllMachineIds();
+  const productIds = getAllProductIds();
 
   return (
     <div className="bg-card border border-border rounded-xl mb-4">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { authJson, getTrainerProfile, logoutTrainer, getTrainerToken, setTrainerToken, type TrainerRole } from "@/lib/auth";
+import { SkeletonTable, ErrorRetry } from "@/components/Skeleton";
 
 interface SessionRow {
   id: string;
@@ -139,12 +140,10 @@ export default function TrainerDashboard() {
       <main className="max-w-6xl mx-auto px-6 py-8">
         <h2 className="text-lg font-semibold mb-4">Мои мастер-классы</h2>
 
-        {loading && <div className="text-sm text-muted-foreground">Загрузка...</div>}
+        {loading && <SkeletonTable rows={4} cols={5} />}
 
         {!loading && error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-            {error}
-          </div>
+          <ErrorRetry message={error} onRetry={() => void load()} />
         )}
 
         {!loading && !error && sessions.length === 0 && (

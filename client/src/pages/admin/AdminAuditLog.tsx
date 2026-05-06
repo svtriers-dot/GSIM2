@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { authJson, getTrainerToken } from "@/lib/auth";
+import { SkeletonTable, ErrorRetry } from "@/components/Skeleton";
 
 interface AuditEntry {
   id: string;
@@ -125,11 +126,9 @@ export default function AdminAuditLog() {
           </span>
         </div>
 
-        {loading && <div className="text-sm text-muted-foreground">Загрузка...</div>}
+        {loading && <SkeletonTable rows={5} cols={6} />}
         {error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
-            {error}
-          </div>
+          <ErrorRetry message={error} onRetry={() => void load(filterAction, offset)} />
         )}
 
         {!loading && !error && rows.length === 0 && (

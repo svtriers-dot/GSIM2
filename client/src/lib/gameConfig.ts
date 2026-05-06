@@ -200,3 +200,20 @@ export function getStationOutputs(stationId: string): string[] {
 export function getProductForStation(stationId: string): ProductDef | undefined {
   return PRODUCTS.find(p => p.finalStation === stationId);
 }
+
+
+// Helper для UI — возвращает все ID станков (для кнопок forced events)
+export function getAllMachineIds(): string[] {
+  const ids: string[] = [];
+  for (const mt of MACHINE_TYPES) {
+    for (let i = 0; i < mt.count; i++) {
+      ids.push(`m_${mt.color}_${i}`);
+    }
+  }
+  return ids;
+}
+
+// Helper — список ID продуктов
+export function getAllProductIds(): string[] {
+  return PRODUCTS.map((p) => p.id);
+}
