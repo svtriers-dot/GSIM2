@@ -158,6 +158,8 @@ export interface GameSessionMode {
   onAction?: (actionType: string, payload: Record<string, unknown>) => void;
   // На завершение игрового времени (totalDays закончились) — отдаём финальный snapshot
   onGameEnd?: (snapshot: GameSnapshot, metrics: SessionMetrics) => void;
+  // ID станции, которую тренер сейчас аннотирует — её надо подсветить пульсирующим overlay
+  highlightedStationId?: string | null;
 }
 
 export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } = {}) {
@@ -1046,6 +1048,13 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                         {isHighlightable && (
                           <rect x={sx - 5} y={sy - 5} width={w + 10} height={h + 10} rx={8} fill="none" stroke={ft.highlight} strokeWidth={2} strokeDasharray="4 2" opacity={0.6}>
                             <animate attributeName="opacity" values="0.3;0.8;0.3" dur="1.5s" repeatCount="indefinite" />
+                          </rect>
+                        )}
+
+                        {sessionMode?.highlightedStationId === stationDef.id && (
+                          <rect x={sx - 8} y={sy - 8} width={w + 16} height={h + 16} rx={10} fill="none" stroke="#f59e0b" strokeWidth={3} opacity={0.9}>
+                            <animate attributeName="opacity" values="0.4;1;0.4" dur="1s" repeatCount="indefinite" />
+                            <animate attributeName="stroke-width" values="2;4;2" dur="1s" repeatCount="indefinite" />
                           </rect>
                         )}
 

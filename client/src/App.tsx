@@ -18,6 +18,7 @@ import TrainerDashboard from "@/pages/trainer/Dashboard";
 import NewSession from "@/pages/trainer/NewSession";
 import TrainerSession from "@/pages/trainer/Session";
 import TrainerPending from "@/pages/trainer/Pending";
+import TrainerReplay from "@/pages/trainer/Replay";
 
 // Admin
 import AdminDashboard from "@/pages/admin/AdminDashboard";
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/trainer/pending" component={TrainerPending} />
       <Route path="/trainer/sessions/new" component={NewSession} />
       <Route path="/trainer/sessions/:id" component={TrainerSession} />
+      <Route path="/trainer/sessions/:sessionId/replay/:teamId" component={TrainerReplay} />
 
       {/* Admin */}
       <Route path="/admin" component={AdminDashboard} />

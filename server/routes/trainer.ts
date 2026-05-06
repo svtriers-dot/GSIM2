@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import {
   trainerRegisterSchema,
@@ -229,7 +229,16 @@ trainerRouter.post(
 // Здесь только запись в trainer_actions для журнала.
 
 import { db } from "../db";
-import { trainerActions, rounds } from "@shared/schema";
+import {
+  trainerActions,
+  rounds,
+  teamRoundResults,
+  decisions as decisionsTable,
+  snapshots as snapshotsTable,
+  teams as teamsTable,
+  teamMembers as teamMembersTable,
+} from "@shared/schema";
+import { desc, asc, inArray } from "drizzle-orm";
 
 trainerRouter.post(
   "/sessions/:id/broadcast",
@@ -308,3 +317,133 @@ trainerRouter.post(
     res.json({ snapshot: snap });
   }),
 );
+
+// =============================================================================
+// MVP-2.B Дебриф — replay, round comparison, snapshots
+// =============================================================================
+
+// GET /api/trainer/sessions/:id/rounds — все раунды + результаты команд
+trainerRouter.get(
+  "/sessions/:id/rounds",
+  requireActiveTrainer,
+  withErrorHandler(async (req, res) => {
+    const sessionId = req.params.id as string;
+    const session = await getSessionForTrainer(sessionId, req.trainer!.sub);
+    if (!session) throw new SessionNotFoundError();
+
+    const allRounds = await db
+      .select()
+      .from(rounds)
+      .where(eq(rounds.sessionId, sessionId))
+      .orderBy(asc(rounds.roundNumber));
+
+    if (allRounds.length === 0) {
+      res.json({ rounds: [], teams: [], results: [] });
+      return;
+    }
+
+    const sessionTeams = await db.select().from(teamsTable).where(eq(teamsTable.sessionId, sessionId));
+    const teamIds = sessionTeams.map((t) => t.id);
+
+    const memberRows = teamIds.length
+      ? await db.select().from(teamMembersTable).where(inArray(teamMembersTable.teamId, teamIds))
+      : [];
+
+    const results = await db
+      .select()
+      .from(teamRoundResults)
+      .where(inArray(teamRoundResults.roundId, allRounds.map((r) => r.id)));
+
+    res.json({
+      rounds: allRounds,
+      teams: sessionTeams.map((t) => ({
+        id: t.id,
+        name: t.name,
+        color: t.color,
+        members: memberRows.filter((m) => m.teamId === t.id).map((m) => m.fullName),
+      })),
+      results,
+    });
+  }),
+);
+
+// GET /api/trainer/sessions/:id/teams/:teamId/replay
+trainerRouter.get(
+  "/sessions/:id/teams/:teamId/replay",
+  requireActiveTrainer,
+  withErrorHandler(async (req, res) => {
+    const sessionId = req.params.id as string;
+    const teamId = req.params.teamId as string;
+    const session = await getSessionForTrainer(sessionId, req.trainer!.sub);
+    if (!session) throw new SessionNotFoundError();
+
+    // Проверка что команда в этой сессии
+    const [team] = await db
+      .select()
+      .from(teamsTable)
+      .where(and(eq(teamsTable.id, teamId), eq(teamsTable.sessionId, sessionId)))
+      .limit(1);
+    if (!team) {
+      res.status(404).json({ error: "team_not_found" });
+      return;
+    }
+
+    const allRounds = await db
+      .select()
+      .from(rounds)
+      .where(eq(rounds.sessionId, sessionId))
+      .orderBy(asc(rounds.roundNumber));
+
+    const allDecisions = allRounds.length
+      ? await db
+          .select()
+          .from(decisionsTable)
+          .where(
+            and(
+              eq(decisionsTable.teamId, teamId),
+              inArray(decisionsTable.roundId, allRounds.map((r) => r.id)),
+            ),
+          )
+          .orderBy(asc(decisionsTable.timestamp))
+      : [];
+
+    const teamResults = allRounds.length
+      ? await db
+          .select()
+          .from(teamRoundResults)
+          .where(
+            and(
+              eq(teamRoundResults.teamId, teamId),
+              inArray(teamRoundResults.roundId, allRounds.map((r) => r.id)),
+            ),
+          )
+      : [];
+
+    res.json({
+      team: { id: team.id, name: team.name, color: team.color },
+      rounds: allRounds,
+      decisions: allDecisions,
+      results: teamResults,
+    });
+  }),
+);
+
+// GET /api/trainer/sessions/:id/snapshots
+trainerRouter.get(
+  "/sessions/:id/snapshots",
+  requireActiveTrainer,
+  withErrorHandler(async (req, res) => {
+    const sessionId = req.params.id as string;
+    const session = await getSessionForTrainer(sessionId, req.trainer!.sub);
+    if (!session) throw new SessionNotFoundError();
+
+    const rows = await db
+      .select()
+      .from(snapshotsTable)
+      .where(eq(snapshotsTable.sessionId, sessionId))
+      .orderBy(desc(snapshotsTable.createdAt));
+
+    res.json({ snapshots: rows });
+  }),
+);
+

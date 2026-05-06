@@ -104,11 +104,13 @@ export default function PlaySessionGame() {
   }, []);
 
   // Стабильный sessionMode props (предотвращает лишние перезапуски useEffect в Game)
+  const highlightedStationId = annotation?.stationId ?? null;
   const sessionMode = useMemo<GameSessionMode>(
     () => ({
       isPaused: paused,
       isEnded: ended,
       restoreSnapshot,
+      highlightedStationId,
       onMetricsUpdate: (m: SessionMetrics) => {
         wsRef.current?.send("team:metrics", m as unknown as Record<string, unknown>);
       },
@@ -119,7 +121,7 @@ export default function PlaySessionGame() {
         wsRef.current?.send("team:game_over", { snapshot, metrics });
       },
     }),
-    [paused, ended, restoreSnapshot],
+    [paused, ended, restoreSnapshot, highlightedStationId],
   );
 
   if (!me) return <div className="p-8 text-center">Загрузка...</div>;

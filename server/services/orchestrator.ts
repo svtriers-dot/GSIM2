@@ -289,7 +289,11 @@ export async function applyTeamMetrics(
   const team = a.teams.get(teamId);
   if (!team) return;
 
-  // Применяем только известные поля метрик — типобезопасно
+  // Сохраняем предыдущие значения для детектирования изменений
+  const prevCash = team.metrics.cash;
+  const prevBottleneck = team.metrics.bottleneckStationId ?? null;
+
+  // Применяем новые метрики
   team.metrics = {
     cash: typeof metrics.cash === "number" ? metrics.cash : team.metrics.cash,
     throughput: typeof metrics.throughput === "number" ? metrics.throughput : team.metrics.throughput,
@@ -305,6 +309,36 @@ export async function applyTeamMetrics(
     type: "team.metric_update",
     payload: { teamId, metrics: team.metrics },
   });
+
+  // MVP-2.B6: алерты для тренера
+  // 1. Cash перешёл в минус
+  if (prevCash >= 0 && team.metrics.cash < 0) {
+    broadcastToTrainers(a, {
+      type: "alert",
+      payload: {
+        kind: "cash_negative",
+        teamId,
+        teamName: team.name,
+        cash: team.metrics.cash,
+        timestamp: Date.now(),
+      },
+    });
+  }
+  // 2. Bottleneck сменился
+  const newBottleneck = team.metrics.bottleneckStationId ?? null;
+  if (prevBottleneck !== newBottleneck && newBottleneck) {
+    broadcastToTrainers(a, {
+      type: "alert",
+      payload: {
+        kind: "bottleneck_changed",
+        teamId,
+        teamName: team.name,
+        from: prevBottleneck,
+        to: newBottleneck,
+        timestamp: Date.now(),
+      },
+    });
+  }
 }
 
 // MVP-2.A1: команда сообщает что игровое время закончилось — фиксируем snapshot factoryState
