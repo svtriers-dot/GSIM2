@@ -74,15 +74,17 @@ export default function PlayResult() {
           на каждое имя из списка (в MVP-2).
         </p>
 
-        <button
-          onClick={() => {
-            clearTeamSession();
-            navigate("/");
-          }}
-          className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium"
-        >
-          Закрыть сессию
-        </button>
+        <div className="flex gap-3 justify-center">
+          <button
+            onClick={() => {
+              clearTeamSession();
+              navigate("/");
+            }}
+            className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium"
+          >
+            ← На главную
+          </button>
+        </div>
       </div>
     </div>
   );

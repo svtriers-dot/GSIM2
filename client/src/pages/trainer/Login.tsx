@@ -65,8 +65,12 @@ export default function TrainerLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md bg-card border border-border rounded-xl p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold mb-1">TessTOC · Тренер</h1>
+      <div className="w-full max-w-md">
+        <a href="/" className="text-sm text-muted-foreground hover:underline mb-3 inline-block">
+          ← На главную
+        </a>
+        <div className="bg-card border border-border rounded-xl p-8 shadow-sm">
+          <h1 className="text-2xl font-semibold mb-1">TessTOC · Тренер</h1>
         <p className="text-sm text-muted-foreground mb-6">
           {mode === "login" ? "Вход в кабинет тренера" : "Регистрация тренера"}
         </p>
@@ -171,6 +175,7 @@ export default function TrainerLogin() {
           </a>
           .
         </p>
+        </div>
       </div>
     </div>
   );

@@ -5,9 +5,14 @@ export default function TrainerLearn() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card">
         <div className="max-w-3xl mx-auto px-6 py-4">
-          <Link href="/trainer/onboarding" className="text-sm text-muted-foreground hover:underline">
-            ← К онбордингу
-          </Link>
+          <div className="flex gap-4 text-sm">
+            <Link href="/trainer/onboarding" className="text-muted-foreground hover:underline">
+              ← К онбордингу
+            </Link>
+            <Link href="/" className="text-muted-foreground hover:underline">
+              На главную
+            </Link>
+          </div>
           <h1 className="text-2xl font-semibold mt-2">Теория ограничений (ТОС) — кратко</h1>
           <p className="text-sm text-muted-foreground mt-1">
             5 минут чтения. Затем сможете пройти квиз.

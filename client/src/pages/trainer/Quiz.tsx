@@ -170,12 +170,14 @@ export default function TrainerQuiz() {
   return (
     <div className="min-h-screen bg-background py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        <Link
-          href="/trainer/onboarding"
-          className="text-sm text-muted-foreground hover:underline"
-        >
-          ← К онбордингу
-        </Link>
+        <div className="flex gap-4 text-sm">
+          <Link href="/trainer/onboarding" className="text-muted-foreground hover:underline">
+            ← К онбордингу
+          </Link>
+          <Link href="/" className="text-muted-foreground hover:underline">
+            На главную
+          </Link>
+        </div>
         <h1 className="text-2xl font-semibold mt-2 mb-2">Квиз: Теория ограничений</h1>
         <p className="text-sm text-muted-foreground mb-6">
           7 вопросов. Минимум 5 правильных для прохождения. Можно перепройти.

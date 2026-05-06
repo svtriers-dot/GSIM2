@@ -93,7 +93,10 @@ export default function TrainerOnboarding() {
     <div className="min-h-screen bg-background py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <header className="mb-8">
-          <h1 className="text-3xl font-semibold mb-2">Онбординг тренера</h1>
+          <a href="/" className="text-sm text-muted-foreground hover:underline">
+            ← На главную
+          </a>
+          <h1 className="text-3xl font-semibold mb-2 mt-2">Онбординг тренера</h1>
           <p className="text-sm text-muted-foreground">
             {profile?.name} · {profile?.email}
           </p>

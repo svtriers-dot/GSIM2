@@ -163,6 +163,19 @@ export default function PlayLobby() {
       )}
 
       <div className="max-w-2xl mx-auto px-4 py-12">
+        <div className="mb-3 flex items-center justify-between text-sm">
+          <a href="/" className="text-muted-foreground hover:underline">
+            ← На главную
+          </a>
+          {canEdit && (
+            <button
+              onClick={leaveTeam}
+              className="text-red-600 hover:underline"
+            >
+              Выйти из команды
+            </button>
+          )}
+        </div>
         <div
           className="bg-card border border-border rounded-xl p-6 mb-4"
           style={{ borderTopColor: me.team.color, borderTopWidth: 6 }}
@@ -269,14 +282,7 @@ export default function PlayLobby() {
           )}
         </div>
 
-        {canEdit && (
-          <button
-            onClick={leaveTeam}
-            className="mt-6 text-sm text-red-600 hover:underline mx-auto block"
-          >
-            Выйти из команды
-          </button>
-        )}
+
       </div>
     </div>
   );
