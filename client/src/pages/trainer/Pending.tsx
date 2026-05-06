@@ -43,7 +43,12 @@ export default function TrainerPending() {
       if (data.token) {
         setTrainerToken(data.token, data.trainer as any);
       }
-      // Если стал active или super_admin — редиректим в кабинет
+      // pending → онбординг с чек-листом
+      if (data.trainer.role === "pending") {
+        navigate("/trainer/onboarding");
+        return;
+      }
+      // active или super_admin — в кабинет
       if (data.trainer.role === "active" || data.trainer.role === "super_admin") {
         navigate("/trainer");
       }

@@ -5,6 +5,7 @@ import { insertGameResultSchema } from "@shared/schema";
 import { trainerRouter } from "./routes/trainer";
 import { teamsRouter } from "./routes/teams";
 import { adminRouter } from "./routes/admin";
+import { verifyRouter } from "./routes/verify";
 import { setupWebSocket } from "./ws";
 
 export async function registerRoutes(
@@ -32,6 +33,7 @@ export async function registerRoutes(
   app.use("/api/trainer", trainerRouter);
   app.use("/api/teams", teamsRouter);
   app.use("/api/admin", adminRouter);
+  app.use("/api/verify", verifyRouter);
 
   // --- WebSocket (тренер + команды) ---
 

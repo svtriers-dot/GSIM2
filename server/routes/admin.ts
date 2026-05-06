@@ -13,6 +13,7 @@ import { resetPasswordRateLimit } from "../middleware/rateLimit";
 import { hashPassword } from "../lib/passwords";
 import { z } from "zod";
 import { recordAdminAction, listAuditLog } from "../services/auditLog";
+import { issueCertification } from "../services/onboarding";
 import { auditLogQuerySchema } from "@shared/schema";
 
 export const adminRouter = Router();
@@ -105,6 +106,11 @@ adminRouter.get("/trainers", requireSuperAdmin, async (req, res) => {
       notes: trainers.notes,
       createdAt: trainers.createdAt,
       updatedAt: trainers.updatedAt,
+      quizPassedAt: trainers.quizPassedAt,
+      quizScore: trainers.quizScore,
+      practicePlayedAt: trainers.practicePlayedAt,
+      practiceFinalCash: trainers.practiceFinalCash,
+      isCertified: trainers.isCertified,
     })
     .from(trainers)
     .where(where)
@@ -131,6 +137,13 @@ adminRouter.get("/trainers/:id", requireSuperAdmin, async (req, res) => {
       notes: trainers.notes,
       createdAt: trainers.createdAt,
       updatedAt: trainers.updatedAt,
+      tourCompletedAt: trainers.tourCompletedAt,
+      quizPassedAt: trainers.quizPassedAt,
+      quizScore: trainers.quizScore,
+      practicePlayedAt: trainers.practicePlayedAt,
+      practiceFinalCash: trainers.practiceFinalCash,
+      isCertified: trainers.isCertified,
+      certifiedAt: trainers.certifiedAt,
     })
     .from(trainers)
     .where(eq(trainers.id, trainerId))
@@ -203,6 +216,16 @@ adminRouter.post("/trainers/:id/approve", requireSuperAdmin, async (req, res) =>
   }
 
   await setTrainerRole(targetId, "active", req.trainer!.sub, parsed.data.notes);
+  // MVP-2 Onboarding: авто-выдача сертификата если онбординг пройден
+  let certPublicId: string | null = null;
+  if (target.quizPassedAt && target.practicePlayedAt) {
+    try {
+      const result = await issueCertification(targetId);
+      certPublicId = result.publicId;
+    } catch (e) {
+      console.error("issueCertification failed:", e);
+    }
+  }
   await recordAdminAction({
     req,
     actor: req.trainer!,
@@ -210,9 +233,13 @@ adminRouter.post("/trainers/:id/approve", requireSuperAdmin, async (req, res) =>
     targetType: "trainer",
     targetId,
     targetLabel: target.email,
-    payload: { notes: parsed.data.notes ?? null, prevRole: target.role },
+    payload: {
+      notes: parsed.data.notes ?? null,
+      prevRole: target.role,
+      certificationPublicId: certPublicId,
+    },
   });
-  res.json({ ok: true });
+  res.json({ ok: true, certificationPublicId: certPublicId });
 });
 
 adminRouter.post("/trainers/:id/reject", requireSuperAdmin, async (req, res) => {

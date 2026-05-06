@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { authJson, getTrainerProfile, logoutTrainer, getTrainerToken, setTrainerToken, type TrainerRole } from "@/lib/auth";
+import Joyride, { type CallBackProps, STATUS, type Step } from "react-joyride";
+import { authJson, authFetch, getTrainerProfile, logoutTrainer, getTrainerToken, setTrainerToken, type TrainerRole } from "@/lib/auth";
 import { SkeletonTable, ErrorRetry } from "@/components/Skeleton";
 
 interface SessionRow {
@@ -34,11 +35,47 @@ const STATUS_COLORS: Record<string, string> = {
   archived: "bg-gray-100 text-gray-400",
 };
 
+const tourSteps: Step[] = [
+  {
+    target: "body",
+    placement: "center",
+    title: "Добро пожаловать в кабинет тренера",
+    content:
+      "Вы прошли сертификацию TessTOC. Этот короткий тур (5 шагов, ~1 минута) покажет интерфейс кабинета.",
+  },
+  {
+    target: '[data-tour="new-session"]',
+    title: "Создать мастер-класс",
+    content:
+      "Нажмите эту кнопку, чтобы начать новую сессию. Получите 6-значный код, по которому подключатся участники.",
+  },
+  {
+    target: '[data-tour="sessions-table"]',
+    title: "Список ваших сессий",
+    content:
+      "Здесь все мастер-классы. Кликните на любой, чтобы открыть Live-дашборд, дебриф, выдать сертификаты участникам.",
+  },
+  {
+    target: '[data-tour="certificate-link"]',
+    title: "Ваш сертификат",
+    content:
+      "Скачайте PDF своего тренерского сертификата с QR-кодом верификации. Можно добавить в LinkedIn.",
+  },
+  {
+    target: "body",
+    placement: "center",
+    title: "Готовы провести мастер-класс",
+    content:
+      "Нажмите «+ Новая сессия», покажите код участникам — и проведите свой первый мастер-класс. Удачи!",
+  },
+];
+
 export default function TrainerDashboard() {
   const [, navigate] = useLocation();
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [runTour, setRunTour] = useState(false);
   const profile = getTrainerProfile();
 
   useEffect(() => {
@@ -57,7 +94,11 @@ export default function TrainerDashboard() {
         // используем его чтобы заменить stale-JWT (например, токен без role после миграции).
         const tok = data.token ?? getTrainerToken()!;
         setTrainerToken(tok, data.trainer);
-        if (role === "pending" || role === "suspended") {
+        if (role === "pending") {
+          navigate("/trainer/onboarding");
+          return;
+        }
+        if (role === "suspended") {
           navigate("/trainer/pending");
           return;
         }
@@ -123,10 +164,21 @@ export default function TrainerDashboard() {
             )}
             <Link
               href="/trainer/sessions/new"
+              data-tour="new-session"
               className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90"
             >
               + Новая сессия
             </Link>
+            <a
+              href="/api/trainer/certification/pdf"
+              target="_blank"
+              rel="noopener"
+              data-tour="certificate-link"
+              className="hidden md:inline-block px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
+              title="Скачать сертификат тренера"
+            >
+              🎓 Сертификат
+            </a>
             <button
               onClick={logout}
               className="px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
@@ -138,6 +190,32 @@ export default function TrainerDashboard() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
+        <Joyride
+          steps={tourSteps}
+          run={runTour}
+          continuous
+          showProgress
+          showSkipButton
+          locale={{
+            back: "Назад",
+            close: "Закрыть",
+            last: "Готово",
+            next: "Дальше",
+            skip: "Пропустить",
+          }}
+          styles={{
+            options: {
+              primaryColor: "#11192d",
+              zIndex: 10000,
+            },
+          }}
+          callback={(d: CallBackProps) => {
+            if (d.status === STATUS.FINISHED || d.status === STATUS.SKIPPED) {
+              setRunTour(false);
+              void authFetch("/api/trainer/onboarding/tour-complete", { method: "POST" });
+            }
+          }}
+        />
         <h2 className="text-lg font-semibold mb-4">Мои мастер-классы</h2>
 
         {loading && <SkeletonTable rows={4} cols={5} />}
@@ -159,7 +237,7 @@ export default function TrainerDashboard() {
         )}
 
         {!loading && !error && sessions.length > 0 && (
-          <div className="border border-border rounded-xl bg-card overflow-hidden">
+          <div data-tour="sessions-table" className="border border-border rounded-xl bg-card overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-elevate-1 text-left">
                 <tr>

@@ -24,6 +24,14 @@ import { requireTrainer, requireActiveTrainer } from "../middleware/auth";
 import { loginRateLimit, registerRateLimit } from "../middleware/rateLimit";
 import { recordAdminAction } from "../services/auditLog";
 import {
+  getOnboardingStatus,
+  recordQuizAttempt,
+  recordPractice,
+  markTourCompleted,
+  getQuizQuestionsForClient,
+} from "../services/onboarding";
+import { submitQuizSchema, recordPracticeSchema } from "@shared/schema";
+import {
   notifySessionStateChange,
   notifyTeamJoined,
   broadcastMessage,
@@ -472,6 +480,7 @@ import {
   generateCertificatesForSession,
   getCertificatePdf,
   listCertificatesForSession,
+  getTrainerCertificatePdf,
 } from "../services/certificates";
 
 // POST /api/trainer/sessions/:id/certificates — batch создание для всех team_members
@@ -748,6 +757,67 @@ trainerRouter.post(
     if (!session) throw new SessionNotFoundError();
     const ticket = issueTrainerTicket(req.trainer!.sub, sessionId);
     res.json({ ticket, expiresInSeconds: 60 });
+  }),
+);
+
+// =============================================================================
+// MVP-2 Onboarding endpoints
+// =============================================================================
+
+// Статус онбординга — для /trainer/pending и /trainer/onboarding
+trainerRouter.get("/onboarding/status", requireTrainer, async (req, res) => {
+  const s = await getOnboardingStatus(req.trainer!.sub);
+  if (!s) return res.status(404).json({ error: "not_found" });
+  res.json(s);
+});
+
+// Список вопросов квиза (без правильных ответов)
+trainerRouter.get("/onboarding/quiz", requireTrainer, async (_req, res) => {
+  res.json({ questions: getQuizQuestionsForClient() });
+});
+
+// Отправка ответов квиза
+trainerRouter.post("/onboarding/quiz", requireTrainer, async (req, res) => {
+  const parsed = submitQuizSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "validation" });
+  }
+  const result = await recordQuizAttempt(req.trainer!.sub, parsed.data.answers);
+  res.json(result);
+});
+
+// Запись пробного прогона (тренер сыграл в /play)
+trainerRouter.post("/onboarding/practice", requireTrainer, async (req, res) => {
+  const parsed = recordPracticeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "validation" });
+  }
+  const result = await recordPractice(req.trainer!.sub, parsed.data.finalCash);
+  res.json(result);
+});
+
+// Отметка прохождения product-tour
+trainerRouter.post("/onboarding/tour-complete", requireTrainer, async (req, res) => {
+  await markTourCompleted(req.trainer!.sub);
+  res.json({ ok: true });
+});
+
+// MVP-2 Onboarding: PDF сертификата тренера
+trainerRouter.get(
+  "/certification/pdf",
+  requireTrainer,  // даже pending видит свою (если уже выдана)
+  withErrorHandler(async (req, res) => {
+    const result = await getTrainerCertificatePdf(req.trainer!.sub);
+    if (!result) {
+      res.status(404).json({ error: "no_certification" });
+      return;
+    }
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename*=UTF-8\'\'${encodeURIComponent(result.filename)}`,
+    );
+    res.send(result.buffer);
   }),
 );
 

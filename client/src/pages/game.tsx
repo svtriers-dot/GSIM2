@@ -208,6 +208,14 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
   const [floorDark, setFloorDark] = useState(false);
   const [showCertDialog, setShowCertDialog] = useState(false);
   const [certNames, setCertNames] = useState<string[]>(['']);
+  // MVP-2 Onboarding: режим практики для тренера (?practice=1)
+  const [isPracticeMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const q = new URLSearchParams(window.location.search);
+    return q.get("practice") === "1";
+  });
+  const [practiceSubmitting, setPracticeSubmitting] = useState(false);
+  const [practiceResult, setPracticeResult] = useState<{ accepted: boolean; minCashRequired: number } | null>(null);
 
   const ft = floorDark
     ? {
@@ -1490,6 +1498,41 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
           <DialogFooter>
             {state.gameOver ? (
               <div className="flex gap-2 w-full justify-end flex-wrap">
+                {isPracticeMode && !sessionMode && (
+                  <Button
+                    data-testid="button-record-practice"
+                    variant="default"
+                    disabled={practiceSubmitting || practiceResult !== null}
+                    onClick={async () => {
+                      setPracticeSubmitting(true);
+                      try {
+                        const tok = localStorage.getItem("tesstoc:trainer:token");
+                        const res = await fetch("/api/trainer/onboarding/practice", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            ...(tok ? { Authorization: `Bearer ${tok}` } : {}),
+                          },
+                          body: JSON.stringify({ finalCash: state.cash }),
+                        });
+                        const data = await res.json();
+                        setPracticeResult(data);
+                      } catch (e) {
+                        console.error("practice record failed:", e);
+                      } finally {
+                        setPracticeSubmitting(false);
+                      }
+                    }}
+                  >
+                    {practiceSubmitting
+                      ? "Сохраняю..."
+                      : practiceResult?.accepted
+                        ? "✅ Зачтено"
+                        : practiceResult
+                          ? `❌ Нужно $${practiceResult.minCashRequired}+`
+                          : "Засчитать как пробный прогон"}
+                  </Button>
+                )}
                 <Button data-testid="button-certificate" variant="secondary" onClick={() => { setShowCertDialog(true); setCertNames(['']); }}>
                   <Download className="w-4 h-4 mr-1" />
                   Сертификат

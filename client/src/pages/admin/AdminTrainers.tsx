@@ -15,6 +15,11 @@ interface TrainerRow {
   approvedBy: string | null;
   notes: string | null;
   createdAt: string;
+  quizPassedAt?: string | null;
+  quizScore?: number | null;
+  practicePlayedAt?: string | null;
+  practiceFinalCash?: number | null;
+  isCertified?: boolean;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -290,7 +295,18 @@ export default function AdminTrainers() {
                         {t.name}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs">{t.email}</td>
+                    <td className="px-4 py-3 font-mono text-xs">
+                      <div>{t.email}</div>
+                      <div className="text-xs mt-0.5 space-x-1">
+                        {t.practicePlayedAt && (
+                          <span title={`Practice $${t.practiceFinalCash?.toLocaleString("en-US")}`}>🎮</span>
+                        )}
+                        {t.quizPassedAt && (
+                          <span title={`Quiz ${t.quizScore}/7`}>📚</span>
+                        )}
+                        {t.isCertified && <span title="Certified">🎓</span>}
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{t.organization || "—"}</td>
                     <td className="px-4 py-3">
                       <span

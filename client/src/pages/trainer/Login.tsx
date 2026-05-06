@@ -46,7 +46,9 @@ export default function TrainerLogin() {
       const data = await res.json();
       setTrainerToken(data.token, data.trainer);
       const role = data.trainer?.role;
-      if (role === "pending" || role === "suspended") {
+      if (role === "pending") {
+        navigate("/trainer/onboarding");
+      } else if (role === "suspended") {
         navigate("/trainer/pending");
       } else if (role === "rejected") {
         // не должно случиться (login отбит на 403), но fallback

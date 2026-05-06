@@ -17,6 +17,11 @@ import Oferta from "@/pages/Oferta";
 import Privacy from "@/pages/Privacy";
 import TrainerLogin from "@/pages/trainer/Login";
 import TrainerPending from "@/pages/trainer/Pending";
+
+const TrainerOnboarding = lazy(() => import("@/pages/trainer/Onboarding"));
+const TrainerLearn = lazy(() => import("@/pages/trainer/Learn"));
+const TrainerQuiz = lazy(() => import("@/pages/trainer/Quiz"));
+const Verify = lazy(() => import("@/pages/Verify"));
 import PlayJoin from "@/pages/play/Join";
 import PlayLobby from "@/pages/play/Lobby";
 import PlayResult from "@/pages/play/Result";
@@ -57,11 +62,15 @@ function Router() {
         <Route path="/legal/eula" component={Eula} />
         <Route path="/legal/oferta" component={Oferta} />
         <Route path="/legal/privacy" component={Privacy} />
+        <Route path="/verify/:publicId" component={Verify} />
 
         {/* Trainer */}
         <Route path="/trainer/login" component={TrainerLogin} />
         <Route path="/trainer" component={TrainerDashboard} />
         <Route path="/trainer/pending" component={TrainerPending} />
+        <Route path="/trainer/onboarding" component={TrainerOnboarding} />
+        <Route path="/trainer/learn" component={TrainerLearn} />
+        <Route path="/trainer/quiz" component={TrainerQuiz} />
         <Route path="/trainer/sessions/new" component={NewSession} />
         <Route path="/trainer/sessions/:id" component={TrainerSession} />
         <Route path="/trainer/sessions/:sessionId/replay/:teamId" component={TrainerReplay} />

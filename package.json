@@ -81,7 +81,9 @@
     "pdfmake": "^0.2.10",
     "helmet": "^7.1.0",
     "express-rate-limit": "^7.4.0",
-    "dompurify": "^3.1.6"
+    "dompurify": "^3.1.6",
+    "qrcode": "^1.5.3",
+    "react-joyride": "^2.9.3"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.15",
@@ -107,7 +109,8 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/pdfmake": "^0.2.9",
-    "@types/dompurify": "^3.0.5"
+    "@types/dompurify": "^3.0.5",
+    "@types/qrcode": "^1.5.5"
   },
   "overrides": {
     "drizzle-kit": {

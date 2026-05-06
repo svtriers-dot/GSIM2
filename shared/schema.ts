@@ -133,11 +133,18 @@ export const trainers = pgTable(
     passwordHash: text("password_hash").notNull(),
     name: varchar("name", { length: 255 }).notNull(),
     organization: varchar("organization", { length: 255 }),
-    // MVP-2 Admin: роль тренера, lifecycle апрувов
     role: trainerRoleEnum("role").notNull().default("pending"),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
-    approvedBy: uuid("approved_by"),  // FK на trainers.id (super_admin), но без явного ref для self-FK
-    notes: text("notes"),  // заметки админа: причина reject/suspend, и т.п.
+    approvedBy: uuid("approved_by"),
+    notes: text("notes"),
+    // MVP-2 Onboarding: чек-лист сертификации
+    tourCompletedAt: timestamp("tour_completed_at", { withTimezone: true }),
+    quizPassedAt: timestamp("quiz_passed_at", { withTimezone: true }),
+    quizScore: integer("quiz_score"),
+    practicePlayedAt: timestamp("practice_played_at", { withTimezone: true }),
+    practiceFinalCash: integer("practice_final_cash"),
+    isCertified: boolean("is_certified").notNull().default(false),
+    certifiedAt: timestamp("certified_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -332,6 +339,29 @@ export const trainerActions = pgTable(
       t.sessionId,
       t.timestamp,
     ),
+  }),
+);
+
+// --- trainer_certifications — сертификат тренера с QR-верификацией ---
+
+export const trainerCertifications = pgTable(
+  "trainer_certifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trainerId: uuid("trainer_id")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+    // Короткий публичный ID для URL /verify/:publicId (12 символов alphanumeric)
+    publicId: varchar("public_id", { length: 16 }).notNull(),
+    quizScore: integer("quiz_score").notNull(),
+    practiceFinalCash: integer("practice_final_cash").notNull(),
+    issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    revokedReason: text("revoked_reason"),
+  },
+  (t) => ({
+    publicIdIdx: uniqueIndex("trainer_certifications_public_id_idx").on(t.publicId),
+    trainerIdx: index("trainer_certifications_trainer_idx").on(t.trainerId),
   }),
 );
 
@@ -630,6 +660,21 @@ export const triggerForcedEventSchema = z.object({
 });
 export type TriggerForcedEventInput = z.infer<typeof triggerForcedEventSchema>;
 
+
+// Onboarding: отправка ответов квиза
+export const submitQuizSchema = z.object({
+  // Массив выбранных индексов ответов (по порядку вопросов)
+  answers: z.array(z.number().int().min(0).max(10)).length(7),
+});
+export type SubmitQuizInput = z.infer<typeof submitQuizSchema>;
+
+// Onboarding: запись пробного прогона
+export const recordPracticeSchema = z.object({
+  finalCash: z.number().int(),
+  totalRevenue: z.number().int().optional(),
+  totalRmCost: z.number().int().optional(),
+});
+
 // =============================================================================
 // TYPE EXPORTS
 // =============================================================================
@@ -651,3 +696,4 @@ export type TrainerAction = typeof trainerActions.$inferSelect;
 export type Certificate = typeof certificates.$inferSelect;
 export type ForcedEvent = typeof forcedEvents.$inferSelect;
 export type AdminAuditLogEntry = typeof adminAuditLog.$inferSelect;
+export type TrainerCertification = typeof trainerCertifications.$inferSelect;
