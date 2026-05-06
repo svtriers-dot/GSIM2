@@ -56,6 +56,7 @@ jobs:
             sudo -u gsim npm run build
 
             sudo cp -r /opt/gsim2/src/dist/* /opt/gsim2/dist/
+            sudo cp -rT /opt/gsim2/src/node_modules /opt/gsim2/node_modules
             sudo chown -R gsim:gsim /opt/gsim2
 
             sudo systemctl restart gsim2
