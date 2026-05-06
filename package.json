@@ -78,7 +78,9 @@
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "nanoid": "^5.0.7",
-    "pdfmake": "^0.2.10"
+    "pdfmake": "^0.2.10",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.4.0"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.15",

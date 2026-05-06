@@ -9,6 +9,7 @@ import {
 } from "@shared/schema";
 import { and, desc, eq, ilike, or, sql, inArray } from "drizzle-orm";
 import { requireSuperAdmin } from "../middleware/auth";
+import { resetPasswordRateLimit } from "../middleware/rateLimit";
 import { hashPassword } from "../lib/passwords";
 import { z } from "zod";
 
@@ -290,7 +291,7 @@ const resetPasswordSchema = z.object({
   newPassword: z.string().min(8).max(128),
 });
 
-adminRouter.post("/trainers/:id/reset-password", requireSuperAdmin, async (req, res) => {
+adminRouter.post("/trainers/:id/reset-password", resetPasswordRateLimit, requireSuperAdmin, async (req, res) => {
   const targetId = req.params.id as string;
   const parsed = resetPasswordSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: "validation" });

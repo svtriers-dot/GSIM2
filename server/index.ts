@@ -1,8 +1,10 @@
 import express, { type Request, Response, NextFunction } from "express";
+import helmet from "helmet";
 import { registerRoutes } from "./routes";
 import { runStartupBootstrap } from "./lib/bootstrap";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { sanitizeForLog } from "./lib/sanitize";
 
 const app = express();
 const httpServer = createServer(app);
@@ -12,6 +14,16 @@ declare module "http" {
     rawBody: unknown;
   }
 }
+
+// MVP-2 Security: helmet применяет дефолтные security headers
+// (CSP — выключен по умолчанию, т.к. SPA + Vite ассеты с CDN-шрифтами;
+// HSTS, X-Frame-Options=DENY, X-Content-Type-Options=nosniff остаются)
+app.use(
+  helmet({
+    contentSecurityPolicy: false, // SPA: CSP позже отдельно; пока nginx-уровень
+    crossOriginEmbedderPolicy: false, // не нужно для SPA + WS
+  }),
+);
 
 app.use(
   express.json({
@@ -50,7 +62,9 @@ app.use((req, res, next) => {
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        // MVP-2 Security: вырезаем token/password/notes/etc перед записью
+        const safe = sanitizeForLog(capturedJsonResponse);
+        logLine += ` :: ${JSON.stringify(safe)}`;
       }
 
       log(logLine);

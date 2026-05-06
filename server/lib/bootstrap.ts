@@ -6,24 +6,45 @@ import { trainers } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 
 export async function runStartupBootstrap(): Promise<void> {
-  // 1. Бэкфилл legacy: все тренеры старее 1 минуты от текущего момента,
-  //    которые получили role=pending по дефолту после миграции — переводим в active.
-  //    Это однократно сработает после первого деплоя с миграцией.
+  // 1. Legacy auto-approve. ОДНОРАЗОВО, через таблицу-флаг — не по таймауту.
+  //    Это предотвращает кейс: новый юзер регистрируется, через минуту рестарт сервера,
+  //    он бы автоматически получил active без апрува. Теперь — только при первом запуске
+  //    после миграции, когда BOOTSTRAP_LEGACY_APPLIED ещё не записан.
   try {
-    const result = await db.execute(sql`
-      UPDATE trainers
-      SET role = 'active'::trainer_role,
-          approved_at = NOW(),
-          notes = COALESCE(notes, '') || E'\n[bootstrap] auto-approved (legacy migration)'
-      WHERE role = 'pending'
-        AND created_at < NOW() - INTERVAL '5 minutes'
+    // Создаём служебную таблицу для one-shot флагов (если ещё нет)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS bootstrap_flags (
+        flag TEXT PRIMARY KEY,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
     `);
-    const affected = (result as any).rowCount ?? 0;
-    if (affected > 0) {
-      console.log(`[bootstrap] auto-approved ${affected} legacy trainer(s) → active`);
+
+    const flagCheck = await db.execute(sql`
+      SELECT 1 FROM bootstrap_flags WHERE flag = 'legacy_auto_approve_v1'
+    `);
+    const alreadyApplied = (flagCheck as any).rows?.length > 0 || (flagCheck as any).rowCount > 0;
+
+    if (!alreadyApplied) {
+      const result = await db.execute(sql`
+        UPDATE trainers
+        SET role = 'active'::trainer_role,
+            approved_at = NOW(),
+            notes = COALESCE(notes, '') || E'\n[bootstrap] auto-approved (legacy migration)'
+        WHERE role = 'pending'
+          AND created_at < NOW() - INTERVAL '5 minutes'
+      `);
+      const affected = (result as any).rowCount ?? 0;
+      if (affected > 0) {
+        console.log(`[bootstrap] auto-approved ${affected} legacy trainer(s) → active`);
+      }
+      await db.execute(sql`
+        INSERT INTO bootstrap_flags (flag) VALUES ('legacy_auto_approve_v1')
+        ON CONFLICT (flag) DO NOTHING
+      `);
+      console.log("[bootstrap] legacy_auto_approve_v1 marked as applied");
     }
   } catch (e) {
-    console.error("[bootstrap] backfill legacy failed:", e);
+    console.error("[bootstrap] legacy backfill failed:", e);
   }
 
   // 2. Super admin из ENV

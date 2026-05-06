@@ -21,9 +21,25 @@ import {
 export function setupWebSocket(httpServer: HttpServer): void {
   const wss = new WebSocketServer({ noServer: true });
 
+  // MVP-2 Security: allowlist для Origin (защита от cross-origin WS-атак)
+  const ALLOWED_ORIGINS = new Set<string>([
+    "https://toc.tesstech.ru",
+    "http://localhost:5000", // dev
+    "http://127.0.0.1:5000", // dev
+  ]);
+
   httpServer.on("upgrade", (req, socket, head) => {
     const url = new URL(req.url || "", "http://localhost");
     if (!url.pathname.startsWith("/ws/")) {
+      socket.destroy();
+      return;
+    }
+    // Origin может отсутствовать в нативном клиенте (Postman/curl) — пропускаем,
+    // но в браузере он всегда есть. Если он есть и не в allowlist — отбиваем.
+    const origin = req.headers.origin;
+    if (origin && !ALLOWED_ORIGINS.has(origin)) {
+      console.warn(`[ws] reject origin: ${origin}`);
+      socket.write("HTTP/1.1 403 Forbidden\r\n\r\n");
       socket.destroy();
       return;
     }

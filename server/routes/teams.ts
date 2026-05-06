@@ -16,6 +16,7 @@ import {
   TeamNameTakenError,
 } from "../services/sessions";
 import { notifyTeamJoined } from "../services/orchestrator";
+import { teamCheckRateLimit, teamJoinRateLimit } from "../middleware/rateLimit";
 import { db } from "../db";
 import { sessions } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -35,7 +36,7 @@ async function teamFromHeader(req: any): Promise<TeamWithMembers | null> {
 // Проверяет существование сессии и требуется ли PIN. Без PIN-валидации.
 // Защита: возвращает только поверхностную инфо, не раскрывает реквизиты.
 
-teamsRouter.get("/check", async (req, res) => {
+teamsRouter.get("/check", teamCheckRateLimit, async (req, res) => {
   const codeRaw = req.query.code;
   if (typeof codeRaw !== "string" || !/^[A-Z0-9]{6}$/.test(codeRaw.toUpperCase())) {
     return res.status(400).json({ error: "validation" });
@@ -54,7 +55,7 @@ teamsRouter.get("/check", async (req, res) => {
 
 // --- POST /api/teams/join -------------------------------------------------
 
-teamsRouter.post("/join", async (req, res) => {
+teamsRouter.post("/join", teamJoinRateLimit, async (req, res) => {
   const parsed = teamJoinSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "validation", details: parsed.error.format() });

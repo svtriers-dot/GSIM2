@@ -21,6 +21,7 @@ import {
   TrainerRejectedError,
 } from "../auth/trainer";
 import { requireTrainer, requireActiveTrainer } from "../middleware/auth";
+import { loginRateLimit, registerRateLimit } from "../middleware/rateLimit";
 import {
   notifySessionStateChange,
   notifyTeamJoined,
@@ -47,7 +48,7 @@ export const trainerRouter = Router();
 
 // --- AUTH -----------------------------------------------------------------
 
-trainerRouter.post("/auth/register", async (req, res) => {
+trainerRouter.post("/auth/register", registerRateLimit, async (req, res) => {
   const parsed = trainerRegisterSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "validation", details: parsed.error.format() });
@@ -64,7 +65,7 @@ trainerRouter.post("/auth/register", async (req, res) => {
   }
 });
 
-trainerRouter.post("/auth/login", async (req, res) => {
+trainerRouter.post("/auth/login", loginRateLimit, async (req, res) => {
   const parsed = trainerLoginSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "validation" });
