@@ -6,6 +6,24 @@ import { trainers } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
 
 export async function runStartupBootstrap(): Promise<void> {
+  // 0. Fix: drizzle-kit в интерактивном режиме на VM ошибочно переименовал
+  //    bootstrap_flags → admin_audit_log в одном из деплоев. Если admin_audit_log
+  //    содержит колонку 'flag' (схема bootstrap_flags) — это сломанная версия.
+  //    DROP её, чтобы drizzle-kit создал заново со своей правильной схемой.
+  try {
+    const broken = await db.execute(sql`
+      SELECT 1 FROM information_schema.columns
+      WHERE table_name = 'admin_audit_log' AND column_name = 'flag'
+      LIMIT 1
+    `);
+    if ((broken as any).rows?.length > 0 || (broken as any).rowCount > 0) {
+      await db.execute(sql`DROP TABLE IF EXISTS admin_audit_log`);
+      console.warn("[bootstrap] dropped broken admin_audit_log (was renamed from bootstrap_flags)");
+    }
+  } catch (e) {
+    console.error("[bootstrap] check broken admin_audit_log failed:", e);
+  }
+
   // 1. Legacy auto-approve. ОДНОРАЗОВО, через таблицу-флаг — не по таймауту.
   //    Это предотвращает кейс: новый юзер регистрируется, через минуту рестарт сервера,
   //    он бы автоматически получил active без апрува. Теперь — только при первом запуске

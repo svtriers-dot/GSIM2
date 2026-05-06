@@ -45,7 +45,10 @@ jobs:
 
             # Применяем миграции схемы (идемпотентно)
             DB_URL=$(sudo grep '^DATABASE_URL=' /opt/gsim2/.env | cut -d= -f2-)
-            sudo -u gsim DATABASE_URL="$DB_URL" npm run db:push
+            # db:push с автоответом '+' (create) на любые вопросы drizzle-kit чтобы избежать
+            # ошибочных rename'ов в неинтерактивном режиме SSH
+            sudo -u gsim DATABASE_URL="$DB_URL" bash -c 'yes "" | npm run db:push' || \
+              sudo -u gsim DATABASE_URL="$DB_URL" npm run db:push
 
             # JWT_SECRET — добавляем если ещё не задан
             if ! sudo grep -q '^JWT_SECRET=' /opt/gsim2/.env; then

@@ -335,6 +335,13 @@ export const trainerActions = pgTable(
   }),
 );
 
+// --- bootstrap_flags (one-shot startup flags, регистрируется чтобы drizzle её не путал) ---
+
+export const bootstrapFlags = pgTable("bootstrap_flags", {
+  flag: text("flag").primaryKey(),
+  appliedAt: timestamp("applied_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 // --- admin_audit_log (compliance trail для super_admin действий) ---
 
 export const adminAuditLog = pgTable(
