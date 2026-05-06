@@ -67,9 +67,19 @@ jobs:
 
             sudo systemctl restart gsim2
 
-            # Smoke-test
-            sleep 3
-            curl -fsS -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" https://toc.tesstech.ru/ || \
-              (echo "[deploy] smoke-test failed" && sudo journalctl -u gsim2 -n 50 --no-pager && exit 1)
+            # Smoke-test с retry (сервис может не успеть подняться сразу)
+            sleep 5
+            for i in 1 2 3 4 5; do
+              if curl -fsS -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" https://toc.tesstech.ru/; then
+                break
+              fi
+              if [ $i -eq 5 ]; then
+                echo "[deploy] smoke-test failed после 5 попыток"
+                sudo journalctl -u gsim2 -n 50 --no-pager
+                exit 1
+              fi
+              echo "[deploy] retry $i..."
+              sleep 3
+            done
 
             echo "[deploy] OK"
