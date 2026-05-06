@@ -178,13 +178,18 @@ export default function Landing() {
 
           <div className="flex items-center gap-2">
             <Link href="/trainer">
-              <a className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all hover:-translate-y-0.5" style={{ color: palette.fg, border: `1px solid ${palette.border}`, background: 'white' }}>
+              <a className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all hover:-translate-y-0.5" style={{ color: palette.fg, border: `1px solid ${palette.border}`, background: 'white' }}>
                 Кабинет тренера
               </a>
             </Link>
+            <Link href="/play/join">
+              <a className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+                В мастер-класс <ArrowRight className="h-4 w-4" />
+              </a>
+            </Link>
             <Link href="/play">
-              <a className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
-                Играть <ArrowRight className="h-4 w-4" />
+              <a className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all hover:-translate-y-0.5" style={{ color: palette.fg, border: `1px solid ${palette.border}`, background: 'white' }}>
+                Играть
               </a>
             </Link>
           </div>
@@ -206,17 +211,19 @@ export default function Landing() {
               Партия за 30 минут даёт практический опыт, которого нет ни в одной книге. Управляйте фабрикой, ищите узкое место, считайте throughput.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link href="/play">
+              <Link href="/play/join">
                 <a className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 2px 6px rgba(17,25,45,0.2)' }}>
-                  Начать игру <ArrowRight className="h-5 w-5" />
+                  Войти по коду <ArrowRight className="h-5 w-5" />
                 </a>
               </Link>
-              <button onClick={() => scrollTo('how-to-play')} className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-semibold transition-colors hover:bg-white/60" style={{ background: 'transparent', color: palette.fg, border: `2px solid ${palette.fg}` }}>
-                Как играть
-              </button>
+              <Link href="/play">
+                <a className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-semibold transition-colors hover:bg-white/60" style={{ background: 'transparent', color: palette.fg, border: `2px solid ${palette.fg}` }}>
+                  Играть одному
+                </a>
+              </Link>
             </div>
             <p className="text-sm mt-6" style={{ color: palette.muted }}>
-              Бесплатно · Регистрация не нужна · 25–40 минут на партию
+              <strong>Получили код от тренера?</strong> Жмите «Войти по коду». Хотите попробовать самостоятельно — играйте без кода, бесплатно, без регистрации.
             </p>
           </div>
 
@@ -453,11 +460,18 @@ export default function Landing() {
           <p className="text-lg mb-8" style={{ color: palette.muted }}>
             Один раз сыграешь — и больше не будешь смотреть на работу как раньше.
           </p>
-          <Link href="/play">
-            <a className="inline-flex items-center justify-center gap-2 px-10 py-4 rounded-md text-base font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 4px 12px rgba(17,25,45,0.25)' }}>
-              Начать игру <ArrowRight className="h-5 w-5" />
-            </a>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/play/join">
+              <a className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 4px 12px rgba(17,25,45,0.25)' }}>
+                Войти по коду <ArrowRight className="h-5 w-5" />
+              </a>
+            </Link>
+            <Link href="/play">
+              <a className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-semibold transition-colors hover:bg-white/60" style={{ background: 'transparent', color: palette.fg, border: `2px solid ${palette.fg}` }}>
+                Играть одному
+              </a>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -490,7 +504,8 @@ export default function Landing() {
               <h4 className="text-xs font-bold tracking-wider uppercase mb-3" style={{ color: palette.fg }}>Продукт</h4>
               <ul className="space-y-2 text-sm" style={{ color: palette.muted }}>
                 <li><Link href="/"><a className="hover:underline">Главная</a></Link></li>
-                <li><Link href="/play"><a className="hover:underline">Играть</a></Link></li>
+                <li><Link href="/play/join"><a className="hover:underline">В мастер-класс</a></Link></li>
+                <li><Link href="/play"><a className="hover:underline">Играть одному</a></Link></li>
                 <li><Link href="/trainer"><a className="hover:underline">Кабинет тренера</a></Link></li>
                 <li><Link href="/about"><a className="hover:underline">О программе</a></Link></li>
               </ul>
