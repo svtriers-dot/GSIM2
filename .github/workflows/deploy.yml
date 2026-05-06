@@ -66,4 +66,4 @@ jobs:
             curl -fsS -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n" https://toc.tesstech.ru/ || \
               (echo "[deploy] smoke-test failed" && sudo journalctl -u gsim2 -n 50 --no-pager && exit 1)
 
-            echo "[deploy] OK — sha $GITHUB_SHA"
+            echo "[deploy] OK"
