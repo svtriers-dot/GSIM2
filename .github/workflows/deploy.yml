@@ -37,7 +37,6 @@ jobs:
           key: ${{ secrets.VM_SSH_KEY }}
           port: 22
           command_timeout: 12m
-          envs: YANDEX_CLIENT_ID,YANDEX_CLIENT_SECRET
           script: |
             set -euo pipefail
             cd /opt/gsim2/src
@@ -60,18 +59,6 @@ jobs:
               echo "[deploy] SUPER_ADMIN_EMAIL=test@tesstech.ru добавлен (можно изменить вручную в .env)"
             fi
 
-            # Yandex OAuth — синхронизируем из GitHub Secrets если заданы
-            if [ -n "${YANDEX_CLIENT_ID:-}" ] && [ -n "${YANDEX_CLIENT_SECRET:-}" ]; then
-              sudo sed -i '/^YANDEX_CLIENT_ID=/d' /opt/gsim2/.env
-              sudo sed -i '/^YANDEX_CLIENT_SECRET=/d' /opt/gsim2/.env
-              sudo sed -i '/^YANDEX_REDIRECT_URI=/d' /opt/gsim2/.env
-              echo "YANDEX_CLIENT_ID=${YANDEX_CLIENT_ID}" | sudo tee -a /opt/gsim2/.env >/dev/null
-              echo "YANDEX_CLIENT_SECRET=${YANDEX_CLIENT_SECRET}" | sudo tee -a /opt/gsim2/.env >/dev/null
-              echo "YANDEX_REDIRECT_URI=https://toc.tesstech.ru/api/trainer/auth/yandex/callback" | sudo tee -a /opt/gsim2/.env >/dev/null
-              echo "[deploy] Yandex OAuth credentials обновлены"
-            else
-              echo "[deploy] Yandex OAuth credentials не заданы — кнопка останется скрыта"
-            fi
 
             sudo -u gsim npm run build
 
