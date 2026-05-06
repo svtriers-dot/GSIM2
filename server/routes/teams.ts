@@ -31,6 +31,28 @@ async function teamFromHeader(req: any): Promise<TeamWithMembers | null> {
   return getTeamByDeviceToken(token);
 }
 
+// --- GET /api/teams/check?code=XXXXXX (pre-check для UX) ---
+// Проверяет существование сессии и требуется ли PIN. Без PIN-валидации.
+// Защита: возвращает только поверхностную инфо, не раскрывает реквизиты.
+
+teamsRouter.get("/check", async (req, res) => {
+  const codeRaw = req.query.code;
+  if (typeof codeRaw !== "string" || !/^[A-Z0-9]{6}$/.test(codeRaw.toUpperCase())) {
+    return res.status(400).json({ error: "validation" });
+  }
+  const { getSessionByCode } = await import("../services/sessions");
+  const session = await getSessionByCode(codeRaw.toUpperCase());
+  if (!session) {
+    return res.json({ exists: false });
+  }
+  res.json({
+    exists: true,
+    name: session.name,
+    requiresPin: !!session.pin,
+    status: session.status,
+  });
+});
+
 // --- POST /api/teams/join -------------------------------------------------
 
 teamsRouter.post("/join", async (req, res) => {
