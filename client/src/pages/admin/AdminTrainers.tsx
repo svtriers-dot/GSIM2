@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { authFetch, authJson, getTrainerToken } from "@/lib/auth";
+import { confirmDialog, confirmAction } from "@/components/ConfirmDialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface TrainerRow {
   id: string;
@@ -32,12 +34,16 @@ const ROLE_COLORS: Record<string, string> = {
 
 export default function AdminTrainers() {
   const [, navigate] = useLocation();
+  const { toast } = useToast();
   const [rows, setRows] = useState<TrainerRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterRole, setFilterRole] = useState<string>("");
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const limit = 100;
 
   useEffect(() => {
     if (!getTrainerToken()) {
@@ -52,15 +58,21 @@ export default function AdminTrainers() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function load(role: string, searchQ: string) {
+  async function load(role: string, searchQ: string, off = 0) {
     setLoading(true);
     setError(null);
     try {
       const url = new URL("/api/admin/trainers", location.origin);
       if (role) url.searchParams.set("role", role);
       if (searchQ) url.searchParams.set("search", searchQ);
-      const data = await authJson<{ trainers: TrainerRow[] }>(url.pathname + url.search);
+      url.searchParams.set("limit", String(limit));
+      url.searchParams.set("offset", String(off));
+      const data = await authJson<{ trainers: TrainerRow[]; total: number }>(
+        url.pathname + url.search,
+      );
       setRows(data.trainers);
+      setTotal(data.total ?? data.trainers.length);
+      setOffset(off);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -69,25 +81,32 @@ export default function AdminTrainers() {
   }
 
   async function setPassword(trainerId: string, name: string) {
-    const newPassword = prompt(`Новый пароль для ${name} (минимум 8 символов):`);
-    if (!newPassword) return;
-    if (newPassword.length < 8) {
-      alert("Пароль слишком короткий (минимум 8 символов)");
+    const r = await confirmDialog({
+      title: `Сбросить пароль для ${name}`,
+      description: "Минимум 8 символов. Старый пароль перестанет работать.",
+      promptLabel: "Новый пароль",
+      promptPlaceholder: "Минимум 8 символов",
+      confirmLabel: "Сбросить",
+      destructive: true,
+    });
+    if (!r.confirmed || !r.promptValue) return;
+    if (r.promptValue.length < 8) {
+      toast({ title: "Пароль слишком короткий", description: "Минимум 8 символов", variant: "destructive" });
       return;
     }
     setBusy(trainerId);
     try {
       const res = await authFetch(`/api/admin/trainers/${trainerId}/reset-password`, {
         method: "POST",
-        body: JSON.stringify({ newPassword }),
+        body: JSON.stringify({ newPassword: r.promptValue }),
       });
       if (!res.ok) {
         const text = await res.text();
         throw new Error(`${res.status}: ${text}`);
       }
-      alert(`Пароль обновлён для ${name}`);
+      toast({ title: "Пароль обновлён", description: name });
     } catch (e: any) {
-      alert(`Ошибка: ${e.message}`);
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
     }
@@ -97,11 +116,27 @@ export default function AdminTrainers() {
     trainerId: string,
     op: "approve" | "reject" | "suspend" | "reactivate",
   ) {
-    let notes: string | null | undefined = undefined;
-    if (op === "reject" || op === "suspend") {
-      notes = prompt(`Причина ${op === "reject" ? "отклонения" : "блокировки"} (опционально):`);
-      if (notes === null) return; // отмена
-    }
+    let notes: string | undefined = undefined;
+    const labels: Record<typeof op, { title: string; confirmLabel: string; destructive: boolean }> = {
+      approve: { title: "Одобрить заявку?", confirmLabel: "Одобрить", destructive: false },
+      reject: { title: "Отклонить заявку?", confirmLabel: "Отклонить", destructive: true },
+      suspend: { title: "Заблокировать тренера?", confirmLabel: "Заблокировать", destructive: true },
+      reactivate: { title: "Восстановить тренера?", confirmLabel: "Восстановить", destructive: false },
+    };
+    const cfg = labels[op];
+    const r = await confirmDialog({
+      title: cfg.title,
+      description: op === "reject" || op === "suspend"
+        ? "Тренер не сможет создавать сессии. Можно указать причину — будет видна в audit-log."
+        : undefined,
+      confirmLabel: cfg.confirmLabel,
+      destructive: cfg.destructive,
+      promptLabel: op === "reject" || op === "suspend" ? "Причина" : undefined,
+      promptOptional: true,
+    });
+    if (!r.confirmed) return;
+    notes = r.promptValue || undefined;
+
     setBusy(trainerId);
     try {
       const res = await authFetch(`/api/admin/trainers/${trainerId}/${op}`, {
@@ -112,9 +147,10 @@ export default function AdminTrainers() {
         const text = await res.text();
         throw new Error(`${res.status}: ${text}`);
       }
+      toast({ title: cfg.title.replace("?", ""), description: notes });
       await load(filterRole, search);
     } catch (e: any) {
-      alert(`Ошибка: ${e.message}`);
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
     }
@@ -175,6 +211,30 @@ export default function AdminTrainers() {
         {!loading && !error && rows.length === 0 && (
           <div className="text-center py-12 border border-dashed border-border rounded-xl text-muted-foreground">
             Нет тренеров с такими параметрами.
+          </div>
+        )}
+
+        {!loading && rows.length > 0 && total > limit && (
+          <div className="flex items-center justify-between mt-4 mb-3 text-sm">
+            <span className="text-muted-foreground">
+              Записи {offset + 1}–{Math.min(offset + limit, total)} из {total}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => load(filterRole, search, Math.max(0, offset - limit))}
+                disabled={offset === 0 || loading}
+                className="px-3 py-1.5 rounded-lg border border-border disabled:opacity-50"
+              >
+                ← Назад
+              </button>
+              <button
+                onClick={() => load(filterRole, search, offset + limit)}
+                disabled={offset + limit >= total || loading}
+                className="px-3 py-1.5 rounded-lg border border-border disabled:opacity-50"
+              >
+                Вперёд →
+              </button>
+            </div>
           </div>
         )}
 

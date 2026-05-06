@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useRoute } from "wouter";
 import { authJson, getTrainerToken } from "@/lib/auth";
-import { TrainerSocket, type SessionLiveState } from "@/lib/trainerSocket";
+import { TrainerSocket, type SessionLiveState, type ConnectionStatus as WsStatus } from "@/lib/trainerSocket";
+import { confirmAction, promptAction } from "@/components/ConfirmDialog";
+import { useToast } from "@/hooks/use-toast";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 
 interface SessionDTO {
   id: string;
@@ -48,10 +51,12 @@ export default function TrainerSession() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("lobby");
+  const { toast } = useToast();
   const [busy, setBusy] = useState<string | null>(null);
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [alerts, setAlerts] = useState<Array<{ id: string; kind: string; teamName: string; teamId: string; cash?: number; from?: string | null; to?: string | null; timestamp: number }>>([]);
   const [alertsOpen, setAlertsOpen] = useState(false);
+  const [wsStatus, setWsStatus] = useState<WsStatus>("disconnected");
   const socketRef = useRef<TrainerSocket | null>(null);
 
   useEffect(() => {
@@ -62,7 +67,8 @@ export default function TrainerSession() {
     if (!sessionId) return;
     void loadInitial();
     const ws = new TrainerSocket(sessionId);
-    ws.connect();
+    void ws.connect();
+    ws.onStatus(setWsStatus);
     ws.on((event) => {
       if (event.type === "session.state_update") {
         setLiveState(event.payload);
@@ -132,7 +138,7 @@ export default function TrainerSession() {
       await authJson(`/api/trainer/sessions/${sessionId}/${action}`, { method: "POST" });
       await refreshSession();
     } catch (e: any) {
-      alert(`Ошибка: ${e.message}`);
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
     }
@@ -148,39 +154,50 @@ export default function TrainerSession() {
       });
       setBroadcastMsg("");
     } catch (e: any) {
-      alert(`Ошибка broadcast: ${e.message}`);
+      toast({ title: "Ошибка broadcast", description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
     }
   }
 
   async function snapshot() {
-    const label = prompt("Метка для snapshot (что сейчас на экране?):");
-    if (!label) return;
+    const r = await promptAction(
+      "Snapshot текущего состояния",
+      "Зафиксируйте педагогический момент — потом сможете вернуться к нему в дебрифе.",
+      "Метка (что сейчас на экране?)",
+    );
+    if (!r.confirmed || !r.promptValue) return;
     setBusy("snapshot");
     try {
       await authJson(`/api/trainer/sessions/${sessionId}/snapshot`, {
         method: "POST",
-        body: JSON.stringify({ label }),
+        body: JSON.stringify({ label: r.promptValue }),
       });
+      toast({ title: "Snapshot сохранён", description: r.promptValue });
     } catch (e: any) {
-      alert(`Ошибка snapshot: ${e.message}`);
+      toast({ title: "Ошибка snapshot", description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
     }
   }
 
   async function kick(teamId: string, teamName: string) {
-    if (!confirm(`Удалить команду «${teamName}»? Их подключение будет разорвано.`)) return;
+    const ok = await confirmAction(
+      `Удалить команду «${teamName}»?`,
+      "Их подключение будет разорвано — переподключиться смогут только повторно по коду.",
+      true,
+    );
+    if (!ok) return;
     setBusy("kick");
     try {
       await authJson(`/api/trainer/sessions/${sessionId}/kick`, {
         method: "POST",
         body: JSON.stringify({ teamId }),
       });
+      toast({ title: "Команда удалена", description: teamName });
       await refreshSession();
     } catch (e: any) {
-      alert(`Ошибка: ${e.message}`);
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
     } finally {
       setBusy(null);
     }
@@ -206,6 +223,7 @@ export default function TrainerSession() {
 
   return (
     <div className="min-h-screen bg-background">
+      <ConnectionStatus status={wsStatus} />
       <header className="border-b border-border bg-card">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <Link href="/trainer" className="text-sm text-muted-foreground hover:underline">
@@ -493,61 +511,114 @@ function LiveTab({ teams }: { teams: any[] }) {
       </div>
     );
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
-      <table className="w-full text-sm">
-        <thead className="bg-elevate-1 text-left">
-          <tr>
-            <th className="px-4 py-3 font-medium">Команда</th>
-            <th className="px-4 py-3 font-medium text-right">Cash $</th>
-            <th className="px-4 py-3 font-medium text-right">Throughput</th>
-            <th className="px-4 py-3 font-medium text-right">WIP / Inv</th>
-            <th className="px-4 py-3 font-medium text-right">OE</th>
-            <th className="px-4 py-3 font-medium">Bottleneck</th>
-            <th className="px-4 py-3 font-medium">Состав</th>
-          </tr>
-        </thead>
-        <tbody>
-          {teams.map((t) => {
-            const m = t.metrics || {};
-            const cash = m.cash ?? 0;
-            return (
-              <tr key={t.id} className="border-t border-border">
-                <td className="px-4 py-3">
-                  <span
-                    className="inline-block w-2.5 h-2.5 rounded-full mr-2 align-middle"
-                    style={{ background: t.color }}
-                  />
-                  <span className="font-medium">{t.name}</span>
-                </td>
-                <td
-                  className={`px-4 py-3 text-right font-mono ${cash < 0 ? "text-red-600" : ""}`}
-                >
-                  ${cash.toLocaleString("en-US")}
-                </td>
-                <td className="px-4 py-3 text-right font-mono">{m.throughput ?? 0}</td>
-                <td className="px-4 py-3 text-right font-mono">{m.inventory ?? 0}</td>
-                <td className="px-4 py-3 text-right font-mono">
-                  ${(m.operatingExpense ?? 0).toLocaleString("en-US")}
-                </td>
-                <td className="px-4 py-3">
-                  {m.bottleneckStationId ? (
-                    <span className="text-amber-600">⚠ {m.bottleneckStationId}</span>
-                  ) : (
-                    <span className="text-muted-foreground">—</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground">
-                  {(t.members || []).map((mm: any) => mm.fullName).join(", ")}
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <>
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3">
+        {teams.map((t) => {
+          const m = t.metrics || {};
+          const cash = m.cash ?? 0;
+          return (
+            <div
+              key={t.id}
+              className="bg-card border border-border rounded-xl p-4"
+              style={{ borderLeftColor: t.color, borderLeftWidth: 4 }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="font-semibold">{t.name}</div>
+                {m.bottleneckStationId && (
+                  <span className="text-xs text-amber-600 font-mono">⚠ {m.bottleneckStationId}</span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <div className="text-xs text-muted-foreground">Cash</div>
+                  <div className={`font-mono font-semibold ${cash < 0 ? "text-red-600" : ""}`}>
+                    ${cash.toLocaleString("en-US")}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Throughput</div>
+                  <div className="font-mono">{m.throughput ?? 0}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">WIP</div>
+                  <div className="font-mono">{m.inventory ?? 0}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">OE</div>
+                  <div className="font-mono">${(m.operatingExpense ?? 0).toLocaleString("en-US")}</div>
+                </div>
+              </div>
+              <div className="mt-2 text-xs text-muted-foreground truncate">
+                {(t.members || []).map((mm: any) => mm.fullName).join(", ")}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop: full table */}
+      <div className="hidden md:block bg-card border border-border rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-elevate-1 text-left">
+            <tr>
+              <th className="px-4 py-3 font-medium">Команда</th>
+              <th className="px-4 py-3 font-medium text-right">
+                <MetricHeader label="Cash $" hint="Сколько денег у команды сейчас. Если в минус — операционные расходы превышают throughput. По ТОС: throughput < operating expense." />
+              </th>
+              <th className="px-4 py-3 font-medium text-right">
+                <MetricHeader label="Throughput" hint="Throughput — выручка от продажи готовой продукции минус сырьё. Главный показатель ТОС: максимизируется через расширение узкого места." />
+              </th>
+              <th className="px-4 py-3 font-medium text-right">
+                <MetricHeader label="WIP / Inv" hint="Work in Progress / Inventory — полуфабрикаты в буферах между станциями. Высокий WIP перед станцией указывает на узкое место." />
+              </th>
+              <th className="px-4 py-3 font-medium text-right">
+                <MetricHeader label="OE" hint="Operating Expense — операционные расходы (сырьё + постоянка). По ТОС снижают только после максимизации throughput." />
+              </th>
+              <th className="px-4 py-3 font-medium">
+                <MetricHeader label="Bottleneck" hint="Станция-узкое место: ограничивает throughput всей системы. По ТОС 5 шагов: найти, использовать максимально, подчинить остальные, расширить, не дать инерции стать новым ограничением." />
+              </th>
+              <th className="px-4 py-3 font-medium">Состав</th>
+            </tr>
+          </thead>
+          <tbody>
+            {teams.map((t) => {
+              const m = t.metrics || {};
+              const cash = m.cash ?? 0;
+              return (
+                <tr key={t.id} className="border-t border-border">
+                  <td className="px-4 py-3">
+                    <span
+                      className="inline-block w-2.5 h-2.5 rounded-full mr-2 align-middle"
+                      style={{ background: t.color }}
+                    />
+                    <span className="font-medium">{t.name}</span>
+                  </td>
+                  <td className={`px-4 py-3 text-right font-mono ${cash < 0 ? "text-red-600" : ""}`}>
+                    ${cash.toLocaleString("en-US")}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono">{m.throughput ?? 0}</td>
+                  <td className="px-4 py-3 text-right font-mono">{m.inventory ?? 0}</td>
+                  <td className="px-4 py-3 text-right font-mono">${(m.operatingExpense ?? 0).toLocaleString("en-US")}</td>
+                  <td className="px-4 py-3">
+                    {m.bottleneckStationId ? (
+                      <span className="text-amber-600">⚠ {m.bottleneckStationId}</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                    {(t.members || []).map((mm: any) => mm.fullName).join(", ")}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
-
 interface RoundDTO {
   id: string;
   roundNumber: number;
@@ -1330,3 +1401,17 @@ function ForcedEventsPanel({
     </div>
   );
 }
+
+// Tooltip-заголовок для ТОС-метрик в Live-таблице
+function MetricHeader({ label, hint }: { label: string; hint: string }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 cursor-help"
+      title={hint}
+    >
+      {label}
+      <span className="text-muted-foreground text-xs">ⓘ</span>
+    </span>
+  );
+}
+

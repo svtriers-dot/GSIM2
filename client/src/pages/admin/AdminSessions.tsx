@@ -39,8 +39,11 @@ const STATUS_COLORS: Record<string, string> = {
 export default function AdminSessions() {
   const [, navigate] = useLocation();
   const [rows, setRows] = useState<SessionRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const limit = 100;
 
   useEffect(() => {
     if (!getTrainerToken()) {
@@ -50,10 +53,18 @@ export default function AdminSessions() {
     void load();
   }, []);
 
-  async function load() {
+  async function load(off = 0) {
+    setLoading(true);
     try {
-      const data = await authJson<{ sessions: SessionRow[] }>("/api/admin/sessions");
+      const url = new URL("/api/admin/sessions", location.origin);
+      url.searchParams.set("limit", String(limit));
+      url.searchParams.set("offset", String(off));
+      const data = await authJson<{ sessions: SessionRow[]; total: number }>(
+        url.pathname + url.search,
+      );
       setRows(data.sessions);
+      setTotal(data.total ?? data.sessions.length);
+      setOffset(off);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -83,6 +94,30 @@ export default function AdminSessions() {
         {!loading && !error && rows.length === 0 && (
           <div className="text-center py-12 border border-dashed border-border rounded-xl text-muted-foreground">
             Сессий пока нет.
+          </div>
+        )}
+
+        {!loading && rows.length > 0 && total > limit && (
+          <div className="flex items-center justify-between mt-4 mb-3 text-sm">
+            <span className="text-muted-foreground">
+              Сессии {offset + 1}–{Math.min(offset + limit, total)} из {total}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => load(Math.max(0, offset - limit))}
+                disabled={offset === 0 || loading}
+                className="px-3 py-1.5 rounded-lg border border-border disabled:opacity-50"
+              >
+                ← Назад
+              </button>
+              <button
+                onClick={() => load(offset + limit)}
+                disabled={offset + limit >= total || loading}
+                className="px-3 py-1.5 rounded-lg border border-border disabled:opacity-50"
+              >
+                Вперёд →
+              </button>
+            </div>
           </div>
         )}
 

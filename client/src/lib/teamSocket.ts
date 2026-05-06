@@ -4,11 +4,31 @@ import { getDeviceToken } from "@/lib/auth";
 
 type Listener = (event: { type: string; payload: any }) => void;
 
+export type TeamConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
+export type TeamStatusListener = (s: TeamConnectionStatus) => void;
+
 export class TeamSocket {
   private ws: WebSocket | null = null;
   private listeners: Set<Listener> = new Set();
+  private statusListeners: Set<TeamStatusListener> = new Set();
+  private status: TeamConnectionStatus = "disconnected";
   private reconnectTimer: number | null = null;
   private closed = false;
+
+  private setStatus(s: TeamConnectionStatus) {
+    this.status = s;
+    this.statusListeners.forEach((l) => { try { l(s); } catch {} });
+  }
+
+  getStatus(): TeamConnectionStatus {
+    return this.status;
+  }
+
+  onStatus(listener: TeamStatusListener): () => void {
+    this.statusListeners.add(listener);
+    listener(this.status);
+    return () => this.statusListeners.delete(listener);
+  }
 
   async connect() {
     const token = getDeviceToken();
@@ -27,11 +47,17 @@ export class TeamSocket {
       }
     } catch {}
 
+    this.setStatus(this.status === "disconnected" ? "connecting" : "reconnecting");
+
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
     const url = ticket
       ? `${proto}//${location.host}/ws/team?ticket=${encodeURIComponent(ticket)}`
       : `${proto}//${location.host}/ws/team?deviceToken=${encodeURIComponent(token)}`;
     this.ws = new WebSocket(url);
+
+    this.ws.addEventListener("open", () => {
+      this.setStatus("connected");
+    });
 
     this.ws.addEventListener("message", (e) => {
       try {
@@ -41,7 +67,11 @@ export class TeamSocket {
     });
 
     this.ws.addEventListener("close", () => {
-      if (this.closed) return;
+      if (this.closed) {
+        this.setStatus("disconnected");
+        return;
+      }
+      this.setStatus("reconnecting");
       this.reconnectTimer = window.setTimeout(() => { void this.connect(); }, 3000);
     });
 
@@ -67,5 +97,6 @@ export class TeamSocket {
     this.closed = true;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.ws?.close();
+    this.setStatus("disconnected");
   }
 }

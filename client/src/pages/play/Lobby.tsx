@@ -8,6 +8,8 @@ import {
   teamFetch,
 } from "@/lib/auth";
 import { TeamSocket } from "@/lib/teamSocket";
+import { confirmAction } from "@/components/ConfirmDialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface MeResponse {
   team: { id: string; name: string; color: string; sessionId: string };
@@ -31,6 +33,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function PlayLobby() {
   const [, navigate] = useLocation();
+  const { toast } = useToast();
   const [me, setMe] = useState<MeResponse | null>(null);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<string[]>([""]);
@@ -93,7 +96,7 @@ export default function PlayLobby() {
   async function saveMembers() {
     const cleaned = draft.map((n) => n.trim()).filter((n) => n.length >= 2);
     if (cleaned.length === 0) {
-      alert("Нужно хотя бы одно ФИО");
+      toast({ title: "Нужно хотя бы одно ФИО", variant: "destructive" });
       return;
     }
     try {
@@ -104,12 +107,17 @@ export default function PlayLobby() {
       setEditing(false);
       await load();
     } catch (e: any) {
-      alert(`Ошибка: ${e.message}`);
+      toast({ title: "Ошибка", description: e.message, variant: "destructive" });
     }
   }
 
   async function leaveTeam() {
-    if (!confirm("Выйти из команды? Подключение придётся делать заново.")) return;
+    const ok = await confirmAction(
+      "Выйти из команды?",
+      "Вам придётся снова вводить код, название команды и ФИО.",
+      true,
+    );
+    if (!ok) return;
     try {
       await teamFetch("/api/teams/leave", { method: "POST" });
     } catch {}

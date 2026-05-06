@@ -25,19 +25,44 @@ export interface SessionLiveState {
 
 type Listener = (event: { type: string; payload: any }) => void;
 
+export type ConnectionStatus = "connecting" | "connected" | "reconnecting" | "disconnected";
+export type StatusListener = (s: ConnectionStatus) => void;
+
 export class TrainerSocket {
   private ws: WebSocket | null = null;
   private listeners: Set<Listener> = new Set();
+  private statusListeners: Set<StatusListener> = new Set();
+  private status: ConnectionStatus = "disconnected";
   private reconnectTimer: number | null = null;
   private closed = false;
 
   constructor(private sessionId: string) {}
 
+  private setStatus(s: ConnectionStatus) {
+    this.status = s;
+    this.statusListeners.forEach((l) => {
+      try {
+        l(s);
+      } catch {}
+    });
+  }
+
+  getStatus(): ConnectionStatus {
+    return this.status;
+  }
+
+  onStatus(listener: StatusListener): () => void {
+    this.statusListeners.add(listener);
+    listener(this.status); // emit current сразу
+    return () => this.statusListeners.delete(listener);
+  }
+
   async connect() {
     const token = getTrainerToken();
     if (!token) return;
 
-    // MVP-2 Security: получаем ws-ticket вместо передачи JWT в URL
+    this.setStatus(this.status === "disconnected" ? "connecting" : "reconnecting");
+
     let ticket: string | null = null;
     try {
       const res = await fetch(`/api/trainer/sessions/${this.sessionId}/ws-ticket`, {
@@ -53,9 +78,12 @@ export class TrainerSocket {
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
     const url = ticket
       ? `${proto}//${location.host}/ws/trainer?ticket=${encodeURIComponent(ticket)}`
-      : // Fallback на legacy если ticket не получили (деплой ещё не подхватил)
-        `${proto}//${location.host}/ws/trainer?token=${encodeURIComponent(token)}&sessionId=${encodeURIComponent(this.sessionId)}`;
+      : `${proto}//${location.host}/ws/trainer?token=${encodeURIComponent(token)}&sessionId=${encodeURIComponent(this.sessionId)}`;
     this.ws = new WebSocket(url);
+
+    this.ws.addEventListener("open", () => {
+      this.setStatus("connected");
+    });
 
     this.ws.addEventListener("message", (e) => {
       try {
@@ -65,7 +93,11 @@ export class TrainerSocket {
     });
 
     this.ws.addEventListener("close", () => {
-      if (this.closed) return;
+      if (this.closed) {
+        this.setStatus("disconnected");
+        return;
+      }
+      this.setStatus("reconnecting");
       this.reconnectTimer = window.setTimeout(() => { void this.connect(); }, 3000);
     });
 
@@ -91,5 +123,6 @@ export class TrainerSocket {
     this.closed = true;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.ws?.close();
+    this.setStatus("disconnected");
   }
 }

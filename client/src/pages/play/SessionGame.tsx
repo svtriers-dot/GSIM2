@@ -6,7 +6,8 @@ import {
   getTeamMeta,
   clearTeamSession,
 } from "@/lib/auth";
-import { TeamSocket } from "@/lib/teamSocket";
+import { TeamSocket, type TeamConnectionStatus } from "@/lib/teamSocket";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 import Game, { type GameSessionMode } from "@/pages/game";
 import type { GameSnapshot, SessionMetrics } from "@/lib/gameEngine";
 
@@ -46,6 +47,7 @@ export default function PlaySessionGame() {
   const [restoreSnapshot, setRestoreSnapshot] = useState<GameSnapshot | null>(null);
   const [lastForcedEvent, setLastForcedEvent] = useState<{ type: string; payload: Record<string, unknown>; durationMs: number | null; triggeredAt: number } | null>(null);
   const [forcedToast, setForcedToast] = useState<string | null>(null);
+  const [wsStatus, setWsStatus] = useState<TeamConnectionStatus>("disconnected");
   const meta = getTeamMeta();
   const wsRef = useRef<TeamSocket | null>(null);
 
@@ -83,7 +85,8 @@ export default function PlaySessionGame() {
       });
 
     const ws = new TeamSocket();
-    ws.connect();
+    void ws.connect();
+    ws.onStatus(setWsStatus);
     wsRef.current = ws;
     ws.on((event) => {
       if (event.type === "game.timer_event") {
@@ -171,6 +174,7 @@ export default function PlaySessionGame() {
 
   return (
     <div className="relative min-h-screen">
+      <ConnectionStatus status={wsStatus} />
       {/* Бейдж команды */}
       <div className="fixed top-2 left-2 z-30 bg-card border border-border rounded-lg px-3 py-1.5 shadow-sm text-xs">
         <span

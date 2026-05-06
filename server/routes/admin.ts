@@ -71,6 +71,9 @@ adminRouter.get("/trainers", requireSuperAdmin, async (req, res) => {
     return res.status(400).json({ error: "validation" });
   }
   const { role, search } = parsed.data;
+  // Pagination — отдельные поля чтобы не ломать фильтры сверху
+  const limit = Math.min(500, Math.max(1, parseInt(String(req.query.limit ?? "100"))));
+  const offset = Math.max(0, parseInt(String(req.query.offset ?? "0")));
 
   const filters: any[] = [];
   if (role) filters.push(eq(trainers.role, role));
@@ -84,6 +87,11 @@ adminRouter.get("/trainers", requireSuperAdmin, async (req, res) => {
     );
   }
   const where = filters.length ? and(...filters) : undefined;
+
+  const [{ total } = { total: 0 }] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(trainers)
+    .where(where);
 
   const rows = await db
     .select({
@@ -100,9 +108,11 @@ adminRouter.get("/trainers", requireSuperAdmin, async (req, res) => {
     })
     .from(trainers)
     .where(where)
-    .orderBy(desc(trainers.createdAt));
+    .orderBy(desc(trainers.createdAt))
+    .limit(limit)
+    .offset(offset);
 
-  res.json({ trainers: rows });
+  res.json({ trainers: rows, total: Number(total), limit, offset });
 });
 
 // --- TRAINER detail ---
@@ -282,7 +292,14 @@ adminRouter.post("/trainers/:id/reactivate", requireSuperAdmin, async (req, res)
 
 // --- ALL SESSIONS in system ---
 
-adminRouter.get("/sessions", requireSuperAdmin, async (_req, res) => {
+adminRouter.get("/sessions", requireSuperAdmin, async (req, res) => {
+  const limit = Math.min(500, Math.max(1, parseInt(String(req.query.limit ?? "100"))));
+  const offset = Math.max(0, parseInt(String(req.query.offset ?? "0")));
+
+  const [{ total } = { total: 0 }] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(sessions);
+
   const rows = await db
     .select({
       id: sessions.id,
@@ -302,7 +319,8 @@ adminRouter.get("/sessions", requireSuperAdmin, async (_req, res) => {
     .from(sessions)
     .leftJoin(trainers, eq(sessions.trainerId, trainers.id))
     .orderBy(desc(sessions.createdAt))
-    .limit(200);
+    .limit(limit)
+    .offset(offset);
 
   // Подсчёт команд по сессии (для UI)
   const sessionIds = rows.map((r) => r.id);
@@ -321,6 +339,9 @@ adminRouter.get("/sessions", requireSuperAdmin, async (_req, res) => {
 
   res.json({
     sessions: rows.map((r) => ({ ...r, teamCount: teamCounts[r.id] || 0 })),
+    total: Number(total),
+    limit,
+    offset,
   });
 });
 
