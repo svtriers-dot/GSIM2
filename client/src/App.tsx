@@ -24,6 +24,7 @@ import TrainerReplay from "@/pages/trainer/Replay";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminTrainers from "@/pages/admin/AdminTrainers";
 import AdminSessions from "@/pages/admin/AdminSessions";
+import AdminAuditLog from "@/pages/admin/AdminAuditLog";
 
 // Play (session-mode)
 import PlayJoin from "@/pages/play/Join";
@@ -57,6 +58,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/trainers" component={AdminTrainers} />
       <Route path="/admin/sessions" component={AdminSessions} />
+      <Route path="/admin/audit-log" component={AdminAuditLog} />
 
       <Route component={NotFound} />
     </Switch>

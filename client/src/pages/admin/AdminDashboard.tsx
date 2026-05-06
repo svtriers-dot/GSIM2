@@ -85,6 +85,12 @@ export default function AdminDashboard() {
               Сессии
             </Link>
             <Link
+              href="/admin/audit-log"
+              className="px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
+            >
+              Audit log
+            </Link>
+            <Link
               href="/trainer"
               className="px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
             >

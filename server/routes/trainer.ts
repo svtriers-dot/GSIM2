@@ -22,6 +22,7 @@ import {
 } from "../auth/trainer";
 import { requireTrainer, requireActiveTrainer } from "../middleware/auth";
 import { loginRateLimit, registerRateLimit } from "../middleware/rateLimit";
+import { recordAdminAction } from "../services/auditLog";
 import {
   notifySessionStateChange,
   notifyTeamJoined,
@@ -72,6 +73,18 @@ trainerRouter.post("/auth/login", loginRateLimit, async (req, res) => {
   }
   try {
     const result = await loginTrainer(parsed.data);
+    // MVP-2 Audit: фиксируем входы super_admin (для мониторинга)
+    if (result.trainer.role === "super_admin") {
+      await recordAdminAction({
+        req,
+        actor: { sub: result.trainer.id, email: result.trainer.email, role: "super_admin" } as any,
+        action: "super_admin_login",
+        targetType: null,
+        targetId: null,
+        targetLabel: null,
+        payload: null,
+      });
+    }
     res.json(result);
   } catch (e: any) {
     if (e instanceof InvalidCredentialsError) {

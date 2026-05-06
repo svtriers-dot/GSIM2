@@ -12,6 +12,8 @@ import { requireSuperAdmin } from "../middleware/auth";
 import { resetPasswordRateLimit } from "../middleware/rateLimit";
 import { hashPassword } from "../lib/passwords";
 import { z } from "zod";
+import { recordAdminAction, listAuditLog } from "../services/auditLog";
+import { auditLogQuerySchema } from "@shared/schema";
 
 export const adminRouter = Router();
 
@@ -191,6 +193,15 @@ adminRouter.post("/trainers/:id/approve", requireSuperAdmin, async (req, res) =>
   }
 
   await setTrainerRole(targetId, "active", req.trainer!.sub, parsed.data.notes);
+  await recordAdminAction({
+    req,
+    actor: req.trainer!,
+    action: "trainer_approved",
+    targetType: "trainer",
+    targetId,
+    targetLabel: target.email,
+    payload: { notes: parsed.data.notes ?? null, prevRole: target.role },
+  });
   res.json({ ok: true });
 });
 
@@ -206,6 +217,15 @@ adminRouter.post("/trainers/:id/reject", requireSuperAdmin, async (req, res) => 
   }
 
   await setTrainerRole(targetId, "rejected", req.trainer!.sub, parsed.data.notes);
+  await recordAdminAction({
+    req,
+    actor: req.trainer!,
+    action: "trainer_rejected",
+    targetType: "trainer",
+    targetId,
+    targetLabel: target.email,
+    payload: { notes: parsed.data.notes ?? null, prevRole: target.role },
+  });
   res.json({ ok: true });
 });
 
@@ -224,6 +244,15 @@ adminRouter.post("/trainers/:id/suspend", requireSuperAdmin, async (req, res) =>
   }
 
   await setTrainerRole(targetId, "suspended", req.trainer!.sub, parsed.data.notes);
+  await recordAdminAction({
+    req,
+    actor: req.trainer!,
+    action: "trainer_suspended",
+    targetType: "trainer",
+    targetId,
+    targetLabel: target.email,
+    payload: { notes: parsed.data.notes ?? null, prevRole: target.role },
+  });
   res.json({ ok: true });
 });
 
@@ -239,6 +268,15 @@ adminRouter.post("/trainers/:id/reactivate", requireSuperAdmin, async (req, res)
   }
 
   await setTrainerRole(targetId, "active", req.trainer!.sub, parsed.data.notes);
+  await recordAdminAction({
+    req,
+    actor: req.trainer!,
+    action: "trainer_reactivated",
+    targetType: "trainer",
+    targetId,
+    targetLabel: target.email,
+    payload: { notes: parsed.data.notes ?? null, prevRole: target.role },
+  });
   res.json({ ok: true });
 });
 
@@ -309,6 +347,32 @@ adminRouter.post("/trainers/:id/reset-password", resetPasswordRateLimit, require
     })
     .where(eq(trainers.id, targetId));
 
+  await recordAdminAction({
+    req,
+    actor: req.trainer!,
+    action: "trainer_password_reset",
+    targetType: "trainer",
+    targetId,
+    targetLabel: target.email,
+    payload: null, // namepюо пароль не логируем
+  });
   res.json({ ok: true });
+});
+
+// MVP-2 Audit log — просмотр для super_admin
+adminRouter.get("/audit-log", requireSuperAdmin, async (req, res) => {
+  const parsed = auditLogQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "validation" });
+  }
+  const result = await listAuditLog(parsed.data);
+  res.json(result);
+});
+
+// История действий по конкретному тренеру (используется на странице /admin/trainers/:id)
+adminRouter.get("/trainers/:id/audit", requireSuperAdmin, async (req, res) => {
+  const targetId = req.params.id as string;
+  const result = await listAuditLog({ targetId, limit: 100 });
+  res.json(result);
 });
 

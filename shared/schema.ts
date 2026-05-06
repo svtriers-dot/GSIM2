@@ -112,6 +112,17 @@ export const trainerRoleEnum = pgEnum("trainer_role", [
   "super_admin",  // апрувит других, видит всё
 ]);
 
+// MVP-2 Audit log — действия super_admin (compliance)
+export const adminActionEnum = pgEnum("admin_action", [
+  "trainer_approved",
+  "trainer_rejected",
+  "trainer_suspended",
+  "trainer_reactivated",
+  "trainer_password_reset",
+  "super_admin_login",
+  "super_admin_logout",
+]);
+
 // --- trainers ---
 
 export const trainers = pgTable(
@@ -321,6 +332,32 @@ export const trainerActions = pgTable(
       t.sessionId,
       t.timestamp,
     ),
+  }),
+);
+
+// --- admin_audit_log (compliance trail для super_admin действий) ---
+
+export const adminAuditLog = pgTable(
+  "admin_audit_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    actorId: uuid("actor_id").references(() => trainers.id, { onDelete: "set null" }),
+    actorEmail: varchar("actor_email", { length: 255 }).notNull(),  // snapshot
+    actorName: varchar("actor_name", { length: 255 }),               // snapshot
+    action: adminActionEnum("action").notNull(),
+    targetType: varchar("target_type", { length: 50 }),              // trainer / session / null
+    targetId: uuid("target_id"),                                     // без FK для гибкости
+    targetLabel: varchar("target_label", { length: 255 }),           // snapshot имени/email
+    payload: jsonb("payload").$type<Record<string, unknown>>(),       // notes, прежние/новые значения
+    ipAddress: varchar("ip_address", { length: 45 }),                // IPv4/IPv6
+    userAgent: text("user_agent"),
+    timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    timestampIdx: index("admin_audit_log_timestamp_idx").on(t.timestamp),
+    actorIdx: index("admin_audit_log_actor_idx").on(t.actorId, t.timestamp),
+    actionIdx: index("admin_audit_log_action_idx").on(t.action, t.timestamp),
+    targetIdx: index("admin_audit_log_target_idx").on(t.targetType, t.targetId),
   }),
 );
 
@@ -558,6 +595,26 @@ export const adminListTrainersQuerySchema = z.object({
 });
 
 
+
+// Audit log filter
+export const auditLogQuerySchema = z.object({
+  action: z.enum([
+    "trainer_approved",
+    "trainer_rejected",
+    "trainer_suspended",
+    "trainer_reactivated",
+    "trainer_password_reset",
+    "super_admin_login",
+    "super_admin_logout",
+  ]).optional(),
+  actorId: z.string().uuid().optional(),
+  targetId: z.string().uuid().optional(),
+  dateFrom: z.string().optional(), // ISO
+  dateTo: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(100),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
 // Forced events
 export const triggerForcedEventSchema = z.object({
   type: z.enum(["machine_breakdown", "demand_spike", "demand_drop", "wage_increase"]),
@@ -586,3 +643,4 @@ export type Snapshot = typeof snapshots.$inferSelect;
 export type TrainerAction = typeof trainerActions.$inferSelect;
 export type Certificate = typeof certificates.$inferSelect;
 export type ForcedEvent = typeof forcedEvents.$inferSelect;
+export type AdminAuditLogEntry = typeof adminAuditLog.$inferSelect;
