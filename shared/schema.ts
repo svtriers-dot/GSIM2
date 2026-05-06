@@ -95,6 +95,15 @@ export const certificateBadgeEnum = pgEnum("certificate_badge", [
   "top3",
 ]);
 
+// MVP-2 Admin: роли тренеров и lifecycle апрувов
+export const trainerRoleEnum = pgEnum("trainer_role", [
+  "pending",      // зарегистрировался, ждёт апрува
+  "active",       // апрувнут, может вести сессии
+  "suspended",    // временно заблокирован
+  "rejected",     // отклонён, не пускаем войти
+  "super_admin",  // апрувит других, видит всё
+]);
+
 // --- trainers ---
 
 export const trainers = pgTable(
@@ -105,11 +114,17 @@ export const trainers = pgTable(
     passwordHash: text("password_hash").notNull(),
     name: varchar("name", { length: 255 }).notNull(),
     organization: varchar("organization", { length: 255 }),
+    // MVP-2 Admin: роль тренера, lifecycle апрувов
+    role: trainerRoleEnum("role").notNull().default("pending"),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    approvedBy: uuid("approved_by"),  // FK на trainers.id (super_admin), но без явного ref для self-FK
+    notes: text("notes"),  // заметки админа: причина reject/suspend, и т.п.
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
     emailIdx: uniqueIndex("trainers_email_idx").on(t.email),
+    roleIdx: index("trainers_role_idx").on(t.role),
   }),
 );
 
@@ -497,6 +512,18 @@ export const snapshotSchema = z.object({
 export const kickSchema = z.object({
   teamId: z.string().uuid(),
   reason: z.string().max(255).optional(),
+});
+
+
+// MVP-2 Admin: zod схемы для admin endpoints
+
+export const adminTrainerActionSchema = z.object({
+  notes: z.string().max(1000).optional(),
+});
+
+export const adminListTrainersQuerySchema = z.object({
+  role: z.enum(["pending", "active", "suspended", "rejected", "super_admin"]).optional(),
+  search: z.string().max(255).optional(),
 });
 
 // =============================================================================

@@ -17,8 +17,9 @@ import {
   getTrainerById,
   TrainerExistsError,
   InvalidCredentialsError,
+  TrainerRejectedError,
 } from "../auth/trainer";
-import { requireTrainer } from "../middleware/auth";
+import { requireTrainer, requireActiveTrainer } from "../middleware/auth";
 import {
   notifySessionStateChange,
   notifyTeamJoined,
@@ -74,6 +75,9 @@ trainerRouter.post("/auth/login", async (req, res) => {
     if (e instanceof InvalidCredentialsError) {
       return res.status(401).json({ error: "invalid_credentials" });
     }
+    if (e instanceof TrainerRejectedError) {
+      return res.status(403).json({ error: "rejected" });
+    }
     console.error("login error:", e);
     res.status(500).json({ error: "internal" });
   }
@@ -87,12 +91,12 @@ trainerRouter.get("/auth/me", requireTrainer, async (req, res) => {
 
 // --- SESSIONS -------------------------------------------------------------
 
-trainerRouter.get("/sessions", requireTrainer, async (req, res) => {
+trainerRouter.get("/sessions", requireActiveTrainer, async (req, res) => {
   const sessions = await listSessionsForTrainer(req.trainer!.sub);
   res.json({ sessions });
 });
 
-trainerRouter.post("/sessions", requireTrainer, async (req, res) => {
+trainerRouter.post("/sessions", requireActiveTrainer, async (req, res) => {
   const parsed = createSessionSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "validation", details: parsed.error.format() });
@@ -106,7 +110,7 @@ trainerRouter.post("/sessions", requireTrainer, async (req, res) => {
   }
 });
 
-trainerRouter.get("/sessions/:id", requireTrainer, async (req, res) => {
+trainerRouter.get("/sessions/:id", requireActiveTrainer, async (req, res) => {
   const session = await getSessionForTrainer((req.params.id as string), req.trainer!.sub);
   if (!session) return res.status(404).json({ error: "not_found" });
   const teams = await listTeamsForSession(session.id);
@@ -136,7 +140,7 @@ function withErrorHandler(
 
 trainerRouter.post(
   "/sessions/:id/start",
-  requireTrainer,
+  requireActiveTrainer,
   withErrorHandler(async (req, res) => {
     const session = await startSession((req.params.id as string), req.trainer!.sub);
     await notifySessionStateChange(session.id);
@@ -146,7 +150,7 @@ trainerRouter.post(
 
 trainerRouter.post(
   "/sessions/:id/pause",
-  requireTrainer,
+  requireActiveTrainer,
   withErrorHandler(async (req, res) => {
     const session = await pauseSession((req.params.id as string), req.trainer!.sub);
     await notifySessionStateChange(session.id);
@@ -156,7 +160,7 @@ trainerRouter.post(
 
 trainerRouter.post(
   "/sessions/:id/resume",
-  requireTrainer,
+  requireActiveTrainer,
   withErrorHandler(async (req, res) => {
     const session = await resumeSession((req.params.id as string), req.trainer!.sub);
     await notifySessionStateChange(session.id);
@@ -166,7 +170,7 @@ trainerRouter.post(
 
 trainerRouter.post(
   "/sessions/:id/end",
-  requireTrainer,
+  requireActiveTrainer,
   withErrorHandler(async (req, res) => {
     const session = await endSession((req.params.id as string), req.trainer!.sub);
     // Финализируем результаты ТЕКУЩЕГО раунда (если был) до изменения статуса в БД
@@ -182,7 +186,7 @@ trainerRouter.post(
 
 trainerRouter.post(
   "/sessions/:id/reset-round",
-  requireTrainer,
+  requireActiveTrainer,
   withErrorHandler(async (req, res) => {
     const round = await resetRound((req.params.id as string), req.trainer!.sub);
     // Финализируем предыдущий раунд (тот что был ended в resetRound)
@@ -200,7 +204,7 @@ trainerRouter.post(
 
 trainerRouter.post(
   "/sessions/:id/kick",
-  requireTrainer,
+  requireActiveTrainer,
   withErrorHandler(async (req, res) => {
     const parsed = kickSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -220,7 +224,7 @@ import { trainerActions, rounds } from "@shared/schema";
 
 trainerRouter.post(
   "/sessions/:id/broadcast",
-  requireTrainer,
+  requireActiveTrainer,
   withErrorHandler(async (req, res) => {
     const parsed = broadcastSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "validation" });
@@ -237,7 +241,7 @@ trainerRouter.post(
 
 trainerRouter.post(
   "/sessions/:id/annotate",
-  requireTrainer,
+  requireActiveTrainer,
   withErrorHandler(async (req, res) => {
     const parsed = annotateSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "validation" });
@@ -254,7 +258,7 @@ trainerRouter.post(
 
 trainerRouter.post(
   "/sessions/:id/spotlight",
-  requireTrainer,
+  requireActiveTrainer,
   withErrorHandler(async (req, res) => {
     const parsed = spotlightSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "validation" });
@@ -270,7 +274,7 @@ trainerRouter.post(
 
 trainerRouter.post(
   "/sessions/:id/snapshot",
-  requireTrainer,
+  requireActiveTrainer,
   withErrorHandler(async (req, res) => {
     const parsed = snapshotSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: "validation" });

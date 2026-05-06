@@ -7,15 +7,18 @@ if (process.env.NODE_ENV === "production" && SECRET === "dev-secret-change-me") 
   console.error("[FATAL] JWT_SECRET не задан в production!");
 }
 
+export type TrainerRole = "pending" | "active" | "suspended" | "rejected" | "super_admin";
+
 export interface TrainerJwtPayload {
   sub: string; // trainer.id
   email: string;
+  role: TrainerRole;
   iat?: number;
   exp?: number;
 }
 
-export function signTrainerToken(payload: { id: string; email: string }): string {
-  return jwt.sign({ sub: payload.id, email: payload.email }, SECRET, {
+export function signTrainerToken(payload: { id: string; email: string; role: TrainerRole }): string {
+  return jwt.sign({ sub: payload.id, email: payload.email, role: payload.role }, SECRET, {
     expiresIn: EXPIRES_IN,
   });
 }

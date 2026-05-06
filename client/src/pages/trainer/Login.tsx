@@ -36,14 +36,24 @@ export default function TrainerLogin() {
             ? "Тренер с таким email уже зарегистрирован"
             : data.error === "invalid_credentials"
               ? "Неверный email или пароль"
-              : data.error === "validation"
-                ? "Некорректные данные. Email — валидный, пароль ≥ 8 символов"
-                : `Ошибка: ${data.error || res.statusText}`,
+              : data.error === "rejected"
+                ? "Заявка отклонена администратором. Доступ невозможен."
+                : data.error === "validation"
+                  ? "Некорректные данные. Email — валидный, пароль ≥ 8 символов"
+                  : `Ошибка: ${data.error || res.statusText}`,
         );
       }
       const data = await res.json();
       setTrainerToken(data.token, data.trainer);
-      navigate("/trainer");
+      const role = data.trainer?.role;
+      if (role === "pending" || role === "suspended") {
+        navigate("/trainer/pending");
+      } else if (role === "rejected") {
+        // не должно случиться (login отбит на 403), но fallback
+        navigate("/trainer/login");
+      } else {
+        navigate("/trainer");
+      }
     } catch (e: any) {
       setError(e.message || "Не удалось войти");
     } finally {

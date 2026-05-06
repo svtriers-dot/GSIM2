@@ -3,11 +3,14 @@
 const TOKEN_KEY = "tesstoc:trainer:token";
 const TRAINER_KEY = "tesstoc:trainer:profile";
 
+export type TrainerRole = "pending" | "active" | "suspended" | "rejected" | "super_admin";
+
 export interface TrainerProfile {
   id: string;
   email: string;
   name: string;
   organization?: string | null;
+  role?: TrainerRole;
 }
 
 export function getTrainerToken(): string | null {

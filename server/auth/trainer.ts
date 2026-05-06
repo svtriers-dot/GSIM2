@@ -2,7 +2,7 @@ import { db } from "../db";
 import { trainers } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { hashPassword, verifyPassword } from "../lib/passwords";
-import { signTrainerToken } from "../lib/jwt";
+import { signTrainerToken, type TrainerRole } from "../lib/jwt";
 import type {
   Trainer,
   TrainerRegisterInput,
@@ -21,6 +21,18 @@ export class InvalidCredentialsError extends Error {
   }
 }
 
+export class TrainerRejectedError extends Error {
+  constructor() {
+    super("rejected");
+  }
+}
+
+export class TrainerSuspendedError extends Error {
+  constructor() {
+    super("suspended");
+  }
+}
+
 export interface AuthResult {
   trainer: Omit<Trainer, "passwordHash">;
   token: string;
@@ -36,6 +48,7 @@ export async function registerTrainer(input: TrainerRegisterInput): Promise<Auth
 
   const passwordHash = await hashPassword(input.password);
 
+  // Новые тренеры — pending по умолчанию (default из schema)
   const [created] = await db
     .insert(trainers)
     .values({
@@ -46,7 +59,11 @@ export async function registerTrainer(input: TrainerRegisterInput): Promise<Auth
     })
     .returning();
 
-  const token = signTrainerToken({ id: created.id, email: created.email });
+  const token = signTrainerToken({
+    id: created.id,
+    email: created.email,
+    role: created.role as TrainerRole,
+  });
 
   const { passwordHash: _, ...safe } = created;
   return { trainer: safe, token };
@@ -63,7 +80,16 @@ export async function loginTrainer(input: TrainerLoginInput): Promise<AuthResult
   const ok = await verifyPassword(input.password, trainer.passwordHash);
   if (!ok) throw new InvalidCredentialsError();
 
-  const token = signTrainerToken({ id: trainer.id, email: trainer.email });
+  // Блокируем rejected — в систему не пускаем совсем
+  if (trainer.role === "rejected") throw new TrainerRejectedError();
+  // suspended — токен выдаём, но requireTrainer его отобьёт
+  // pending/active/super_admin — пропускаем
+
+  const token = signTrainerToken({
+    id: trainer.id,
+    email: trainer.email,
+    role: trainer.role as TrainerRole,
+  });
 
   const { passwordHash: _, ...safe } = trainer;
   return { trainer: safe, token };

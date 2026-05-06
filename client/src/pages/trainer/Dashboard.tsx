@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { authJson, getTrainerProfile, logoutTrainer, getTrainerToken } from "@/lib/auth";
+import { authJson, getTrainerProfile, logoutTrainer, getTrainerToken, setTrainerToken, type TrainerRole } from "@/lib/auth";
 
 interface SessionRow {
   id: string;
@@ -45,7 +45,35 @@ export default function TrainerDashboard() {
       navigate("/trainer/login");
       return;
     }
-    void load();
+    // Проверяем актуальную роль (могла измениться после апрува/саспенда)
+    authJson<{ trainer: { id: string; email: string; name: string; organization: string | null; role: TrainerRole } }>(
+      "/api/trainer/auth/me",
+    )
+      .then((data) => {
+        const role = data.trainer.role;
+        // Обновляем профиль в localStorage
+        const tok = getTrainerToken()!;
+        setTrainerToken(tok, data.trainer);
+        if (role === "pending" || role === "suspended") {
+          navigate("/trainer/pending");
+          return;
+        }
+        if (role === "rejected") {
+          logoutTrainer();
+          navigate("/trainer/login");
+          return;
+        }
+        // active или super_admin — продолжаем
+        void load();
+      })
+      .catch((e) => {
+        if (String(e.message).startsWith("401") || String(e.message).startsWith("403")) {
+          logoutTrainer();
+          navigate("/trainer/login");
+          return;
+        }
+        void load();
+      });
   }, []);
 
   async function load() {
@@ -82,6 +110,14 @@ export default function TrainerDashboard() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            {profile?.role === "super_admin" && (
+              <Link
+                href="/admin"
+                className="px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
+              >
+                🛡 Админка
+              </Link>
+            )}
             <Link
               href="/trainer/sessions/new"
               className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90"

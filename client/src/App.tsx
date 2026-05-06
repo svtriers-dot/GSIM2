@@ -17,6 +17,12 @@ import TrainerLogin from "@/pages/trainer/Login";
 import TrainerDashboard from "@/pages/trainer/Dashboard";
 import NewSession from "@/pages/trainer/NewSession";
 import TrainerSession from "@/pages/trainer/Session";
+import TrainerPending from "@/pages/trainer/Pending";
+
+// Admin
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminTrainers from "@/pages/admin/AdminTrainers";
+import AdminSessions from "@/pages/admin/AdminSessions";
 
 // Play (session-mode)
 import PlayJoin from "@/pages/play/Join";
@@ -41,8 +47,14 @@ function Router() {
       {/* Trainer */}
       <Route path="/trainer/login" component={TrainerLogin} />
       <Route path="/trainer" component={TrainerDashboard} />
+      <Route path="/trainer/pending" component={TrainerPending} />
       <Route path="/trainer/sessions/new" component={NewSession} />
       <Route path="/trainer/sessions/:id" component={TrainerSession} />
+
+      {/* Admin */}
+      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/trainers" component={AdminTrainers} />
+      <Route path="/admin/sessions" component={AdminSessions} />
 
       <Route component={NotFound} />
     </Switch>
