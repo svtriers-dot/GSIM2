@@ -406,6 +406,11 @@ export default function TrainerSession() {
           )}
         </div>
 
+        {/* V2 forced events panel — только когда сессия running */}
+        {isRunning && (
+          <ForcedEventsPanel sessionId={session.id} teams={teamsForUI as any} />
+        )}
+
         {/* Контент таб */}
         {tab === "lobby" && (
           <LobbyTab session={session} teams={teamsForUI as any} onKick={kick} />
@@ -1180,6 +1185,148 @@ function Field({ label, value, mono }: { label: string; value: string; mono?: bo
     <div className="grid grid-cols-3 gap-3 py-1 border-b border-border last:border-b-0">
       <div className="text-sm text-muted-foreground col-span-1">{label}</div>
       <div className={`col-span-2 ${mono ? "font-mono text-sm" : "text-sm"}`}>{value}</div>
+    </div>
+  );
+}
+
+function ForcedEventsPanel({
+  sessionId,
+  teams,
+}: {
+  sessionId: string;
+  teams: any[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  async function trigger(type: string, payload: Record<string, unknown>, durationMs: number) {
+    setBusy(type);
+    try {
+      await authJson(`/api/trainer/sessions/${sessionId}/events`, {
+        method: "POST",
+        body: JSON.stringify({ type, payload, durationMs }),
+      });
+    } catch (e: any) {
+      alert(`Ошибка: ${e.message}`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  // Список машин — для выбора что сломать. Берём из gameConfig (статично известно)
+  const machineIds = ["m_lightblue_0", "m_lightblue_1", "m_blue_0", "m_green_0", "m_green_1", "m_pink_0", "m_pink_1", "m_brown_0"];
+  const productIds = ["A", "D", "F"];
+
+  return (
+    <div className="bg-card border border-border rounded-xl mb-4">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-elevate-1 rounded-xl"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-xl">⚙️</span>
+          <div>
+            <div className="font-medium">События для всех команд</div>
+            <div className="text-xs text-muted-foreground">
+              Поломки, всплески спроса, повышение расходов — добавьте «вызов» в раунд
+            </div>
+          </div>
+        </div>
+        <span className="text-muted-foreground">{open ? "▴" : "▾"}</span>
+      </button>
+
+      {open && (
+        <div className="border-t border-border p-4 space-y-4">
+          {/* Поломка станка */}
+          <div>
+            <div className="text-xs font-medium text-muted-foreground mb-2 uppercase">
+              🔧 Поломка станка (на 60 секунд)
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {machineIds.map((mid) => (
+                <button
+                  key={mid}
+                  disabled={busy !== null}
+                  onClick={() => trigger("machine_breakdown", { machineId: mid }, 60000)}
+                  className="px-3 py-1.5 rounded text-xs border border-border hover:bg-elevate-1 disabled:opacity-50 font-mono"
+                >
+                  {mid}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Спрос */}
+          <div>
+            <div className="text-xs font-medium text-muted-foreground mb-2 uppercase">
+              📈 Всплеск спроса x2 (на 90 сек)
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {productIds.map((pid) => (
+                <button
+                  key={`spike-${pid}`}
+                  disabled={busy !== null}
+                  onClick={() =>
+                    trigger("demand_spike", { productId: pid, multiplier: 2 }, 90000)
+                  }
+                  className="px-3 py-1.5 rounded text-xs border border-border hover:bg-green-50 disabled:opacity-50"
+                >
+                  Продукт {pid}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs font-medium text-muted-foreground mb-2 uppercase">
+              📉 Падение спроса в 2 раза (на 90 сек)
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {productIds.map((pid) => (
+                <button
+                  key={`drop-${pid}`}
+                  disabled={busy !== null}
+                  onClick={() =>
+                    trigger("demand_drop", { productId: pid, multiplier: 0.5 }, 90000)
+                  }
+                  className="px-3 py-1.5 rounded text-xs border border-border hover:bg-red-50 disabled:opacity-50"
+                >
+                  Продукт {pid}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Wage increase */}
+          <div>
+            <div className="text-xs font-medium text-muted-foreground mb-2 uppercase">
+              💸 Повышение постоянных расходов (на всю сессию)
+            </div>
+            <div className="flex gap-2">
+              <button
+                disabled={busy !== null}
+                onClick={() => trigger("wage_increase", { percent: 20 }, 0)}
+                className="px-3 py-1.5 rounded text-xs border border-border hover:bg-amber-50 disabled:opacity-50"
+              >
+                +20%
+              </button>
+              <button
+                disabled={busy !== null}
+                onClick={() => trigger("wage_increase", { percent: 50 }, 0)}
+                className="px-3 py-1.5 rounded text-xs border border-border hover:bg-amber-50 disabled:opacity-50"
+              >
+                +50%
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground pt-2 border-t border-border">
+            События применяются ко всем командам одновременно. Лог событий доступен в
+            аналитике сессии.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

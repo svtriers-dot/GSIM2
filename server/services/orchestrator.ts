@@ -237,6 +237,23 @@ export function broadcastMessage(sessionId: string, message: string): void {
   }
 }
 
+// V2 forced events: пушит событие всем командам сессии + тренеру (для UI)
+export function broadcastForcedEvent(
+  sessionId: string,
+  event: { type: string; payload: Record<string, unknown>; durationMs: number | null; triggeredAt: number },
+): void {
+  const a = active.get(sessionId);
+  if (!a) return;
+  const wsEvent = { type: "forced_event", payload: event };
+  const data = JSON.stringify(wsEvent);
+  for (const ws of Array.from(a.teamSockets.values())) {
+    if (ws.readyState === ws.OPEN) ws.send(data);
+  }
+  for (const ws of Array.from(a.trainerSockets)) {
+    if (ws.readyState === ws.OPEN) ws.send(data);
+  }
+}
+
 export function annotateStation(
   sessionId: string,
   stationId: string,

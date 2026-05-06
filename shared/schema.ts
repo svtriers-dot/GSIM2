@@ -95,6 +95,14 @@ export const certificateBadgeEnum = pgEnum("certificate_badge", [
   "top3",
 ]);
 
+// MVP-2 Forced events — события, которые тренер триггерит во время раунда
+export const forcedEventTypeEnum = pgEnum("forced_event_type", [
+  "machine_breakdown",   // поломка станка на N мс
+  "demand_spike",        // +X% спроса на продукт на N мс
+  "demand_drop",         // -X% спроса
+  "wage_increase",       // +X% к fixedExpenses до конца сессии
+]);
+
 // MVP-2 Admin: роли тренеров и lifecycle апрувов
 export const trainerRoleEnum = pgEnum("trainer_role", [
   "pending",      // зарегистрировался, ждёт апрува
@@ -316,6 +324,29 @@ export const trainerActions = pgTable(
   }),
 );
 
+// --- forced_events (V2: динамические события сессии) ---
+
+export const forcedEvents = pgTable(
+  "forced_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => sessions.id, { onDelete: "cascade" }),
+    roundId: uuid("round_id").references(() => rounds.id, { onDelete: "set null" }),
+    type: forcedEventTypeEnum("type").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    triggeredAt: timestamp("triggered_at", { withTimezone: true }).notNull().defaultNow(),
+    durationMs: integer("duration_ms"),
+    triggeredBy: uuid("triggered_by")
+      .notNull()
+      .references(() => trainers.id, { onDelete: "cascade" }),
+  },
+  (t) => ({
+    sessionIdx: index("forced_events_session_idx").on(t.sessionId, t.triggeredAt),
+  }),
+);
+
 // --- certificates ---
 
 export const certificates = pgTable(
@@ -526,6 +557,15 @@ export const adminListTrainersQuerySchema = z.object({
   search: z.string().max(255).optional(),
 });
 
+
+// Forced events
+export const triggerForcedEventSchema = z.object({
+  type: z.enum(["machine_breakdown", "demand_spike", "demand_drop", "wage_increase"]),
+  payload: z.record(z.unknown()),
+  durationMs: z.number().int().min(1000).max(600000).optional(),
+});
+export type TriggerForcedEventInput = z.infer<typeof triggerForcedEventSchema>;
+
 // =============================================================================
 // TYPE EXPORTS
 // =============================================================================
@@ -545,3 +585,4 @@ export type Decision = typeof decisions.$inferSelect;
 export type Snapshot = typeof snapshots.$inferSelect;
 export type TrainerAction = typeof trainerActions.$inferSelect;
 export type Certificate = typeof certificates.$inferSelect;
+export type ForcedEvent = typeof forcedEvents.$inferSelect;

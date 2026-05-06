@@ -1,11 +1,13 @@
 import {
   type MachineColor,
+  type GameConstants,
   STATIONS,
   CONNECTIONS,
   MACHINE_TYPES,
   PRODUCTS,
   RAW_MATERIALS,
   GAME_CONSTANTS,
+  SCENARIO_PRESETS,
   getStationInputs,
   getProductForStation,
 } from './gameConfig';
@@ -17,6 +19,7 @@ export interface MachineState {
   assignedTo: string | null;
   status: 'idle' | 'setup' | 'prod';
   setupRemaining: number;
+  brokenUntilMs?: number; // V2 forced events
 }
 
 export interface StationRuntimeState {
@@ -108,10 +111,19 @@ export class GoldrattEngine {
   dayEndSummary: DayEndSummary | null = null;
   machineWorkTime: Record<string, number> = {};
   weeklyMachineWorkTime: Record<string, number> = {};
+  demandMultipliers: Record<string, { multiplier: number; dueAtMs: number }> = {};
 
-  constructor() {
-    this.cash = GAME_CONSTANTS.startingCash;
-    this.fixedExpenses = GAME_CONSTANTS.fixedExpenses;
+  constants: GameConstants;
+
+  constructor(opts?: { preset?: string; overrides?: Partial<GameConstants> }) {
+    const presetCfg = opts?.preset && opts.preset in SCENARIO_PRESETS ? SCENARIO_PRESETS[opts.preset] : {};
+    this.constants = {
+      ...GAME_CONSTANTS,
+      ...presetCfg,
+      ...(opts?.overrides ?? {}),
+    };
+    this.cash = this.constants.startingCash;
+    this.fixedExpenses = this.constants.fixedExpenses;
     this.initMachines();
     this.initStations();
     this.initBuffers();
@@ -203,16 +215,20 @@ export class GoldrattEngine {
   tick(dt: number) {
     if (!this.running || this.gameOver) return;
 
+    this.updateForcedEffects();
+
     const gameDt = dt * this.pace;
     this.timeInDay += gameDt;
 
-    if (this.timeInDay >= GAME_CONSTANTS.dayDurationSeconds) {
-      this.timeInDay = GAME_CONSTANTS.dayDurationSeconds;
+    if (this.timeInDay >= this.constants.dayDurationSeconds) {
+      this.timeInDay = this.constants.dayDurationSeconds;
       this.endDay();
       return;
     }
 
     for (const m of this.machines) {
+      // Сломанные машины не накапливают workTime
+      if (m.brokenUntilMs && m.brokenUntilMs > Date.now()) continue;
       if (m.assignedTo && m.status === 'prod') {
         this.machineWorkTime[m.id] = (this.machineWorkTime[m.id] || 0) + gameDt;
       }
@@ -223,6 +239,11 @@ export class GoldrattEngine {
     for (const stationDef of sortedStations) {
       const state = this.stationStates[stationDef.id];
       if (!state.machineId) continue;
+
+      // V2 forced events: если машина на этой станции сломана, прогресс не идёт
+      const machineOnStation = state.machineId ? this.machines.find((m) => m.id === state.machineId) : null;
+      const isBroken = !!(machineOnStation?.brokenUntilMs && machineOnStation.brokenUntilMs > Date.now());
+      if (isBroken) continue;
 
       if (state.status === 'setup') {
         state.setupRemaining -= gameDt;
@@ -293,7 +314,7 @@ export class GoldrattEngine {
 
   private endDay() {
     this.running = false;
-    const dayDuration = GAME_CONSTANTS.dayDurationSeconds;
+    const dayDuration = this.constants.dayDurationSeconds;
     const utilization: MachineUtilization[] = this.machines.map(m => ({
       machineId: m.id,
       color: m.color,
@@ -333,7 +354,7 @@ export class GoldrattEngine {
 
     const throughput = this.totalRevenue - this.totalRMCost;
 
-    const isLastDay = this.day >= GAME_CONSTANTS.totalDays;
+    const isLastDay = this.day >= this.constants.totalDays;
     const profitLoss = isLastDay ? throughput - this.fixedExpenses : throughput;
 
     this.dayEndSummary = {
@@ -454,7 +475,7 @@ export class GoldrattEngine {
     this.week = 1;
     this.day = 1;
     this.timeInDay = 0;
-    this.cash = GAME_CONSTANTS.startingCash;
+    this.cash = this.constants.startingCash;
     this.dailyRevenue = 0;
     this.dailyRMCost = 0;
     this.totalRevenue = 0;
@@ -471,6 +492,46 @@ export class GoldrattEngine {
     this.initStations();
     this.initBuffers();
     this.initDemand();
+  }
+
+  // V2 forced events — публичные методы
+  applyMachineBreakdown(machineId: string, durationMs: number): boolean {
+    const m = this.machines.find((mm) => mm.id === machineId);
+    if (!m) return false;
+    m.brokenUntilMs = Date.now() + durationMs;
+    return true;
+  }
+
+  applyDemandMultiplier(productId: string, multiplier: number, durationMs: number): void {
+    this.demandMultipliers = this.demandMultipliers ?? {};
+    this.demandMultipliers[productId] = {
+      multiplier,
+      dueAtMs: Date.now() + durationMs,
+    };
+    const product = PRODUCTS.find((p) => p.id === productId);
+    if (product) {
+      const current = this.demandRemaining[productId] ?? product.weeklyDemand;
+      this.demandRemaining[productId] = Math.max(0, Math.round(current * multiplier));
+    }
+  }
+
+  applyWageIncrease(percentDelta: number): void {
+    this.fixedExpenses = Math.round(this.fixedExpenses * (1 + percentDelta / 100));
+  }
+
+  private updateForcedEffects(): void {
+    const now = Date.now();
+    for (const m of this.machines) {
+      if (m.brokenUntilMs && m.brokenUntilMs <= now) {
+        m.brokenUntilMs = undefined;
+      }
+    }
+    this.demandMultipliers = this.demandMultipliers ?? {};
+    for (const [pid, eff] of Object.entries(this.demandMultipliers)) {
+      if (eff.dueAtMs <= now) {
+        delete this.demandMultipliers[pid];
+      }
+    }
   }
 
   getSnapshot(): GameSnapshot {

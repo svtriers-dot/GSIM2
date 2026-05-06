@@ -23,7 +23,16 @@ interface MeResponse {
     name: string;
     accessCode: string;
     status: string;
-    configOverrides?: { logoUrl?: string | null; primaryColor?: string | null; orgName?: string | null };
+    scenarioPreset?: string;
+    configOverrides?: {
+      logoUrl?: string | null;
+      primaryColor?: string | null;
+      orgName?: string | null;
+      startingCash?: number;
+      fixedExpenses?: number;
+      totalDays?: number;
+      dayDurationSeconds?: number;
+    };
   } | null;
 }
 
@@ -35,6 +44,8 @@ export default function PlaySessionGame() {
   const [annotation, setAnnotation] = useState<{ stationId: string; text: string } | null>(null);
   const [broadcast, setBroadcast] = useState<{ message: string; ts: number } | null>(null);
   const [restoreSnapshot, setRestoreSnapshot] = useState<GameSnapshot | null>(null);
+  const [lastForcedEvent, setLastForcedEvent] = useState<{ type: string; payload: Record<string, unknown>; durationMs: number | null; triggeredAt: number } | null>(null);
+  const [forcedToast, setForcedToast] = useState<string | null>(null);
   const meta = getTeamMeta();
   const wsRef = useRef<TeamSocket | null>(null);
 
@@ -93,6 +104,19 @@ export default function PlaySessionGame() {
         setAnnotation({ stationId: event.payload.stationId, text: event.payload.text });
         const dur = event.payload.durationMs || 10000;
         setTimeout(() => setAnnotation(null), dur);
+      } else if (event.type === "forced_event") {
+        const ev = event.payload as any;
+        setLastForcedEvent(ev);
+        // Toast для участника
+        const labels: Record<string, string> = {
+          machine_breakdown: "🔧 Поломка станка",
+          demand_spike: "📈 Всплеск спроса",
+          demand_drop: "📉 Падение спроса",
+          wage_increase: "💸 Повысились расходы",
+        };
+        const lbl = labels[ev.type] || ev.type;
+        setForcedToast(lbl);
+        setTimeout(() => setForcedToast(null), 5000);
       } else if (event.type === "game.state_sync") {
         // Сервер прислал текущий state команды (при первом подключении / reconnect)
         const fs = event.payload?.team?.factoryState;
@@ -110,12 +134,26 @@ export default function PlaySessionGame() {
 
   // Стабильный sessionMode props (предотвращает лишние перезапуски useEffect в Game)
   const highlightedStationId = annotation?.stationId ?? null;
+  const scenarioPreset = me?.session?.scenarioPreset;
+  const constantsOverrides = useMemo(() => {
+    const co = me?.session?.configOverrides ?? {};
+    const out: Record<string, number> = {};
+    if (typeof co.startingCash === "number") out.startingCash = co.startingCash;
+    if (typeof co.fixedExpenses === "number") out.fixedExpenses = co.fixedExpenses;
+    if (typeof co.totalDays === "number") out.totalDays = co.totalDays;
+    if (typeof co.dayDurationSeconds === "number") out.dayDurationSeconds = co.dayDurationSeconds;
+    return out;
+  }, [me?.session?.configOverrides]);
+
   const sessionMode = useMemo<GameSessionMode>(
     () => ({
       isPaused: paused,
       isEnded: ended,
       restoreSnapshot,
       highlightedStationId,
+      lastForcedEvent,
+      scenarioPreset,
+      constantsOverrides,
       onMetricsUpdate: (m: SessionMetrics) => {
         wsRef.current?.send("team:metrics", m as unknown as Record<string, unknown>);
       },
@@ -126,7 +164,7 @@ export default function PlaySessionGame() {
         wsRef.current?.send("team:game_over", { snapshot, metrics });
       },
     }),
-    [paused, ended, restoreSnapshot, highlightedStationId],
+    [paused, ended, restoreSnapshot, highlightedStationId, lastForcedEvent, scenarioPreset, constantsOverrides],
   );
 
   if (!me) return <div className="p-8 text-center">Загрузка...</div>;
@@ -205,6 +243,13 @@ export default function PlaySessionGame() {
               ×
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Forced event toast */}
+      {forcedToast && (
+        <div className="fixed top-2 left-1/2 -translate-x-1/2 z-30 bg-red-600 text-white px-5 py-3 rounded-lg shadow-lg font-semibold">
+          {forcedToast}
         </div>
       )}
 

@@ -119,6 +119,7 @@ teamsRouter.get("/me", async (req, res) => {
           name: session.name,
           accessCode: session.accessCode,
           status: session.status,
+          scenarioPreset: session.scenarioPreset,
           startedAt: session.startedAt,
           endedAt: session.endedAt,
           configOverrides: session.configOverrides ?? {},

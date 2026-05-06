@@ -124,6 +124,36 @@ export const GAME_CONSTANTS = {
   minutesPerWeek: 2400,
 };
 
+// V2: пресеты сложности — реальные параметры
+export type GameConstants = typeof GAME_CONSTANTS;
+
+export const SCENARIO_PRESETS: Record<string, Partial<GameConstants>> = {
+  easy: {
+    startingCash: 15000,
+    fixedExpenses: 8000,
+    totalDays: 4,
+  },
+  medium: {}, // дефолт
+  hard: {
+    startingCash: 7000,
+    fixedExpenses: 14000,
+    totalDays: 6,
+  },
+  custom: {}, // тренер задаёт сам
+};
+
+export function resolveGameConstants(
+  preset: string | undefined,
+  overrides: Partial<GameConstants> = {},
+): GameConstants {
+  const presetCfg = preset && preset in SCENARIO_PRESETS ? SCENARIO_PRESETS[preset] : {};
+  return {
+    ...GAME_CONSTANTS,
+    ...presetCfg,
+    ...overrides,
+  };
+}
+
 export const COLOR_MAP: Record<MachineColor, { fill: string; stroke: string; bg: string }> = {
   lightblue: { fill: '#039BE5', stroke: '#01579B', bg: '#B3E5FC' },
   blue:      { fill: '#1A237E', stroke: '#0D1B5C', bg: '#9FA8DA' },

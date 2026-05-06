@@ -5,8 +5,13 @@ import { authJson, getTrainerToken } from "@/lib/auth";
 export default function NewSession() {
   const [, navigate] = useLocation();
   const [name, setName] = useState("");
-  const [scenarioPreset, setScenarioPreset] = useState<"easy" | "medium" | "hard">("medium");
+  const [scenarioPreset, setScenarioPreset] = useState<"easy" | "medium" | "hard" | "custom">("medium");
   const [maxTeams, setMaxTeams] = useState(20);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [customStartingCash, setCustomStartingCash] = useState<string>("");
+  const [customFixedExpenses, setCustomFixedExpenses] = useState<string>("");
+  const [customTotalDays, setCustomTotalDays] = useState<string>("");
+  const [customDayDurationSeconds, setCustomDayDurationSeconds] = useState<string>("");
   const [expiresInHours, setExpiresInHours] = useState(24);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +35,14 @@ export default function NewSession() {
             scenarioPreset,
             maxTeams,
             expiresInHours,
+            configOverrides: {
+              ...(customStartingCash ? { startingCash: parseInt(customStartingCash) } : {}),
+              ...(customFixedExpenses ? { fixedExpenses: parseInt(customFixedExpenses) } : {}),
+              ...(customTotalDays ? { totalDays: parseInt(customTotalDays) } : {}),
+              ...(customDayDurationSeconds
+                ? { dayDurationSeconds: parseInt(customDayDurationSeconds) }
+                : {}),
+            },
           }),
         },
       );
@@ -78,9 +91,10 @@ export default function NewSession() {
               onChange={(e) => setScenarioPreset(e.target.value as any)}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background"
             >
-              <option value="easy">Easy — упрощённый Product Mix</option>
-              <option value="medium">Medium — стандартный (рекомендуется)</option>
-              <option value="hard">Hard — с поломками и колебаниями спроса (V2)</option>
+              <option value="easy">Easy — стартовый капитал $15k, расходы $8k/нед, 4 дня</option>
+              <option value="medium">Medium — стартовый $10k, расходы $11k/нед, 5 дней (рекомендуется)</option>
+              <option value="hard">Hard — стартовый $7k, расходы $14k/нед, 6 дней</option>
+              <option value="custom">Custom — задать параметры вручную ниже</option>
             </select>
           </div>
 
@@ -111,6 +125,85 @@ export default function NewSession() {
               />
               <p className="text-xs text-muted-foreground mt-1">До 7 дней</p>
             </div>
+          </div>
+
+          <div className="border border-border rounded-lg">
+            <button
+              type="button"
+              onClick={() => setAdvancedOpen(!advancedOpen)}
+              className="w-full px-3 py-2 flex items-center justify-between text-sm font-medium hover:bg-elevate-1 rounded-lg"
+            >
+              <span>⚙ Расширенные настройки {scenarioPreset === "custom" && "(обязательны)"}</span>
+              <span className="text-muted-foreground">{advancedOpen ? "▴" : "▾"}</span>
+            </button>
+            {(advancedOpen || scenarioPreset === "custom") && (
+              <div className="border-t border-border p-3 space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Поля переопределяют значения пресета. Пустые — используют пресет.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium mb-1">
+                      Стартовый капитал, $
+                    </label>
+                    <input
+                      type="number"
+                      min={1000}
+                      max={100000}
+                      step={500}
+                      value={customStartingCash}
+                      onChange={(e) => setCustomStartingCash(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg border border-border bg-background text-sm"
+                      placeholder="из пресета"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">
+                      Постоянные расходы, $/нед
+                    </label>
+                    <input
+                      type="number"
+                      min={1000}
+                      max={100000}
+                      step={500}
+                      value={customFixedExpenses}
+                      onChange={(e) => setCustomFixedExpenses(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg border border-border bg-background text-sm"
+                      placeholder="из пресета"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">
+                      Дней в раунде
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={customTotalDays}
+                      onChange={(e) => setCustomTotalDays(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg border border-border bg-background text-sm"
+                      placeholder="из пресета"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">
+                      Длительность дня, сек
+                    </label>
+                    <input
+                      type="number"
+                      min={60}
+                      max={1800}
+                      step={30}
+                      value={customDayDurationSeconds}
+                      onChange={(e) => setCustomDayDurationSeconds(e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-lg border border-border bg-background text-sm"
+                      placeholder="из пресета"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {error && (

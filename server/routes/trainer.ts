@@ -10,6 +10,7 @@ import {
   spotlightSchema,
   snapshotSchema,
   kickSchema,
+  triggerForcedEventSchema,
 } from "@shared/schema";
 import {
   registerTrainer,
@@ -233,6 +234,7 @@ import {
   sessions,
   trainerActions,
   rounds,
+  forcedEvents,
   teamRoundResults,
   decisions as decisionsTable,
   snapshots as snapshotsTable,
@@ -638,4 +640,116 @@ trainerRouter.patch(
     res.json({ session: updated });
   }),
 );
+
+// MVP-2 V2 — Forced events (тренер триггерит событие)
+import { broadcastForcedEvent } from "../services/orchestrator";
+
+trainerRouter.post(
+  "/sessions/:id/events",
+  requireActiveTrainer,
+  withErrorHandler(async (req, res) => {
+    const sessionId = req.params.id as string;
+    const session = await getSessionForTrainer(sessionId, req.trainer!.sub);
+    if (!session) throw new SessionNotFoundError();
+
+    const parsed = triggerForcedEventSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "validation" });
+      return;
+    }
+
+    // Найдём текущий раунд
+    const allRounds = await db.select().from(rounds).where(eq(rounds.sessionId, sessionId));
+    const currentRound =
+      allRounds.find((r) => r.status === "running" || r.status === "paused") ??
+      allRounds.sort((a, b) => b.roundNumber - a.roundNumber)[0] ??
+      null;
+
+    const [created] = await db
+      .insert(forcedEvents)
+      .values({
+        sessionId,
+        roundId: currentRound?.id ?? null,
+        type: parsed.data.type,
+        payload: parsed.data.payload,
+        durationMs: parsed.data.durationMs ?? null,
+        triggeredBy: req.trainer!.sub,
+      })
+      .returning();
+
+    broadcastForcedEvent(sessionId, {
+      type: parsed.data.type,
+      payload: parsed.data.payload,
+      durationMs: parsed.data.durationMs ?? null,
+      triggeredAt: created.triggeredAt.getTime(),
+    });
+
+    res.json({ event: created });
+  }),
+);
+
+trainerRouter.get(
+  "/sessions/:id/events",
+  requireActiveTrainer,
+  withErrorHandler(async (req, res) => {
+    const sessionId = req.params.id as string;
+    const session = await getSessionForTrainer(sessionId, req.trainer!.sub);
+    if (!session) throw new SessionNotFoundError();
+    const events = await db.select().from(forcedEvents).where(eq(forcedEvents.sessionId, sessionId)).orderBy(desc(forcedEvents.triggeredAt));
+    res.json({ events });
+  }),
+);
+
+// =============================================================================
+// V2 — Yandex OAuth
+// =============================================================================
+import {
+  isYandexConfigured,
+  buildYandexAuthUrl,
+  exchangeCodeForToken,
+  fetchYandexProfile,
+  findOrCreateTrainerFromYandex,
+} from "../auth/yandex";
+
+trainerRouter.get("/auth/yandex/status", (_req, res) => {
+  res.json({ configured: isYandexConfigured() });
+});
+
+trainerRouter.get("/auth/yandex/start", (req, res) => {
+  if (!isYandexConfigured()) {
+    res.status(503).json({ error: "yandex_not_configured" });
+    return;
+  }
+  const state = Math.random().toString(36).slice(2) + Date.now().toString(36);
+  const url = buildYandexAuthUrl(state);
+  res.redirect(url);
+});
+
+trainerRouter.get("/auth/yandex/callback", async (req, res) => {
+  if (!isYandexConfigured()) {
+    res.status(503).send("Yandex OAuth не настроен");
+    return;
+  }
+  const code = req.query.code as string;
+  const error = req.query.error as string;
+  if (error || !code) {
+    res.redirect(`/trainer/login?yandex_error=${encodeURIComponent(error || "no_code")}`);
+    return;
+  }
+  try {
+    const tokens = await exchangeCodeForToken(code);
+    const profile = await fetchYandexProfile(tokens.access_token);
+    const result = await findOrCreateTrainerFromYandex(profile);
+    // Передаём JWT через query (фронт сохранит и удалит из URL)
+    const target = `/trainer/oauth/return?token=${encodeURIComponent(result.token)}&isNew=${result.isNew ? "1" : "0"}`;
+    res.redirect(target);
+  } catch (e: any) {
+    if (e.message === "rejected") {
+      res.redirect(`/trainer/login?yandex_error=rejected`);
+      return;
+    }
+    console.error("yandex oauth error:", e);
+    res.redirect(`/trainer/login?yandex_error=${encodeURIComponent(e.message || "internal")}`);
+  }
+});
 

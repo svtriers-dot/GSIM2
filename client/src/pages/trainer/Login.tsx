@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { setTrainerToken } from "@/lib/auth";
 
@@ -13,6 +13,23 @@ export default function TrainerLogin() {
   const [organization, setOrganization] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [yandexConfigured, setYandexConfigured] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/trainer/auth/yandex/status")
+      .then((r) => r.json())
+      .then((d) => setYandexConfigured(!!d.configured))
+      .catch(() => {});
+    const params = new URLSearchParams(location.search);
+    const yaErr = params.get("yandex_error");
+    if (yaErr) {
+      setError(
+        yaErr === "rejected"
+          ? "Заявка отклонена администратором"
+          : `Ошибка Yandex OAuth: ${yaErr}`,
+      );
+    }
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -68,6 +85,23 @@ export default function TrainerLogin() {
         <p className="text-sm text-muted-foreground mb-6">
           {mode === "login" ? "Вход в кабинет тренера" : "Регистрация тренера"}
         </p>
+
+        {yandexConfigured && (
+          <>
+            <a
+              href="/api/trainer/auth/yandex/start"
+              className="w-full mb-3 inline-flex items-center justify-center gap-2 py-2.5 rounded-lg border border-border bg-white hover:bg-elevate-1 text-sm font-medium"
+            >
+              <span style={{ color: "#fc3f1d", fontSize: 18, fontWeight: 700 }}>Я</span>
+              Войти через Yandex
+            </a>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground">или</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+          </>
+        )}
 
         <div className="flex gap-2 mb-6">
           <button

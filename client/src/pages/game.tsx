@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { GoldrattEngine, type GameSnapshot, type MachineState, type SessionMetrics } from '@/lib/gameEngine';
 import {
   STATIONS,
@@ -160,10 +160,43 @@ export interface GameSessionMode {
   onGameEnd?: (snapshot: GameSnapshot, metrics: SessionMetrics) => void;
   // ID станции, которую тренер сейчас аннотирует — её надо подсветить пульсирующим overlay
   highlightedStationId?: string | null;
+  // V2 — кастом-конфиг: пресет сложности + ручные overrides
+  scenarioPreset?: string;
+  constantsOverrides?: { startingCash?: number; fixedExpenses?: number; totalDays?: number; dayDurationSeconds?: number };
+  // V2 forced events — последнее полученное событие (Game применяет его к engine)
+  lastForcedEvent?: {
+    type: string;
+    payload: Record<string, unknown>;
+    durationMs: number | null;
+    triggeredAt: number;
+  } | null;
 }
 
 export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } = {}) {
-  const engineRef = useRef(new GoldrattEngine());
+  // Engine инициализируется один раз при mount. В session-mode применяются preset/overrides
+  // от тренера. После init они не меняются (мы не пересоздаём engine на лету).
+  const engineRef = useRef<GoldrattEngine>(
+    new GoldrattEngine({
+      preset: undefined,
+      overrides: undefined,
+    }),
+  );
+
+  // При получении нового sessionMode (первый рендер с конфигом) — пересоздадим engine
+  // чтобы стартовый кэш и постоянка применились корректно.
+  const engineConfigKey = useMemo(() => {
+    return `${sessionMode?.scenarioPreset ?? ""}|${JSON.stringify(sessionMode?.constantsOverrides ?? {})}`;
+  }, [sessionMode?.scenarioPreset, sessionMode?.constantsOverrides]);
+
+  useEffect(() => {
+    if (!sessionMode) return; // в одиночном режиме оставляем дефолт
+    engineRef.current = new GoldrattEngine({
+      preset: sessionMode.scenarioPreset,
+      overrides: sessionMode.constantsOverrides,
+    });
+    setState(engineRef.current.getSnapshot());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [engineConfigKey]);
   const [state, setState] = useState<GameSnapshot>(engineRef.current.getSnapshot());
   const [selectedMachine, setSelectedMachine] = useState<string | null>(null);
   const [purchaseRM, setPurchaseRM] = useState<string | null>(null);
@@ -319,6 +352,32 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionMode?.restoreSnapshot]);
+
+  // V2 forced events — применяем к engine при изменении triggeredAt
+  useEffect(() => {
+    const ev = sessionMode?.lastForcedEvent;
+    if (!ev) return;
+    const engine = engineRef.current;
+    try {
+      if (ev.type === "machine_breakdown") {
+        const machineId = (ev.payload as any)?.machineId;
+        const dur = ev.durationMs ?? 60000;
+        if (machineId) engine.applyMachineBreakdown(machineId, dur);
+      } else if (ev.type === "demand_spike" || ev.type === "demand_drop") {
+        const productId = (ev.payload as any)?.productId;
+        const mult = (ev.payload as any)?.multiplier ?? (ev.type === "demand_spike" ? 2 : 0.5);
+        const dur = ev.durationMs ?? 60000;
+        if (productId) engine.applyDemandMultiplier(productId, mult, dur);
+      } else if (ev.type === "wage_increase") {
+        const percent = (ev.payload as any)?.percent ?? 20;
+        engine.applyWageIncrease(percent);
+      }
+      setState(engine.getSnapshot());
+    } catch (e) {
+      console.error("forced event apply error:", e);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionMode?.lastForcedEvent?.triggeredAt]);
 
   // Session-mode: при isEnded — финализация
   useEffect(() => {
