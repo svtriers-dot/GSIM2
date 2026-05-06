@@ -176,11 +176,18 @@ export default function Landing() {
             ))}
           </nav>
 
-          <Link href="/play">
-            <a className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
-              Играть <ArrowRight className="h-4 w-4" />
-            </a>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/trainer">
+              <a className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all hover:-translate-y-0.5" style={{ color: palette.fg, border: `1px solid ${palette.border}`, background: 'white' }}>
+                Кабинет тренера
+              </a>
+            </Link>
+            <Link href="/play">
+              <a className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+                Играть <ArrowRight className="h-4 w-4" />
+              </a>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -484,6 +491,7 @@ export default function Landing() {
               <ul className="space-y-2 text-sm" style={{ color: palette.muted }}>
                 <li><Link href="/"><a className="hover:underline">Главная</a></Link></li>
                 <li><Link href="/play"><a className="hover:underline">Играть</a></Link></li>
+                <li><Link href="/trainer"><a className="hover:underline">Кабинет тренера</a></Link></li>
                 <li><Link href="/about"><a className="hover:underline">О программе</a></Link></li>
               </ul>
             </div>
