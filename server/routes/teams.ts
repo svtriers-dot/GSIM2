@@ -121,6 +121,7 @@ teamsRouter.get("/me", async (req, res) => {
           status: session.status,
           startedAt: session.startedAt,
           endedAt: session.endedAt,
+          configOverrides: session.configOverrides ?? {},
         }
       : null,
   });

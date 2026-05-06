@@ -412,7 +412,7 @@ export default function TrainerSession() {
         )}
         {tab === "live" && <LiveTab teams={liveTeams.length ? liveTeams : (teams as any)} />}
         {tab === "debrief" && <DebriefTab sessionId={session.id} liveTeams={teamsForUI as any} />}
-        {tab === "settings" && <SettingsTab session={session} />}
+        {tab === "settings" && <SettingsTab session={session} configOverrides={(session as any).configOverrides ?? {}} onSavedConfig={(next) => setSession((s) => s ? ({ ...s, configOverrides: next } as any) : s)} />}
       </main>
     </div>
   );
@@ -861,6 +861,9 @@ function DebriefTab({
         </div>
       )}
 
+      {/* MVP-2.C — Экспорт результатов */}
+      <CertificatesAndExport sessionId={sessionId} hasFinishedRound={finishedRounds.length > 0} />
+
       <p className="text-sm text-muted-foreground">
         Reset round создаёт новый раунд для тех же команд — классическая
         ТОС-механика «играем → дебриф → играем снова».
@@ -869,20 +872,305 @@ function DebriefTab({
   );
 }
 
-function SettingsTab({ session }: { session: SessionDTO }) {
+function CertificatesAndExport({
+  sessionId,
+  hasFinishedRound,
+}: {
+  sessionId: string;
+  hasFinishedRound: boolean;
+}) {
+  const [certs, setCerts] = useState<any[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!hasFinishedRound) return;
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId, hasFinishedRound]);
+
+  async function load() {
+    try {
+      const data = await authJson<{ certificates: any[] }>(
+        `/api/trainer/sessions/${sessionId}/certificates`,
+      );
+      setCerts(data.certificates);
+    } catch (e: any) {
+      // тихо, эта секция опциональна
+    }
+  }
+
+  async function generate() {
+    setBusy("generate");
+    setError(null);
+    try {
+      const data = await authJson<{ generated: number; total: number; certificates: any[] }>(
+        `/api/trainer/sessions/${sessionId}/certificates`,
+        { method: "POST" },
+      );
+      setCerts(data.certificates);
+    } catch (e: any) {
+      setError(
+        String(e.message).includes("no_finished_round")
+          ? "Сначала завершите хотя бы один раунд (кнопка Завершить или Reset round)"
+          : e.message,
+      );
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function downloadCsv() {
+    setBusy("csv");
+    try {
+      const tok = getTrainerToken();
+      const res = await fetch(`/api/trainer/sessions/${sessionId}/export.csv`, {
+        headers: tok ? { Authorization: `Bearer ${tok}` } : {},
+      });
+      if (!res.ok) throw new Error(`${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `session-${sessionId.slice(0, 8)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      alert(`Ошибка экспорта: ${e.message}`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function downloadCert(certId: string, fullName: string) {
+    setBusy(certId);
+    try {
+      const tok = getTrainerToken();
+      const res = await fetch(`/api/trainer/certificates/${certId}/pdf`, {
+        headers: tok ? { Authorization: `Bearer ${tok}` } : {},
+      });
+      if (!res.ok) throw new Error(`${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${fullName.replace(/\s+/g, "_")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      alert(`Ошибка: ${e.message}`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
-    <div className="bg-card border border-border rounded-xl p-6 space-y-3">
-      <h3 className="text-lg font-semibold">Настройки сессии</h3>
-      <Field label="ID сессии" value={session.id} mono />
-      <Field label="Код доступа" value={session.accessCode} mono />
-      <Field label="Сценарий" value={session.scenarioPreset} />
-      <Field label="Макс. команд" value={String(session.maxTeams)} />
-      <Field label="Стартовала" value={session.startedAt ? new Date(session.startedAt).toLocaleString("ru-RU") : "—"} />
-      <Field label="Завершена" value={session.endedAt ? new Date(session.endedAt).toLocaleString("ru-RU") : "—"} />
-      <Field label="Истекает" value={new Date(session.expiresAt).toLocaleString("ru-RU")} />
-      <p className="text-xs text-muted-foreground pt-2">
-        White-label, кастомный конфиг сценария, PDF-сертификаты — в MVP-2.
-      </p>
+    <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+      <h3 className="text-lg font-semibold">Документы участников</h3>
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={generate}
+          disabled={!hasFinishedRound || busy === "generate"}
+          className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+        >
+          {busy === "generate"
+            ? "Генерирую..."
+            : certs.length > 0
+              ? "↻ Перегенерировать сертификаты"
+              : "🎓 Сгенерировать сертификаты"}
+        </button>
+        <button
+          onClick={downloadCsv}
+          disabled={busy === "csv"}
+          className="px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-elevate-1 disabled:opacity-50"
+        >
+          {busy === "csv" ? "Экспортирую..." : "📊 Скачать CSV"}
+        </button>
+      </div>
+
+      {!hasFinishedRound && (
+        <p className="text-xs text-muted-foreground">
+          Сертификаты выдаются после завершения хотя бы одного раунда.
+        </p>
+      )}
+
+      {error && (
+        <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {error}
+        </div>
+      )}
+
+      {certs.length > 0 && (
+        <div className="border border-border rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-elevate-1 text-left">
+              <tr>
+                <th className="px-3 py-2 font-medium">Участник</th>
+                <th className="px-3 py-2 font-medium">Команда</th>
+                <th className="px-3 py-2 font-medium">Награда</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {certs.map((c) => (
+                <tr key={c.id} className="border-t border-border">
+                  <td className="px-3 py-2">{c.memberFullName}</td>
+                  <td className="px-3 py-2">
+                    {c.teamColor && (
+                      <span
+                        className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle"
+                        style={{ background: c.teamColor }}
+                      />
+                    )}
+                    {c.teamName}
+                  </td>
+                  <td className="px-3 py-2">
+                    {c.badge === "top1" && "🥇 1 место"}
+                    {c.badge === "top2" && "🥈 2 место"}
+                    {c.badge === "top3" && "🥉 3 место"}
+                    {!c.badge && <span className="text-muted-foreground">—</span>}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <button
+                      onClick={() => downloadCert(c.id, c.memberFullName)}
+                      disabled={busy === c.id}
+                      className="text-primary hover:underline text-xs disabled:opacity-50"
+                    >
+                      {busy === c.id ? "..." : "Скачать PDF →"}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SettingsTab({
+  session,
+  configOverrides,
+  onSavedConfig,
+}: {
+  session: SessionDTO;
+  configOverrides: Record<string, any>;
+  onSavedConfig: (next: Record<string, any>) => void;
+}) {
+  const [logoUrl, setLogoUrl] = useState<string>(configOverrides?.logoUrl ?? "");
+  const [primaryColor, setPrimaryColor] = useState<string>(configOverrides?.primaryColor ?? "");
+  const [orgName, setOrgName] = useState<string>(configOverrides?.orgName ?? "");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function save() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const body = {
+        configOverrides: {
+          logoUrl: logoUrl.trim() || null,
+          primaryColor: primaryColor.trim() || null,
+          orgName: orgName.trim() || null,
+        },
+      };
+      const data = await authJson<{ session: any }>(
+        `/api/trainer/sessions/${session.id}`,
+        { method: "PATCH", body: JSON.stringify(body) },
+      );
+      onSavedConfig(data.session.configOverrides ?? {});
+      setMsg("Сохранено");
+      setTimeout(() => setMsg(null), 2000);
+    } catch (e: any) {
+      setMsg(`Ошибка: ${e.message}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-card border border-border rounded-xl p-6 space-y-3">
+        <h3 className="text-lg font-semibold">Параметры сессии</h3>
+        <Field label="ID сессии" value={session.id} mono />
+        <Field label="Код доступа" value={session.accessCode} mono />
+        <Field label="Сценарий" value={session.scenarioPreset} />
+        <Field label="Макс. команд" value={String(session.maxTeams)} />
+        <Field label="Стартовала" value={session.startedAt ? new Date(session.startedAt).toLocaleString("ru-RU") : "—"} />
+        <Field label="Завершена" value={session.endedAt ? new Date(session.endedAt).toLocaleString("ru-RU") : "—"} />
+        <Field label="Истекает" value={new Date(session.expiresAt).toLocaleString("ru-RU")} />
+      </div>
+
+      <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold">White-label (брендирование)</h3>
+          <p className="text-sm text-muted-foreground">
+            Логотип и цвет вашего корп-клиента появятся в lobby и игре участников.
+            Если поля пустые — используется дефолтная палитра TessTOC.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">URL логотипа (PNG/SVG)</label>
+          <input
+            type="url"
+            value={logoUrl}
+            onChange={(e) => setLogoUrl(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-border bg-background"
+            placeholder="https://example.com/logo.png"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">Primary color (hex)</label>
+            <div className="flex gap-2">
+              <input
+                type="color"
+                value={primaryColor || "#a8a25a"}
+                onChange={(e) => setPrimaryColor(e.target.value)}
+                className="w-12 h-10 rounded border border-border"
+              />
+              <input
+                type="text"
+                value={primaryColor}
+                onChange={(e) => setPrimaryColor(e.target.value)}
+                placeholder="#a8a25a"
+                pattern="^#[0-9a-fA-F]{6}$"
+                className="flex-1 px-3 py-2 rounded-lg border border-border bg-background font-mono text-sm"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Название организации</label>
+            <input
+              type="text"
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background"
+              placeholder="ООО Пример"
+              maxLength={255}
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={save}
+            disabled={busy}
+            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
+          >
+            {busy ? "..." : "Сохранить"}
+          </button>
+          {msg && <span className="text-sm text-muted-foreground">{msg}</span>}
+        </div>
+      </div>
     </div>
   );
 }

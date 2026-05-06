@@ -68,6 +68,31 @@ export default function AdminTrainers() {
     }
   }
 
+  async function setPassword(trainerId: string, name: string) {
+    const newPassword = prompt(`Новый пароль для ${name} (минимум 8 символов):`);
+    if (!newPassword) return;
+    if (newPassword.length < 8) {
+      alert("Пароль слишком короткий (минимум 8 символов)");
+      return;
+    }
+    setBusy(trainerId);
+    try {
+      const res = await authFetch(`/api/admin/trainers/${trainerId}/reset-password`, {
+        method: "POST",
+        body: JSON.stringify({ newPassword }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`${res.status}: ${text}`);
+      }
+      alert(`Пароль обновлён для ${name}`);
+    } catch (e: any) {
+      alert(`Ошибка: ${e.message}`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function action(
     trainerId: string,
     op: "approve" | "reject" | "suspend" | "reactivate",
@@ -191,7 +216,7 @@ export default function AdminTrainers() {
                       })}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <ActionButtons trainer={t} busy={busy === t.id} onAction={(op) => action(t.id, op)} />
+                      <ActionButtons trainer={t} busy={busy === t.id} onAction={(op) => action(t.id, op)} onResetPassword={() => setPassword(t.id, t.name)} />
                     </td>
                   </tr>
                 ))}
@@ -208,17 +233,29 @@ function ActionButtons({
   trainer,
   busy,
   onAction,
+  onResetPassword,
 }: {
   trainer: TrainerRow;
   busy: boolean;
   onAction: (op: "approve" | "reject" | "suspend" | "reactivate") => void;
+  onResetPassword: () => void;
 }) {
   const role = trainer.role;
   if (role === "super_admin") {
     return <span className="text-xs text-muted-foreground">—</span>;
   }
   return (
-    <div className="flex gap-1 justify-end">
+    <div className="flex gap-1 justify-end items-center">
+      {role !== "rejected" && (
+        <button
+          disabled={busy}
+          onClick={onResetPassword}
+          className="px-2 py-1 rounded text-xs hover:bg-elevate-1 border border-border disabled:opacity-50"
+          title="Сбросить пароль"
+        >
+          🔑
+        </button>
+      )}
       {role === "pending" && (
         <>
           <button

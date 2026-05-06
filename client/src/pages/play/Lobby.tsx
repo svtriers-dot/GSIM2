@@ -12,7 +12,12 @@ import { TeamSocket } from "@/lib/teamSocket";
 interface MeResponse {
   team: { id: string; name: string; color: string; sessionId: string };
   members: { id: string; fullName: string }[];
-  session: { name: string; accessCode: string; status: string } | null;
+  session: {
+    name: string;
+    accessCode: string;
+    status: string;
+    configOverrides?: { logoUrl?: string | null; primaryColor?: string | null; orgName?: string | null };
+  } | null;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -127,6 +132,25 @@ export default function PlayLobby() {
           <button onClick={() => setBroadcast(null)} className="ml-3 text-sm underline">
             закрыть
           </button>
+        </div>
+      )}
+
+      {me.session?.configOverrides?.logoUrl && (
+        <div
+          className="border-b border-border px-4 py-3 flex items-center gap-3"
+          style={{
+            background: me.session.configOverrides.primaryColor || "transparent",
+            color: me.session.configOverrides.primaryColor ? "white" : undefined,
+          }}
+        >
+          <img
+            src={me.session.configOverrides.logoUrl}
+            alt="logo"
+            style={{ height: 36, maxWidth: 200, objectFit: "contain" }}
+          />
+          {me.session.configOverrides.orgName && (
+            <span className="font-semibold">{me.session.configOverrides.orgName}</span>
+          )}
         </div>
       )}
 

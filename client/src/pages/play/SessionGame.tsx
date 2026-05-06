@@ -19,7 +19,12 @@ interface MeResponse {
     factoryState?: Record<string, unknown>;
   };
   members: { id: string; fullName: string }[];
-  session: { name: string; accessCode: string; status: string } | null;
+  session: {
+    name: string;
+    accessCode: string;
+    status: string;
+    configOverrides?: { logoUrl?: string | null; primaryColor?: string | null; orgName?: string | null };
+  } | null;
 }
 
 export default function PlaySessionGame() {
@@ -137,6 +142,26 @@ export default function PlaySessionGame() {
         <span className="font-semibold">{me.team.name}</span>
         <span className="text-muted-foreground"> · {me.members.length} участн.</span>
       </div>
+
+      {/* White-label бренд (если задан) */}
+      {me.session?.configOverrides?.logoUrl && (
+        <div
+          className="fixed top-2 right-2 z-30 bg-card border border-border rounded-lg px-3 py-1.5 shadow-sm text-xs flex items-center gap-2"
+          style={{
+            borderColor: me.session.configOverrides.primaryColor || undefined,
+            borderWidth: 2,
+          }}
+        >
+          <img
+            src={me.session.configOverrides.logoUrl}
+            alt="logo"
+            style={{ height: 24, maxWidth: 100, objectFit: "contain" }}
+          />
+          {me.session.configOverrides.orgName && (
+            <span className="font-medium">{me.session.configOverrides.orgName}</span>
+          )}
+        </div>
+      )}
 
       {/* Игра в режиме сессии */}
       <Game sessionMode={sessionMode} />

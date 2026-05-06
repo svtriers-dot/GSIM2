@@ -1,0 +1,449 @@
+// PDF-сертификаты участников. pdfmake — без headless browser, серверная генерация.
+
+import PdfPrinter from "pdfmake";
+import type { TDocumentDefinitions } from "pdfmake/interfaces";
+import { db } from "../db";
+import {
+  certificates,
+  teamMembers,
+  teams,
+  sessions,
+  trainers,
+  rounds,
+  teamRoundResults,
+} from "@shared/schema";
+import { and, eq, inArray, asc } from "drizzle-orm";
+
+// Стандартные шрифты pdfmake (встроены в библиотеку)
+const fonts = {
+  Roboto: {
+    normal: "node_modules/pdfmake/build/vfs_fonts.js",
+  },
+};
+
+// Используем pdfmake с встроенным VFS — он содержит Roboto + кириллицу
+// Альтернатива: подгрузить vfs_fonts вручную и применить
+
+let printer: PdfPrinter;
+function getPrinter(): PdfPrinter {
+  if (!printer) {
+    // Стандартный встроенный VFS pdfmake включает Roboto с кириллицей
+    const vfs = require("pdfmake/build/vfs_fonts.js");
+    const fontDef = {
+      Roboto: {
+        normal: Buffer.from(vfs.pdfMake?.vfs?.["Roboto-Regular.ttf"] ?? vfs.default?.pdfMake?.vfs?.["Roboto-Regular.ttf"] ?? "", "base64"),
+        bold: Buffer.from(vfs.pdfMake?.vfs?.["Roboto-Medium.ttf"] ?? vfs.default?.pdfMake?.vfs?.["Roboto-Medium.ttf"] ?? "", "base64"),
+        italics: Buffer.from(vfs.pdfMake?.vfs?.["Roboto-Italic.ttf"] ?? vfs.default?.pdfMake?.vfs?.["Roboto-Italic.ttf"] ?? "", "base64"),
+        bolditalics: Buffer.from(vfs.pdfMake?.vfs?.["Roboto-MediumItalic.ttf"] ?? vfs.default?.pdfMake?.vfs?.["Roboto-MediumItalic.ttf"] ?? "", "base64"),
+      },
+    };
+    printer = new PdfPrinter(fontDef);
+  }
+  return printer;
+}
+
+interface CertificateData {
+  fullName: string;
+  teamName: string;
+  sessionName: string;
+  trainerName: string;
+  trainerOrganization: string | null;
+  finalCash: number;
+  throughput: number;
+  rankInRound: number;
+  totalTeams: number;
+  badge: "top1" | "top2" | "top3" | null;
+  date: Date;
+  certId: string;
+}
+
+const BADGE_LABELS: Record<string, string> = {
+  top1: "🥇 Золото — Лучший throughput",
+  top2: "🥈 Серебро",
+  top3: "🥉 Бронза",
+};
+
+export function buildCertificatePdf(data: CertificateData): Promise<Buffer> {
+  // pdfmake падает если в тексте есть emoji/символы вне Roboto. Уберём emoji и оставим текст.
+  const badgeText = data.badge
+    ? data.badge === "top1"
+      ? "ЗОЛОТО — победитель раунда"
+      : data.badge === "top2"
+        ? "СЕРЕБРО — второе место"
+        : "БРОНЗА — третье место"
+    : null;
+
+  const dateStr = data.date.toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  const docDef: TDocumentDefinitions = {
+    pageSize: "A4",
+    pageOrientation: "landscape",
+    pageMargins: [60, 50, 60, 50],
+    content: [
+      {
+        text: "СЕРТИФИКАТ",
+        style: "title",
+        alignment: "center",
+        margin: [0, 20, 0, 0],
+      },
+      {
+        text: "об участии в мастер-классе по Теории ограничений",
+        style: "subtitle",
+        alignment: "center",
+        margin: [0, 10, 0, 30],
+      },
+      {
+        canvas: [
+          { type: "line", x1: 100, y1: 0, x2: 600, y2: 0, lineWidth: 1, lineColor: "#a8a25a" },
+        ],
+        margin: [0, 0, 0, 30],
+      },
+      {
+        text: "Настоящий сертификат подтверждает, что",
+        alignment: "center",
+        fontSize: 13,
+        color: "#666",
+        margin: [0, 0, 0, 16],
+      },
+      {
+        text: data.fullName,
+        style: "name",
+        alignment: "center",
+        margin: [0, 0, 0, 16],
+      },
+      {
+        text: [
+          "успешно прошёл(а) учебную сессию ",
+          { text: `«${data.sessionName}»`, italics: true },
+        ],
+        alignment: "center",
+        fontSize: 13,
+        color: "#444",
+        margin: [0, 0, 0, 6],
+      },
+      {
+        text: [
+          "в составе команды ",
+          { text: `«${data.teamName}»`, bold: true },
+        ],
+        alignment: "center",
+        fontSize: 13,
+        color: "#444",
+        margin: [0, 0, 0, 30],
+      },
+      // Результаты в виде колонок
+      {
+        columns: [
+          {
+            width: "*",
+            stack: [
+              { text: "Итоговый cash", style: "metricLabel", alignment: "center" },
+              {
+                text: `$${data.finalCash.toLocaleString("en-US")}`,
+                style: "metricValue",
+                alignment: "center",
+              },
+            ],
+          },
+          {
+            width: "*",
+            stack: [
+              { text: "Throughput", style: "metricLabel", alignment: "center" },
+              {
+                text: data.throughput.toLocaleString("en-US"),
+                style: "metricValue",
+                alignment: "center",
+              },
+            ],
+          },
+          {
+            width: "*",
+            stack: [
+              { text: "Место в раунде", style: "metricLabel", alignment: "center" },
+              {
+                text: `${data.rankInRound} из ${data.totalTeams}`,
+                style: "metricValue",
+                alignment: "center",
+              },
+            ],
+          },
+        ],
+        margin: [0, 0, 0, 30],
+      },
+      ...(badgeText
+        ? [
+            {
+              text: badgeText,
+              alignment: "center" as const,
+              fontSize: 16,
+              bold: true,
+              color: "#a8a25a",
+              margin: [0, 0, 0, 20] as [number, number, number, number],
+            },
+          ]
+        : []),
+      {
+        canvas: [
+          { type: "line", x1: 100, y1: 0, x2: 600, y2: 0, lineWidth: 1, lineColor: "#a8a25a" },
+        ],
+        margin: [0, 20, 0, 16],
+      },
+      {
+        columns: [
+          {
+            width: "*",
+            stack: [
+              { text: dateStr, fontSize: 10, color: "#888", alignment: "center" },
+              { text: "Дата проведения", fontSize: 9, color: "#aaa", alignment: "center" },
+            ],
+          },
+          {
+            width: "*",
+            stack: [
+              {
+                text: data.trainerName,
+                fontSize: 10,
+                color: "#888",
+                alignment: "center",
+              },
+              {
+                text: data.trainerOrganization
+                  ? `Тренер · ${data.trainerOrganization}`
+                  : "Тренер",
+                fontSize: 9,
+                color: "#aaa",
+                alignment: "center",
+              },
+            ],
+          },
+          {
+            width: "*",
+            stack: [
+              { text: data.certId.slice(0, 8).toUpperCase(), fontSize: 10, color: "#888", alignment: "center" },
+              {
+                text: "ID для верификации",
+                fontSize: 9,
+                color: "#aaa",
+                alignment: "center",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        text: "TessTOC · симулятор Теории ограничений · toc.tesstech.ru",
+        fontSize: 8,
+        color: "#bbb",
+        alignment: "center",
+        margin: [0, 30, 0, 0],
+      },
+    ],
+    styles: {
+      title: { fontSize: 36, bold: true, color: "#11192d" },
+      subtitle: { fontSize: 14, color: "#666" },
+      name: { fontSize: 28, bold: true, color: "#11192d" },
+      metricLabel: { fontSize: 10, color: "#888" },
+      metricValue: { fontSize: 22, bold: true, color: "#11192d" },
+    },
+    defaultStyle: { font: "Roboto", fontSize: 11 },
+  };
+
+  return new Promise((resolve, reject) => {
+    try {
+      const pdfDoc = getPrinter().createPdfKitDocument(docDef);
+      const chunks: Buffer[] = [];
+      pdfDoc.on("data", (c: Buffer) => chunks.push(c));
+      pdfDoc.on("end", () => resolve(Buffer.concat(chunks)));
+      pdfDoc.on("error", reject);
+      pdfDoc.end();
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+// =============================================================================
+// Batch: создание сертификатов для всех team_members сессии после её завершения
+// =============================================================================
+
+export async function generateCertificatesForSession(sessionId: string): Promise<{
+  generated: number;
+  total: number;
+}> {
+  const [session] = await db.select().from(sessions).where(eq(sessions.id, sessionId)).limit(1);
+  if (!session) throw new Error("session_not_found");
+
+  const [trainer] = await db.select().from(trainers).where(eq(trainers.id, session.trainerId)).limit(1);
+  if (!trainer) throw new Error("trainer_not_found");
+
+  // Берём последний завершённый раунд
+  const allRounds = await db
+    .select()
+    .from(rounds)
+    .where(eq(rounds.sessionId, sessionId))
+    .orderBy(asc(rounds.roundNumber));
+  const lastFinished = [...allRounds].reverse().find((r) => r.status === "ended");
+  if (!lastFinished) {
+    throw new Error("no_finished_round");
+  }
+
+  const sessionTeams = await db.select().from(teams).where(eq(teams.sessionId, sessionId));
+  const teamIds = sessionTeams.map((t) => t.id);
+  if (teamIds.length === 0) {
+    return { generated: 0, total: 0 };
+  }
+
+  const allMembers = await db
+    .select()
+    .from(teamMembers)
+    .where(inArray(teamMembers.teamId, teamIds));
+  const allResults = await db
+    .select()
+    .from(teamRoundResults)
+    .where(
+      and(
+        eq(teamRoundResults.roundId, lastFinished.id),
+        inArray(teamRoundResults.teamId, teamIds),
+      ),
+    );
+
+  const totalTeams = sessionTeams.length;
+  let generated = 0;
+
+  for (const member of allMembers) {
+    const team = sessionTeams.find((t) => t.id === member.teamId);
+    if (!team) continue;
+    const result = allResults.find((r) => r.teamId === member.teamId);
+    const rank = result?.rankInRound ?? totalTeams;
+    const badge: "top1" | "top2" | "top3" | null =
+      rank === 1 ? "top1" : rank === 2 ? "top2" : rank === 3 ? "top3" : null;
+
+    // Уже выдан?
+    const existing = await db
+      .select()
+      .from(certificates)
+      .where(
+        and(
+          eq(certificates.teamMemberId, member.id),
+          eq(certificates.sessionId, sessionId),
+        ),
+      )
+      .limit(1);
+    if (existing.length > 0) continue;
+
+    const [cert] = await db
+      .insert(certificates)
+      .values({
+        teamMemberId: member.id,
+        sessionId,
+        scoreBreakdown: {
+          finalCash: result?.finalCash ?? 0,
+          throughput: result?.throughput ?? 0,
+          inventory: result?.inventory ?? 0,
+          operatingExpense: result?.operatingExpense ?? 0,
+          rankInRound: rank,
+          totalTeams,
+        },
+        isTop3: badge !== null,
+        badge,
+        pdfUrl: null, // PDF генерируется по требованию
+      })
+      .returning();
+    generated += 1;
+  }
+
+  return { generated, total: allMembers.length };
+}
+
+// PDF-генерация по требованию (lazy) — кешируется в памяти процесса
+const pdfCache = new Map<string, Buffer>();
+
+export async function getCertificatePdf(certificateId: string): Promise<{
+  buffer: Buffer;
+  filename: string;
+} | null> {
+  if (pdfCache.has(certificateId)) {
+    const buf = pdfCache.get(certificateId)!;
+    return { buffer: buf, filename: `certificate-${certificateId.slice(0, 8)}.pdf` };
+  }
+
+  const [cert] = await db
+    .select()
+    .from(certificates)
+    .where(eq(certificates.id, certificateId))
+    .limit(1);
+  if (!cert) return null;
+
+  const [member] = await db
+    .select()
+    .from(teamMembers)
+    .where(eq(teamMembers.id, cert.teamMemberId))
+    .limit(1);
+  if (!member) return null;
+
+  const [team] = await db.select().from(teams).where(eq(teams.id, member.teamId)).limit(1);
+  if (!team) return null;
+
+  const [session] = await db.select().from(sessions).where(eq(sessions.id, cert.sessionId)).limit(1);
+  if (!session) return null;
+
+  const [trainer] = await db.select().from(trainers).where(eq(trainers.id, session.trainerId)).limit(1);
+  if (!trainer) return null;
+
+  const score = (cert.scoreBreakdown ?? {}) as Record<string, number>;
+
+  const buf = await buildCertificatePdf({
+    fullName: member.fullName,
+    teamName: team.name,
+    sessionName: session.name,
+    trainerName: trainer.name,
+    trainerOrganization: trainer.organization,
+    finalCash: Number(score.finalCash ?? 0),
+    throughput: Number(score.throughput ?? 0),
+    rankInRound: Number(score.rankInRound ?? 0),
+    totalTeams: Number(score.totalTeams ?? 0),
+    badge: cert.badge as "top1" | "top2" | "top3" | null,
+    date: cert.generatedAt,
+    certId: cert.id,
+  });
+
+  pdfCache.set(cert.id, buf);
+  return { buffer: buf, filename: `${member.fullName.replace(/\s+/g, "_")}-${cert.id.slice(0, 8)}.pdf` };
+}
+
+export async function listCertificatesForSession(sessionId: string) {
+  const certs = await db
+    .select({
+      id: certificates.id,
+      teamMemberId: certificates.teamMemberId,
+      sessionId: certificates.sessionId,
+      scoreBreakdown: certificates.scoreBreakdown,
+      isTop3: certificates.isTop3,
+      badge: certificates.badge,
+      generatedAt: certificates.generatedAt,
+      memberFullName: teamMembers.fullName,
+      teamId: teamMembers.teamId,
+    })
+    .from(certificates)
+    .leftJoin(teamMembers, eq(teamMembers.id, certificates.teamMemberId))
+    .where(eq(certificates.sessionId, sessionId));
+
+  // подтянем имена команд
+  const teamIds = Array.from(new Set(certs.map((c) => c.teamId).filter(Boolean))) as string[];
+  const teamRows = teamIds.length
+    ? await db.select().from(teams).where(inArray(teams.id, teamIds))
+    : [];
+
+  return certs.map((c) => {
+    const t = teamRows.find((tt) => tt.id === c.teamId);
+    return {
+      ...c,
+      teamName: t?.name ?? null,
+      teamColor: t?.color ?? null,
+    };
+  });
+}

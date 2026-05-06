@@ -230,6 +230,7 @@ trainerRouter.post(
 
 import { db } from "../db";
 import {
+  sessions,
   trainerActions,
   rounds,
   teamRoundResults,
@@ -444,6 +445,197 @@ trainerRouter.get(
       .orderBy(desc(snapshotsTable.createdAt));
 
     res.json({ snapshots: rows });
+  }),
+);
+
+// =============================================================================
+// MVP-2.C — Сертификаты + CSV-экспорт + reset password (через админ)
+// =============================================================================
+
+import {
+  generateCertificatesForSession,
+  getCertificatePdf,
+  listCertificatesForSession,
+} from "../services/certificates";
+
+// POST /api/trainer/sessions/:id/certificates — batch создание для всех team_members
+trainerRouter.post(
+  "/sessions/:id/certificates",
+  requireActiveTrainer,
+  withErrorHandler(async (req, res) => {
+    const sessionId = req.params.id as string;
+    const session = await getSessionForTrainer(sessionId, req.trainer!.sub);
+    if (!session) throw new SessionNotFoundError();
+
+    try {
+      const result = await generateCertificatesForSession(sessionId);
+      const certs = await listCertificatesForSession(sessionId);
+      res.json({ ...result, certificates: certs });
+    } catch (e: any) {
+      if (e.message === "no_finished_round") {
+        res.status(409).json({ error: "no_finished_round" });
+        return;
+      }
+      throw e;
+    }
+  }),
+);
+
+// GET /api/trainer/sessions/:id/certificates — список выданных
+trainerRouter.get(
+  "/sessions/:id/certificates",
+  requireActiveTrainer,
+  withErrorHandler(async (req, res) => {
+    const sessionId = req.params.id as string;
+    const session = await getSessionForTrainer(sessionId, req.trainer!.sub);
+    if (!session) throw new SessionNotFoundError();
+    const certs = await listCertificatesForSession(sessionId);
+    res.json({ certificates: certs });
+  }),
+);
+
+// GET /api/trainer/certificates/:certId/pdf — скачать PDF
+trainerRouter.get(
+  "/certificates/:certId/pdf",
+  requireActiveTrainer,
+  withErrorHandler(async (req, res) => {
+    const certId = req.params.certId as string;
+    const result = await getCertificatePdf(certId);
+    if (!result) {
+      res.status(404).json({ error: "not_found" });
+      return;
+    }
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename*=UTF-8\'\'${encodeURIComponent(result.filename)}`,
+    );
+    res.send(result.buffer);
+  }),
+);
+
+// GET /api/trainer/sessions/:id/export.csv — выгрузка для HR
+trainerRouter.get(
+  "/sessions/:id/export.csv",
+  requireActiveTrainer,
+  withErrorHandler(async (req, res) => {
+    const sessionId = req.params.id as string;
+    const session = await getSessionForTrainer(sessionId, req.trainer!.sub);
+    if (!session) throw new SessionNotFoundError();
+
+    const sessionTeams = await db.select().from(teamsTable).where(eq(teamsTable.sessionId, sessionId));
+    const teamIds = sessionTeams.map((t) => t.id);
+    const memberRows = teamIds.length
+      ? await db.select().from(teamMembersTable).where(inArray(teamMembersTable.teamId, teamIds))
+      : [];
+    const allRounds = await db
+      .select()
+      .from(rounds)
+      .where(eq(rounds.sessionId, sessionId))
+      .orderBy(asc(rounds.roundNumber));
+    const allResults = allRounds.length
+      ? await db
+          .select()
+          .from(teamRoundResults)
+          .where(inArray(teamRoundResults.roundId, allRounds.map((r) => r.id)))
+      : [];
+
+    const csvEscape = (v: unknown) => {
+      const s = String(v ?? "");
+      if (s.includes('"') || s.includes(",") || s.includes("\n")) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    };
+
+    const headers = [
+      "ФИО",
+      "Команда",
+      "Раунд",
+      "Cash",
+      "Throughput",
+      "Inventory",
+      "OE",
+      "Bottleneck",
+      "Место",
+    ];
+
+    const rowsCsv: string[] = [headers.join(",")];
+
+    for (const member of memberRows) {
+      const team = sessionTeams.find((t) => t.id === member.teamId);
+      if (!team) continue;
+      if (allRounds.length === 0) {
+        rowsCsv.push(
+          [csvEscape(member.fullName), csvEscape(team.name), "", "", "", "", "", "", ""].join(","),
+        );
+        continue;
+      }
+      for (const r of allRounds) {
+        const result = allResults.find((rr) => rr.teamId === team.id && rr.roundId === r.id);
+        rowsCsv.push(
+          [
+            csvEscape(member.fullName),
+            csvEscape(team.name),
+            csvEscape(r.roundNumber),
+            csvEscape(result?.finalCash ?? ""),
+            csvEscape(result?.throughput ?? ""),
+            csvEscape(result?.inventory ?? ""),
+            csvEscape(result?.operatingExpense ?? ""),
+            csvEscape(result?.bottleneckStationId ?? ""),
+            csvEscape(result?.rankInRound ?? ""),
+          ].join(","),
+        );
+      }
+    }
+
+    const csv = "\uFEFF" + rowsCsv.join("\r\n");
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    const safeName = session.name.replace(/[^а-яА-Яa-zA-Z0-9_-]+/g, "_");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename*=UTF-8\'\'${encodeURIComponent(safeName)}.csv`,
+    );
+    res.send(csv);
+  }),
+);
+
+// MVP-2.C3 — обновление настроек сессии (white-label, конфиг)
+import { z as zPatch } from "zod";
+const sessionPatchSchema = zPatch.object({
+  configOverrides: zPatch
+    .object({
+      logoUrl: zPatch.string().url().max(500).optional().nullable(),
+      primaryColor: zPatch.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+      orgName: zPatch.string().max(255).optional().nullable(),
+    })
+    .passthrough()
+    .optional(),
+});
+
+trainerRouter.patch(
+  "/sessions/:id",
+  requireActiveTrainer,
+  withErrorHandler(async (req, res) => {
+    const sessionId = req.params.id as string;
+    const session = await getSessionForTrainer(sessionId, req.trainer!.sub);
+    if (!session) throw new SessionNotFoundError();
+    const parsed = sessionPatchSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "validation" });
+      return;
+    }
+    const updates: Partial<typeof sessions.$inferInsert> = {
+      updatedAt: new Date(),
+    };
+    if (parsed.data.configOverrides) {
+      updates.configOverrides = {
+        ...((session.configOverrides as Record<string, unknown>) ?? {}),
+        ...parsed.data.configOverrides,
+      };
+    }
+    const [updated] = await db.update(sessions).set(updates).where(eq(sessions.id, sessionId)).returning();
+    res.json({ session: updated });
   }),
 );
 

@@ -9,6 +9,8 @@ import {
 } from "@shared/schema";
 import { and, desc, eq, ilike, or, sql, inArray } from "drizzle-orm";
 import { requireSuperAdmin } from "../middleware/auth";
+import { hashPassword } from "../lib/passwords";
+import { z } from "zod";
 
 export const adminRouter = Router();
 
@@ -282,3 +284,30 @@ adminRouter.get("/sessions", requireSuperAdmin, async (_req, res) => {
     sessions: rows.map((r) => ({ ...r, teamCount: teamCounts[r.id] || 0 })),
   });
 });
+
+// MVP-2.C4 — суперадмин сбрасывает пароль тренеру (без email)
+const resetPasswordSchema = z.object({
+  newPassword: z.string().min(8).max(128),
+});
+
+adminRouter.post("/trainers/:id/reset-password", requireSuperAdmin, async (req, res) => {
+  const targetId = req.params.id as string;
+  const parsed = resetPasswordSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "validation" });
+
+  const [target] = await db.select().from(trainers).where(eq(trainers.id, targetId)).limit(1);
+  if (!target) return res.status(404).json({ error: "not_found" });
+
+  const passwordHash = await hashPassword(parsed.data.newPassword);
+  await db
+    .update(trainers)
+    .set({
+      passwordHash,
+      updatedAt: new Date(),
+      notes: (target.notes ?? "") + `\n[admin] password reset by super_admin at ${new Date().toISOString()}`,
+    })
+    .where(eq(trainers.id, targetId));
+
+  res.json({ ok: true });
+});
+
