@@ -1,12 +1,17 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
+import type { Server } from "http";
 import { storage } from "./storage";
 import { insertGameResultSchema } from "@shared/schema";
+import { trainerRouter } from "./routes/trainer";
+import { teamsRouter } from "./routes/teams";
+import { setupWebSocket } from "./ws";
 
 export async function registerRoutes(
   httpServer: Server,
-  app: Express
+  app: Express,
 ): Promise<Server> {
+  // --- legacy: индивидуальный режим (НЕ ТРОГАТЬ) ---
+
   app.post("/api/game-results", async (req, res) => {
     const parsed = insertGameResultSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -20,6 +25,15 @@ export async function registerRoutes(
     const results = await storage.getTopGameResults(20);
     res.json(results);
   });
+
+  // --- ТРЕНЕРСКИЙ РЕЖИМ (ADR-002) ---
+
+  app.use("/api/trainer", trainerRouter);
+  app.use("/api/teams", teamsRouter);
+
+  // --- WebSocket (тренер + команды) ---
+
+  setupWebSocket(httpServer);
 
   return httpServer;
 }
