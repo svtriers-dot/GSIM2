@@ -219,11 +219,7 @@ export default function TrainerSession() {
               <div className="text-3xl font-mono font-bold tracking-wider">
                 {session.accessCode}
               </div>
-              {session.pin && (
-                <div className="text-xs text-muted-foreground mt-1">
-                  PIN: <span className="font-mono">{session.pin}</span>
-                </div>
-              )}
+
             </div>
           </div>
 
@@ -369,12 +365,6 @@ function LobbyTab({
         <div className="text-7xl font-mono font-bold tracking-widest">{session.accessCode}</div>
         <p className="text-sm text-muted-foreground mt-4">
           Заходить на: <span className="font-mono">{location.host}/play/join</span>
-          {session.pin && (
-            <>
-              {" "}
-              · PIN: <span className="font-mono font-bold">{session.pin}</span>
-            </>
-          )}
         </p>
       </div>
 
@@ -542,7 +532,6 @@ function SettingsTab({ session }: { session: SessionDTO }) {
       <h3 className="text-lg font-semibold">Настройки сессии</h3>
       <Field label="ID сессии" value={session.id} mono />
       <Field label="Код доступа" value={session.accessCode} mono />
-      <Field label="PIN" value={session.pin || "не задан"} mono />
       <Field label="Сценарий" value={session.scenarioPreset} />
       <Field label="Макс. команд" value={String(session.maxTeams)} />
       <Field label="Стартовала" value={session.startedAt ? new Date(session.startedAt).toLocaleString("ru-RU") : "—"} />

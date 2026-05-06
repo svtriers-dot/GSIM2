@@ -259,11 +259,6 @@ export async function joinSession(input: TeamJoinInput): Promise<TeamWithMembers
   const session = await getSessionByCode(input.code);
   if (!session) throw new SessionNotFoundError();
 
-  // Проверяем PIN если задан
-  if (session.pin && session.pin !== input.pin) {
-    throw new SessionInvalidPinError();
-  }
-
   // Проверяем что сессия принимает (lobby или draft)
   if (!["lobby", "draft"].includes(session.status)) {
     throw new SessionInvalidStateError(session.status, ["lobby", "draft"]);

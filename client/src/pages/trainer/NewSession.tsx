@@ -7,7 +7,6 @@ export default function NewSession() {
   const [name, setName] = useState("");
   const [scenarioPreset, setScenarioPreset] = useState<"easy" | "medium" | "hard">("medium");
   const [maxTeams, setMaxTeams] = useState(20);
-  const [pin, setPin] = useState("");
   const [expiresInHours, setExpiresInHours] = useState(24);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +29,6 @@ export default function NewSession() {
             name,
             scenarioPreset,
             maxTeams,
-            pin: pin || undefined,
             expiresInHours,
           }),
         },
@@ -113,23 +111,6 @@ export default function NewSession() {
               />
               <p className="text-xs text-muted-foreground mt-1">До 7 дней</p>
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              PIN-код (опционально, 4–6 цифр)
-            </label>
-            <input
-              type="text"
-              pattern="\d{4,6}"
-              value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              className="w-full px-3 py-2 rounded-lg border border-border bg-background"
-              placeholder="123456"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Если задан — участники должны ввести PIN при подключении по коду.
-            </p>
           </div>
 
           {error && (

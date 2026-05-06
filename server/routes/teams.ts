@@ -48,7 +48,6 @@ teamsRouter.get("/check", async (req, res) => {
   res.json({
     exists: true,
     name: session.name,
-    requiresPin: !!session.pin,
     status: session.status,
   });
 });

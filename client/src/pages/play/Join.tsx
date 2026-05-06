@@ -10,8 +10,6 @@ export default function PlayJoin() {
   const [, navigate] = useLocation();
   const [step, setStep] = useState<"code" | "team">("code");
   const [code, setCode] = useState("");
-  const [pin, setPin] = useState("");
-  const [requirePin, setRequirePin] = useState(false);
   const [sessionInfo, setSessionInfo] = useState<{ name: string; status: string } | null>(null);
   const [checking, setChecking] = useState(false);
   const [teamName, setTeamName] = useState("");
@@ -58,11 +56,6 @@ export default function PlayJoin() {
         );
       }
       setSessionInfo({ name: data.name, status: data.status });
-      // Если требуется PIN и ещё не введён — остаёмся на step 1, показываем поле PIN
-      if (data.requiresPin && !pin) {
-        setRequirePin(true);
-        return;
-      }
       setStep("team");
     } catch (e: any) {
       setError(e.message || "Не удалось проверить код");
@@ -87,7 +80,6 @@ export default function PlayJoin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: code.toUpperCase(),
-          pin: pin || undefined,
           teamName: teamName.trim(),
           members: cleanMembers,
         }),
@@ -108,7 +100,6 @@ export default function PlayJoin() {
                     : data.error === "validation"
                       ? "Проверьте данные: код 6 знаков, ФИО ≥ 2 символов"
                       : `Ошибка: ${data.error || res.statusText}`;
-        if (data.error === "invalid_pin") setRequirePin(true);
         throw new Error(msg);
       }
       const data = await res.json();
@@ -148,27 +139,7 @@ export default function PlayJoin() {
                 placeholder="ABC123"
               />
             </div>
-            {requirePin && (
-              <div>
-                <label className="block text-sm font-medium mb-1">
-                  PIN {sessionInfo && <span className="text-xs text-muted-foreground">(этот код защищён PIN-ом)</span>}
-                </label>
-                <input
-                  type="text"
-                  pattern="\d{4,6}"
-                  required
-                  autoFocus
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="w-full px-4 py-3 text-center text-2xl font-mono tracking-widest rounded-lg border border-border bg-background"
-                  placeholder="••••"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Тренер должен был сказать вам PIN.
-                </p>
-              </div>
-            )}
-            {error && (
+{error && (
               <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                 {error}
               </div>
@@ -176,10 +147,10 @@ export default function PlayJoin() {
 
             <button
               type="submit"
-              disabled={code.length !== 6 || checking || (requirePin && !pin)}
+              disabled={code.length !== 6 || checking}
               className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50"
             >
-              {checking ? "Проверяю..." : requirePin && !pin ? "Введите PIN" : "Дальше →"}
+              {checking ? "Проверяю..." : "Дальше →"}
             </button>
           </form>
         )}
@@ -214,20 +185,7 @@ export default function PlayJoin() {
               />
             </div>
 
-            {requirePin && (
-              <div>
-                <label className="block text-sm font-medium mb-1">PIN</label>
-                <input
-                  type="text"
-                  pattern="\d{4,6}"
-                  value={pin}
-                  onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-background"
-                />
-              </div>
-            )}
-
-            <div>
+<div>
               <label className="block text-sm font-medium mb-1">
                 Кто играет (ФИО для сертификатов)
               </label>
