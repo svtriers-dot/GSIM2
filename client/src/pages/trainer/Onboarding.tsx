@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { authJson, getTrainerToken, getTrainerProfile, logoutTrainer } from "@/lib/auth";
+import { authJson, downloadAuthFile, getTrainerToken, getTrainerProfile, logoutTrainer } from "@/lib/auth";
 
 interface Status {
   tourCompleted: boolean;
@@ -207,14 +207,13 @@ export default function TrainerOnboarding() {
               ID сертификата: <span className="font-mono">{status.certificationPublicId}</span>
             </div>
             <div className="flex gap-2 justify-center flex-wrap">
-              <a
-                href="/api/trainer/certification/pdf"
-                target="_blank"
-                rel="noopener"
+              <button
+                type="button"
+                onClick={() => downloadAuthFile("/api/trainer/certification/pdf", "TessTOC_certificate.pdf")}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
               >
                 📄 Скачать PDF
-              </a>
+              </button>
               <a
                 href={`/verify/${status.certificationPublicId}`}
                 target="_blank"

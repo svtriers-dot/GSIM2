@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import Joyride, { type CallBackProps, STATUS, type Step } from "react-joyride";
-import { authJson, authFetch, getTrainerProfile, logoutTrainer, getTrainerToken, setTrainerToken, type TrainerRole } from "@/lib/auth";
+import { authJson, authFetch, downloadAuthFile, getTrainerProfile, logoutTrainer, getTrainerToken, setTrainerToken, type TrainerRole } from "@/lib/auth";
 import { SkeletonTable, ErrorRetry } from "@/components/Skeleton";
 
 interface SessionRow {
@@ -169,16 +169,15 @@ export default function TrainerDashboard() {
             >
               + Новая сессия
             </Link>
-            <a
-              href="/api/trainer/certification/pdf"
-              target="_blank"
-              rel="noopener"
+            <button
+              type="button"
+              onClick={() => downloadAuthFile("/api/trainer/certification/pdf", "TessTOC_certificate.pdf")}
               data-tour="certificate-link"
               className="hidden md:inline-block px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
               title="Скачать сертификат тренера"
             >
               🎓 Сертификат
-            </a>
+            </button>
             <button
               onClick={logout}
               className="px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"

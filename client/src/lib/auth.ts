@@ -104,6 +104,55 @@ export async function authJson<T = unknown>(url: string, init: RequestInit = {})
   return res.json();
 }
 
+/**
+ * Скачивание файла с Bearer-токеном в заголовке.
+ * Браузер не позволяет вкладывать кастомные заголовки в <a href>, поэтому
+ * для защищённых endpoint'ов нужно fetch + Blob + programmatic download.
+ *
+ * @param url абсолютный или относительный путь
+ * @param fallbackFilename имя файла, если сервер не вернул Content-Disposition
+ * @returns true если файл скачан, false если ошибка (alert уже показан)
+ */
+export async function downloadAuthFile(
+  url: string,
+  fallbackFilename: string,
+): Promise<boolean> {
+  try {
+    const res = await authFetch(url);
+    if (!res.ok) {
+      let msg = `${res.status}`;
+      try {
+        const data = await res.json();
+        if (data?.error) msg = `${res.status}: ${data.error}`;
+      } catch {}
+      alert(`Не удалось скачать файл: ${msg}`);
+      return false;
+    }
+    const blob = await res.blob();
+    let filename = fallbackFilename;
+    const cd = res.headers.get("Content-Disposition") || "";
+    const m1 = /filename\*=UTF-8''([^;]+)/i.exec(cd);
+    if (m1) {
+      try { filename = decodeURIComponent(m1[1]); } catch {}
+    } else {
+      const m2 = /filename="?([^";]+)"?/i.exec(cd);
+      if (m2) filename = m2[1];
+    }
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+    return true;
+  } catch (e: any) {
+    alert(`Ошибка скачивания: ${e?.message ?? e}`);
+    return false;
+  }
+}
+
 // Device token для команды (1 устройство = 1 команда)
 
 const DEVICE_KEY = "tesstoc:team:deviceToken";
