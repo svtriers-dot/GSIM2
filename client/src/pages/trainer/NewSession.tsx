@@ -91,9 +91,9 @@ export default function NewSession() {
               onChange={(e) => setScenarioPreset(e.target.value as any)}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background"
             >
-              <option value="easy">Easy — стартовый капитал $15k, расходы $8k/нед, 4 дня</option>
+              <option value="easy">Easy — стартовый капитал $15k, расходы $8k/нед, 5 дней</option>
               <option value="medium">Medium — стартовый $10k, расходы $11k/нед, 5 дней (рекомендуется)</option>
-              <option value="hard">Hard — стартовый $7k, расходы $14k/нед, 6 дней</option>
+              <option value="hard">Hard — стартовый $7k, расходы $14k/нед, 5 дней</option>
               <option value="custom">Custom — задать параметры вручную ниже</option>
             </select>
           </div>

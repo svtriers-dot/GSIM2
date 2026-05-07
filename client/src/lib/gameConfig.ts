@@ -131,13 +131,11 @@ export const SCENARIO_PRESETS: Record<string, Partial<GameConstants>> = {
   easy: {
     startingCash: 15000,
     fixedExpenses: 8000,
-    totalDays: 4,
   },
   medium: {}, // дефолт
   hard: {
     startingCash: 7000,
     fixedExpenses: 14000,
-    totalDays: 6,
   },
   custom: {}, // тренер задаёт сам
 };
