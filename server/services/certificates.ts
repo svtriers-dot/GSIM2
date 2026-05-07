@@ -27,14 +27,25 @@ const fonts = {
 let printer: PdfPrinter;
 function getPrinter(): PdfPrinter {
   if (!printer) {
-    // Стандартный встроенный VFS pdfmake включает Roboto с кириллицей
-    const vfs = require("pdfmake/build/vfs_fonts.js");
+    // pdfmake 0.2.x: vfs_fonts.js экспортирует напрямую { "Roboto-Regular.ttf": "..base64..", ... }
+    // (раньше было обёрнуто в .pdfMake.vfs — поэтому fallback'и для совместимости).
+    const vfs: Record<string, string> = require("pdfmake/build/vfs_fonts.js");
+    const pick = (name: string): string =>
+      (vfs as any)?.[name] ??
+      (vfs as any)?.default?.[name] ??
+      (vfs as any)?.pdfMake?.vfs?.[name] ??
+      (vfs as any)?.default?.pdfMake?.vfs?.[name] ??
+      "";
+    const robotoNormal = pick("Roboto-Regular.ttf");
+    if (!robotoNormal) {
+      throw new Error("pdfmake vfs_fonts: Roboto-Regular.ttf не найден — проверь установку pdfmake");
+    }
     const fontDef = {
       Roboto: {
-        normal: Buffer.from(vfs.pdfMake?.vfs?.["Roboto-Regular.ttf"] ?? vfs.default?.pdfMake?.vfs?.["Roboto-Regular.ttf"] ?? "", "base64"),
-        bold: Buffer.from(vfs.pdfMake?.vfs?.["Roboto-Medium.ttf"] ?? vfs.default?.pdfMake?.vfs?.["Roboto-Medium.ttf"] ?? "", "base64"),
-        italics: Buffer.from(vfs.pdfMake?.vfs?.["Roboto-Italic.ttf"] ?? vfs.default?.pdfMake?.vfs?.["Roboto-Italic.ttf"] ?? "", "base64"),
-        bolditalics: Buffer.from(vfs.pdfMake?.vfs?.["Roboto-MediumItalic.ttf"] ?? vfs.default?.pdfMake?.vfs?.["Roboto-MediumItalic.ttf"] ?? "", "base64"),
+        normal: Buffer.from(robotoNormal, "base64"),
+        bold: Buffer.from(pick("Roboto-Medium.ttf"), "base64"),
+        italics: Buffer.from(pick("Roboto-Italic.ttf"), "base64"),
+        bolditalics: Buffer.from(pick("Roboto-MediumItalic.ttf"), "base64"),
       },
     };
     printer = new PdfPrinter(fontDef);
