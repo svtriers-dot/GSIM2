@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { teamJson, getDeviceToken, getTeamMeta, clearTeamSession } from "@/lib/auth";
+import { teamJson, downloadTeamFile, getDeviceToken, clearTeamSession } from "@/lib/auth";
 
 interface MeResponse {
   team: { id: string; name: string; color: string; sessionId: string };
@@ -8,10 +8,33 @@ interface MeResponse {
   session: { name: string; accessCode: string; status: string } | null;
 }
 
+interface CertItem {
+  id: string;
+  teamMemberId: string;
+  fullName: string;
+  badge: "top1" | "top2" | "top3" | null;
+  isTop3: boolean;
+  generatedAt: string;
+}
+
+interface CertsResponse {
+  ready: boolean;
+  status?: string;
+  certificates: CertItem[];
+}
+
+const BADGE_LABEL: Record<string, string> = {
+  top1: "🥇",
+  top2: "🥈",
+  top3: "🥉",
+};
+
 export default function PlayResult() {
   const [, navigate] = useLocation();
   const [me, setMe] = useState<MeResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [certs, setCerts] = useState<CertsResponse | null>(null);
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   useEffect(() => {
     if (!getDeviceToken()) {
@@ -21,7 +44,31 @@ export default function PlayResult() {
     teamJson<MeResponse>("/api/teams/me")
       .then(setMe)
       .catch((e) => setError(e.message));
+    void loadCerts();
+    const id = setInterval(loadCerts, 6000); // авто-poll пока не готовы
+    return () => clearInterval(id);
   }, []);
+
+  async function loadCerts() {
+    try {
+      const data = await teamJson<CertsResponse>("/api/teams/me/certificates");
+      setCerts(data);
+    } catch {
+      // оставляем предыдущее
+    }
+  }
+
+  async function download(cert: CertItem) {
+    setDownloading(cert.id);
+    try {
+      await downloadTeamFile(
+        `/api/teams/me/certificates/${cert.id}/pdf`,
+        `${cert.fullName.replace(/\s+/g, "_")}.pdf`,
+      );
+    } finally {
+      setDownloading(null);
+    }
+  }
 
   if (error)
     return (
@@ -42,7 +89,7 @@ export default function PlayResult() {
   if (!me) return <div className="p-8 text-center">Загрузка...</div>;
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
       <div className="max-w-xl w-full bg-card border border-border rounded-xl p-8 text-center">
         <div className="text-5xl mb-3">🏁</div>
         <h1 className="text-2xl font-semibold mb-1">Сессия завершена</h1>
@@ -58,21 +105,53 @@ export default function PlayResult() {
           <div className="text-lg font-bold">{me.team.name}</div>
         </div>
 
-        <div className="mb-6">
-          <h3 className="text-sm font-semibold mb-2">Состав</h3>
-          <ul className="text-sm space-y-1">
-            {me.members.map((m, i) => (
-              <li key={m.id}>
-                {i + 1}. {m.fullName}
-              </li>
-            ))}
-          </ul>
-        </div>
+        <div className="mb-6 text-left">
+          <h3 className="text-sm font-semibold mb-2 text-center">Сертификаты участников</h3>
 
-        <p className="text-sm text-muted-foreground mb-6">
-          Подробный leaderboard и сертификаты — у тренера. Тренер выдаст PDF-сертификаты
-          на каждое имя из списка (в MVP-2).
-        </p>
+          {!certs || !certs.ready ? (
+            <div className="text-sm text-muted-foreground text-center py-4">
+              Сертификаты будут доступны после завершения сессии тренером.
+              {certs?.status && certs.status !== "ended" ? (
+                <div className="text-xs mt-1">
+                  Статус сессии: <span className="font-mono">{certs.status}</span>
+                </div>
+              ) : null}
+            </div>
+          ) : certs.certificates.length === 0 ? (
+            <div className="text-sm text-muted-foreground text-center py-4">
+              Сертификаты ещё не сгенерированы. Попробуйте обновить страницу через минуту.
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {me.members.map((m) => {
+                const cert = certs.certificates.find((c) => c.teamMemberId === m.id);
+                return (
+                  <li
+                    key={m.id}
+                    className="flex items-center justify-between bg-elevate-1 border border-border rounded-lg px-3 py-2"
+                  >
+                    <span className="text-sm">
+                      {cert?.badge ? `${BADGE_LABEL[cert.badge]} ` : ""}
+                      {m.fullName}
+                    </span>
+                    {cert ? (
+                      <button
+                        type="button"
+                        onClick={() => download(cert)}
+                        disabled={downloading === cert.id}
+                        className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium disabled:opacity-50"
+                      >
+                        {downloading === cert.id ? "..." : "📄 Скачать"}
+                      </button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
 
         <div className="flex gap-3 justify-center">
           <button

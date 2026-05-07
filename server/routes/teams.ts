@@ -17,9 +17,14 @@ import {
 } from "../services/sessions";
 import { notifyTeamJoined } from "../services/orchestrator";
 import { teamCheckRateLimit, teamJoinRateLimit } from "../middleware/rateLimit";
+import {
+  generateCertificatesForSession,
+  getCertificatePdf,
+  listCertificatesForSession,
+} from "../services/certificates";
 import { db } from "../db";
-import { sessions } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { sessions, certificates, teamMembers } from "@shared/schema";
+import { eq, inArray } from "drizzle-orm";
 
 export const teamsRouter = Router();
 
@@ -184,3 +189,99 @@ teamsRouter.post("/ws-ticket", async (req, res) => {
   res.json({ ticket, expiresInSeconds: 60 });
 });
 
+// =============================================================================
+// MVP-2.D: self-service сертификаты участникам
+// =============================================================================
+//
+// GET  /api/teams/me/certificates              — список сертификатов команды
+//                                                (lazy generate если session ended).
+// GET  /api/teams/me/certificates/:certId/pdf  — PDF сертификата (только для члена
+//                                                СВОЕЙ команды).
+//
+// Авторизация — по X-Device-Token (как в /api/teams/me).
+// =============================================================================
+
+teamsRouter.get("/me/certificates", async (req, res) => {
+  const team = await teamFromHeader(req);
+  if (!team) return res.status(404).json({ error: "team_not_found" });
+
+  const [session] = await db
+    .select()
+    .from(sessions)
+    .where(eq(sessions.id, team.sessionId))
+    .limit(1);
+  if (!session) return res.status(404).json({ error: "session_not_found" });
+
+  // Сертификаты доступны только после завершения сессии
+  if (session.status !== "ended") {
+    return res.json({ ready: false, status: session.status, certificates: [] });
+  }
+
+  // Lazy generation: если сертификатов сессии ещё нет, попробовать сгенерировать
+  const sessionCerts = await listCertificatesForSession(session.id);
+  if (sessionCerts.length === 0) {
+    try {
+      await generateCertificatesForSession(session.id);
+    } catch (e: any) {
+      // no_finished_round и подобное — отдадим пустой список, но не 500
+      console.warn("[teams/certificates] lazy generate failed:", e?.message ?? e);
+    }
+  }
+
+  // Возвращаем только сертификаты ТЕКУЩЕЙ команды
+  const memberIds = team.members.map((m) => m.id);
+  if (memberIds.length === 0) {
+    return res.json({ ready: true, certificates: [] });
+  }
+
+  const teamCerts = await db
+    .select({
+      id: certificates.id,
+      teamMemberId: certificates.teamMemberId,
+      badge: certificates.badge,
+      isTop3: certificates.isTop3,
+      generatedAt: certificates.generatedAt,
+    })
+    .from(certificates)
+    .where(inArray(certificates.teamMemberId, memberIds));
+
+  // Привяжем fullName из team.members
+  const enriched = teamCerts.map((c) => {
+    const member = team.members.find((m) => m.id === c.teamMemberId);
+    return {
+      ...c,
+      fullName: member?.fullName ?? "—",
+    };
+  });
+
+  res.json({ ready: true, certificates: enriched });
+});
+
+teamsRouter.get("/me/certificates/:certId/pdf", async (req, res) => {
+  const team = await teamFromHeader(req);
+  if (!team) return res.status(404).json({ error: "team_not_found" });
+  const certId = String(req.params.certId);
+
+  // Проверяем что cert принадлежит члену этой команды
+  const [cert] = await db
+    .select()
+    .from(certificates)
+    .where(eq(certificates.id, certId))
+    .limit(1);
+  if (!cert) return res.status(404).json({ error: "certificate_not_found" });
+
+  const memberIds = team.members.map((m) => m.id);
+  if (!memberIds.includes(cert.teamMemberId)) {
+    return res.status(403).json({ error: "not_your_team" });
+  }
+
+  const result = await getCertificatePdf(certId);
+  if (!result) return res.status(404).json({ error: "pdf_unavailable" });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename*=UTF-8\'\'${encodeURIComponent(result.filename)}`,
+  );
+  res.send(result.buffer);
+});

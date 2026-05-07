@@ -207,3 +207,47 @@ export async function teamJson<T = unknown>(url: string, init: RequestInit = {})
   }
   return res.json();
 }
+/**
+ * Скачивание файла с X-Device-Token в заголовке (для участников команды).
+ * Аналог downloadAuthFile, но для team-flow вместо trainer-flow.
+ */
+export async function downloadTeamFile(
+  url: string,
+  fallbackFilename: string,
+): Promise<boolean> {
+  try {
+    const res = await teamFetch(url);
+    if (!res.ok) {
+      let msg = `${res.status}`;
+      try {
+        const data = await res.json();
+        if (data?.error) msg = `${res.status}: ${data.error}`;
+      } catch {}
+      alert(`Не удалось скачать файл: ${msg}`);
+      return false;
+    }
+    const blob = await res.blob();
+    let filename = fallbackFilename;
+    const cd = res.headers.get("Content-Disposition") || "";
+    const m1 = /filename\*=UTF-8''([^;]+)/i.exec(cd);
+    if (m1) {
+      try { filename = decodeURIComponent(m1[1]); } catch {}
+    } else {
+      const m2 = /filename="?([^";]+)"?/i.exec(cd);
+      if (m2) filename = m2[1];
+    }
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+    return true;
+  } catch (e: any) {
+    alert(`Ошибка скачивания: ${e?.message ?? e}`);
+    return false;
+  }
+}
+

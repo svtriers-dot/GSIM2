@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import Joyride, { type CallBackProps, STATUS, type Step } from "react-joyride";
-import { authJson, authFetch, downloadAuthFile, getTrainerProfile, logoutTrainer, getTrainerToken, setTrainerToken, type TrainerRole } from "@/lib/auth";
+import { authJson, authFetch, getTrainerProfile, logoutTrainer, getTrainerToken, setTrainerToken, type TrainerRole } from "@/lib/auth";
 import { SkeletonTable, ErrorRetry } from "@/components/Skeleton";
 
 interface SessionRow {
@@ -41,7 +41,7 @@ const tourSteps: Step[] = [
     placement: "center",
     title: "Добро пожаловать в кабинет тренера",
     content:
-      "Вы прошли сертификацию TessTOC. Этот короткий тур (5 шагов, ~1 минута) покажет интерфейс кабинета.",
+      "Этот короткий тур (4 шага, ~1 минута) покажет интерфейс кабинета.",
   },
   {
     target: '[data-tour="new-session"]',
@@ -54,12 +54,6 @@ const tourSteps: Step[] = [
     title: "Список ваших сессий",
     content:
       "Здесь все мастер-классы. Кликните на любой, чтобы открыть Live-дашборд, дебриф, выдать сертификаты участникам.",
-  },
-  {
-    target: '[data-tour="certificate-link"]',
-    title: "Ваш сертификат",
-    content:
-      "Скачайте PDF своего тренерского сертификата с QR-кодом верификации. Можно добавить в LinkedIn.",
   },
   {
     target: "body",
@@ -76,7 +70,6 @@ export default function TrainerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [runTour, setRunTour] = useState(false);
-  const [isCertified, setIsCertified] = useState<boolean>(false);
   const profile = getTrainerProfile();
 
   useEffect(() => {
@@ -124,12 +117,8 @@ export default function TrainerDashboard() {
   async function load() {
     setLoading(true);
     try {
-      const [data, st] = await Promise.all([
-        authJson<{ sessions: SessionRow[] }>("/api/trainer/sessions"),
-        authJson<{ isCertified: boolean }>("/api/trainer/onboarding/status").catch(() => ({ isCertified: false })),
-      ]);
+      const data = await authJson<{ sessions: SessionRow[] }>("/api/trainer/sessions");
       setSessions(data.sessions);
-      setIsCertified(!!st?.isCertified);
     } catch (e: any) {
       if (String(e.message).startsWith("401")) {
         logoutTrainer();
@@ -174,26 +163,6 @@ export default function TrainerDashboard() {
             >
               + Новая сессия
             </Link>
-            {isCertified ? (
-              <button
-                type="button"
-                onClick={() => downloadAuthFile("/api/trainer/certification/pdf", "TessTOC_certificate.pdf")}
-                data-tour="certificate-link"
-                className="hidden md:inline-block px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
-                title="Скачать сертификат тренера"
-              >
-                🎓 Сертификат
-              </button>
-            ) : (
-              <Link
-                href="/trainer/onboarding"
-                data-tour="certificate-link"
-                className="hidden md:inline-block px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
-                title="Пройдите чек-лист сертификации"
-              >
-                🎓 Сертификация
-              </Link>
-            )}
             <button
               onClick={logout}
               className="px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
