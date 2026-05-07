@@ -4,6 +4,7 @@
 import { db } from "../db";
 import { trainers } from "@shared/schema";
 import { eq, sql } from "drizzle-orm";
+import { issueCertification } from "../services/onboarding";
 
 export async function runStartupBootstrap(): Promise<void> {
   // 0. Fix: drizzle-kit в интерактивном режиме на VM ошибочно переименовал
@@ -86,22 +87,44 @@ export async function runStartupBootstrap(): Promise<void> {
       return;
     }
 
-    if (existing.role === "super_admin") {
+    if (existing.role !== "super_admin") {
+      await db
+        .update(trainers)
+        .set({
+          role: "super_admin",
+          approvedAt: existing.approvedAt ?? new Date(),
+          approvedBy: existing.id, // self-approve для super_admin
+          updatedAt: new Date(),
+          notes: (existing.notes ?? "") + "\n[bootstrap] upgraded to super_admin via SUPER_ADMIN_EMAIL",
+        })
+        .where(eq(trainers.id, existing.id));
+      console.log(`[bootstrap] ✅ ${adminEmail} → super_admin`);
+    } else {
       console.log(`[bootstrap] super_admin ${adminEmail} уже настроен`);
-      return;
     }
 
-    await db
-      .update(trainers)
-      .set({
-        role: "super_admin",
-        approvedAt: existing.approvedAt ?? new Date(),
-        approvedBy: existing.id, // self-approve для super_admin
-        updatedAt: new Date(),
-        notes: (existing.notes ?? "") + "\n[bootstrap] upgraded to super_admin via SUPER_ADMIN_EMAIL",
-      })
-      .where(eq(trainers.id, existing.id));
-    console.log(`[bootstrap] ✅ ${adminEmail} → super_admin`);
+    // 3. Авто-сертификация super_admin'а — он не должен проходить онбординг
+    //    (квиз/практика). Без этого UI Dashboard прячет кнопку "🎓 Сертификат".
+    //    Заполняем дефолты для quiz/practice если их не было.
+    if (!existing.isCertified) {
+      const updates: Record<string, unknown> = { updatedAt: new Date() };
+      if (existing.quizScore == null) updates.quizScore = 7;
+      if (existing.quizPassedAt == null) updates.quizPassedAt = new Date();
+      if (existing.practiceFinalCash == null) updates.practiceFinalCash = 14000;
+      if (existing.practicePlayedAt == null) updates.practicePlayedAt = new Date();
+      if (Object.keys(updates).length > 1) {
+        await db.update(trainers).set(updates).where(eq(trainers.id, existing.id));
+      }
+      try {
+        const { publicId, alreadyExists } = await issueCertification(existing.id);
+        console.log(
+          `[bootstrap] ✅ ${adminEmail} сертифицирован, publicId=${publicId}` +
+            (alreadyExists ? " (уже был)" : ""),
+        );
+      } catch (e) {
+        console.error("[bootstrap] auto-certify super_admin failed:", e);
+      }
+    }
   } catch (e) {
     console.error("[bootstrap] super_admin upgrade failed:", e);
   }
