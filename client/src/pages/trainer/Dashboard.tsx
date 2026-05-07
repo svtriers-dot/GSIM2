@@ -76,6 +76,7 @@ export default function TrainerDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [runTour, setRunTour] = useState(false);
+  const [isCertified, setIsCertified] = useState<boolean>(false);
   const profile = getTrainerProfile();
 
   useEffect(() => {
@@ -123,8 +124,12 @@ export default function TrainerDashboard() {
   async function load() {
     setLoading(true);
     try {
-      const data = await authJson<{ sessions: SessionRow[] }>("/api/trainer/sessions");
+      const [data, st] = await Promise.all([
+        authJson<{ sessions: SessionRow[] }>("/api/trainer/sessions"),
+        authJson<{ isCertified: boolean }>("/api/trainer/onboarding/status").catch(() => ({ isCertified: false })),
+      ]);
       setSessions(data.sessions);
+      setIsCertified(!!st?.isCertified);
     } catch (e: any) {
       if (String(e.message).startsWith("401")) {
         logoutTrainer();
@@ -169,15 +174,26 @@ export default function TrainerDashboard() {
             >
               + Новая сессия
             </Link>
-            <button
-              type="button"
-              onClick={() => downloadAuthFile("/api/trainer/certification/pdf", "TessTOC_certificate.pdf")}
-              data-tour="certificate-link"
-              className="hidden md:inline-block px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
-              title="Скачать сертификат тренера"
-            >
-              🎓 Сертификат
-            </button>
+            {isCertified ? (
+              <button
+                type="button"
+                onClick={() => downloadAuthFile("/api/trainer/certification/pdf", "TessTOC_certificate.pdf")}
+                data-tour="certificate-link"
+                className="hidden md:inline-block px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
+                title="Скачать сертификат тренера"
+              >
+                🎓 Сертификат
+              </button>
+            ) : (
+              <Link
+                href="/trainer/onboarding"
+                data-tour="certificate-link"
+                className="hidden md:inline-block px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
+                title="Пройдите чек-лист сертификации"
+              >
+                🎓 Сертификация
+              </Link>
+            )}
             <button
               onClick={logout}
               className="px-3 py-2 rounded-lg border border-border text-sm hover:bg-elevate-1"
