@@ -112,7 +112,7 @@ export default function TrainerLearn() {
               <Link href="/play?practice=1" className="text-primary hover:underline font-medium">
                 Сыграть пробный раунд
               </Link>
-              {" "}— достичь итогового cash $14k+ за 5 дней.
+              {" "}— достичь итогового cash 14k ₽+ за 5 дней.
             </li>
             <li>
               <Link href="/trainer/quiz" className="text-primary hover:underline font-medium">

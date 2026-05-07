@@ -91,9 +91,9 @@ export default function NewSession() {
               onChange={(e) => setScenarioPreset(e.target.value as any)}
               className="w-full px-3 py-2 rounded-lg border border-border bg-background"
             >
-              <option value="easy">Easy — стартовый капитал $15k, расходы $8k/нед, 5 дней</option>
-              <option value="medium">Medium — стартовый $10k, расходы $11k/нед, 5 дней (рекомендуется)</option>
-              <option value="hard">Hard — стартовый $7k, расходы $14k/нед, 5 дней</option>
+              <option value="easy">Easy — стартовый капитал 15k ₽, расходы 8k ₽/нед, 5 дней</option>
+              <option value="medium">Medium — стартовый 10k ₽, расходы 11k ₽/нед, 5 дней (рекомендуется)</option>
+              <option value="hard">Hard — стартовый 7k ₽, расходы 14k ₽/нед, 5 дней</option>
               <option value="custom">Custom — задать параметры вручную ниже</option>
             </select>
           </div>
@@ -144,7 +144,7 @@ export default function NewSession() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium mb-1">
-                      Стартовый капитал, $
+                      Стартовый капитал, ₽
                     </label>
                     <input
                       type="number"
@@ -159,7 +159,7 @@ export default function NewSession() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1">
-                      Постоянные расходы, $/нед
+                      Постоянные расходы, ₽/нед
                     </label>
                     <input
                       type="number"

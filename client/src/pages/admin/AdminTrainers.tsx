@@ -299,7 +299,7 @@ export default function AdminTrainers() {
                       <div>{t.email}</div>
                       <div className="text-xs mt-0.5 space-x-1">
                         {t.practicePlayedAt && (
-                          <span title={`Practice $${t.practiceFinalCash?.toLocaleString("en-US")}`}>🎮</span>
+                          <span title={`Practice ${t.practiceFinalCash?.toLocaleString("ru-RU")} ₽`}>🎮</span>
                         )}
                         {t.quizPassedAt && (
                           <span title={`Quiz ${t.quizScore}/7`}>📚</span>

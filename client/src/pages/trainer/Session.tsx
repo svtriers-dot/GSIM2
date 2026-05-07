@@ -320,7 +320,7 @@ export default function TrainerSession() {
                     {a.kind === "cash_negative" && (
                       <>
                         cash ушёл в минус —{" "}
-                        <span className="font-mono text-red-700">${a.cash?.toLocaleString("en-US")}</span>
+                        <span className="font-mono text-red-700">{a.cash?.toLocaleString("ru-RU")} ₽</span>
                       </>
                     )}
                     {a.kind === "bottleneck_changed" && (
@@ -565,7 +565,7 @@ function LiveTab({ teams }: { teams: any[] }) {
             <tr>
               <th className="px-4 py-3 font-medium">Команда</th>
               <th className="px-4 py-3 font-medium text-right">
-                <MetricHeader label="Cash $" hint="Сколько денег у команды сейчас. Если в минус — операционные расходы превышают throughput. По ТОС: throughput < operating expense." />
+                <MetricHeader label="Cash, ₽" hint="Сколько денег у команды сейчас. Если в минус — операционные расходы превышают throughput. По ТОС: throughput < operating expense." />
               </th>
               <th className="px-4 py-3 font-medium text-right">
                 <MetricHeader label="Throughput" hint="Throughput — выручка от продажи готовой продукции минус сырьё. Главный показатель ТОС: максимизируется через расширение узкого места." />
@@ -716,7 +716,7 @@ function DebriefTab({
               <tr>
                 <th className="px-4 py-3 font-medium w-12">#</th>
                 <th className="px-4 py-3 font-medium">Команда</th>
-                <th className="px-4 py-3 font-medium text-right">Cash $</th>
+                <th className="px-4 py-3 font-medium text-right">Cash, ₽</th>
                 <th className="px-4 py-3 font-medium text-right">Throughput</th>
                 <th className="px-4 py-3 font-medium">Состав</th>
               </tr>
@@ -742,7 +742,7 @@ function DebriefTab({
                       (t.metrics?.cash ?? 0) < 0 ? "text-red-600" : ""
                     }`}
                   >
-                    ${(t.metrics?.cash ?? 0).toLocaleString("en-US")}
+                    {(t.metrics?.cash ?? 0).toLocaleString("ru-RU")} ₽
                   </td>
                   <td className="px-4 py-3 text-right font-mono">
                     {t.metrics?.throughput ?? 0}
@@ -826,7 +826,7 @@ function DebriefTab({
                 <div>
                   <div className="text-xs text-muted-foreground">Cash R{lastRound.roundNumber}</div>
                   <div className={`font-mono font-semibold ${(last?.finalCash ?? 0) < 0 ? "text-red-600" : ""}`}>
-                    ${(last?.finalCash ?? 0).toLocaleString("en-US")}
+                    {(last?.finalCash ?? 0).toLocaleString("ru-RU")} ₽
                   </div>
                 </div>
                 <div>

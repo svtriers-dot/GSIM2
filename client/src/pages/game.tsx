@@ -1529,7 +1529,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                       : practiceResult?.accepted
                         ? "✅ Зачтено"
                         : practiceResult
-                          ? `❌ Нужно $${practiceResult.minCashRequired}+`
+                          ? `❌ Нужно ${practiceResult.minCashRequired.toLocaleString("ru-RU")} ₽+`
                           : "Засчитать как пробный прогон"}
                   </Button>
                 )}

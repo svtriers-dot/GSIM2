@@ -212,12 +212,12 @@ export default function TrainerReplay() {
                       <div>
                         <span className="text-muted-foreground">Cash:</span>{" "}
                         <span className={`font-mono font-semibold ${result.finalCash < 0 ? "text-red-600" : ""}`}>
-                          ${result.finalCash.toLocaleString("en-US")}
+                          {result.finalCash.toLocaleString("ru-RU")} ₽
                         </span>
                       </div>
                       <div>
                         <span className="text-muted-foreground">Throughput:</span>{" "}
-                        <span className="font-mono">{result.throughput.toLocaleString("en-US")}</span>
+                        <span className="font-mono">{result.throughput.toLocaleString("ru-RU")} ₽</span>
                         {" · "}
                         <span className="text-muted-foreground">Rank:</span>{" "}
                         <span className="font-mono">#{result.rankInRound}</span>
