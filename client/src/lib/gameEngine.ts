@@ -570,9 +570,20 @@ export class GoldrattEngine {
     let bottleneckStationId: string | null = null;
     let maxQueue = 0;
     for (const [stationId, st] of Object.entries(this.stationStates)) {
-      // буфер для этой станции — bufferKey совпадает с stationId
-      const queue = this.buffers[stationId] || 0;
-      if (queue > maxQueue && (st.status === 'prod' || st.status === 'setup' || st.status === 'idle')) {
+      // Очередь = входной буфер(ы) ПЕРЕД станцией (а не buffers[stationId], которого нет).
+      const def = STATIONS.find((s) => s.id === stationId);
+      let queue = 0;
+      if (def?.isAssembly) {
+        const lb = this.getLeftBufferId(stationId);
+        const rb = this.getRightBufferId(stationId);
+        queue = (lb ? this.buffers[lb] || 0 : 0) + (rb ? this.buffers[rb] || 0 : 0);
+      } else {
+        const ib = this.getInputBufferId(stationId);
+        queue = ib ? this.buffers[ib] || 0 : 0;
+      }
+      // Узкое место интереснее на станциях со станком (где работа реально стопорится),
+      // но если станка нет, а очередь копится — это тоже сигнал, поэтому учитываем все.
+      if (queue > maxQueue) {
         maxQueue = queue;
         bottleneckStationId = stationId;
       }

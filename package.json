@@ -9,7 +9,8 @@
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "db:push": "drizzle-kit push",
-    "grant-super-admin": "tsx script/grant-super-admin.ts"
+    "grant-super-admin": "tsx script/grant-super-admin.ts",
+    "test": "tsx __tests__/engine.spec.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -120,5 +121,5 @@
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
   },
-  "description": "TessTOC \u2014 Goldratt Theory of Constraints production simulator (experimental branch)"
+  "description": "TessTOC — Goldratt Theory of Constraints production simulator (experimental branch)"
 }
