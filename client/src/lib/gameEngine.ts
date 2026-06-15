@@ -84,6 +84,7 @@ export interface SessionMetrics {
   inventory: number;           // суммарный WIP во всех буферах
   operatingExpense: number;    // totalRMCost (затраты на сырьё, аналог OE)
   bottleneckStationId: string | null;  // самая загруженная станция с очередью
+  bottleneckQueue: number;     // глубина очереди (WIP) перед узким местом
   day: number;
   timeInDay: number;
   running: boolean;
@@ -595,6 +596,7 @@ export class GoldrattEngine {
       inventory,
       operatingExpense: Math.round(this.totalRMCost),
       bottleneckStationId,
+      bottleneckQueue: maxQueue,
       day: this.day,
       timeInDay: this.timeInDay,
       running: this.running,

@@ -39,6 +39,7 @@ export interface OrchestratedTeam {
     inventory: number;
     operatingExpense: number;
     bottleneckStationId?: string | null;
+    bottleneckQueue?: number;
   };
   lastSeenAt: Date;
 }
@@ -73,6 +74,7 @@ function defaultMetrics(): OrchestratedTeam["metrics"] {
     inventory: 0,
     operatingExpense: 0,
     bottleneckStationId: null,
+    bottleneckQueue: 0,
   };
 }
 
@@ -319,6 +321,8 @@ export async function applyTeamMetrics(
       typeof metrics.operatingExpense === "number" ? metrics.operatingExpense : team.metrics.operatingExpense,
     bottleneckStationId:
       "bottleneckStationId" in metrics ? (metrics.bottleneckStationId ?? null) : team.metrics.bottleneckStationId,
+    bottleneckQueue:
+      typeof metrics.bottleneckQueue === "number" ? metrics.bottleneckQueue : team.metrics.bottleneckQueue,
   };
   team.lastSeenAt = new Date();
 

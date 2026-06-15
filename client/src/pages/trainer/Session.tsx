@@ -527,7 +527,7 @@ function LiveTab({ teams }: { teams: any[] }) {
               <div className="flex items-center justify-between mb-3">
                 <div className="font-semibold">{t.name}</div>
                 {m.bottleneckStationId && (
-                  <span className="text-xs text-amber-600 font-mono">⚠ {m.bottleneckStationId}</span>
+                  <span className="text-xs text-amber-600 font-mono">⚠ {m.bottleneckStationId}{m.bottleneckQueue ? ` ·${m.bottleneckQueue}` : ""}</span>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
@@ -603,7 +603,10 @@ function LiveTab({ teams }: { teams: any[] }) {
                   <td className="px-4 py-3 text-right font-mono">${(m.operatingExpense ?? 0).toLocaleString("en-US")}</td>
                   <td className="px-4 py-3">
                     {m.bottleneckStationId ? (
-                      <span className="text-amber-600">⚠ {m.bottleneckStationId}</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-100 text-amber-700 font-mono text-xs font-semibold">
+                        ⚠ {m.bottleneckStationId}
+                        {m.bottleneckQueue ? <span className="text-amber-600/80">очередь {m.bottleneckQueue}</span> : null}
+                      </span>
                     ) : (
                       <span className="text-muted-foreground">—</span>
                     )}

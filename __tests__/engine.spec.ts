@@ -199,6 +199,7 @@ function run(e: GoldrattEngine, seconds: number) {
   ok("metrics: inventory = сумма буферов", m.inventory === Object.values(e.buffers).reduce((a,b)=>a+b,0), m.inventory);
   // bottleneck: ожидаем НЕ null если есть очередь у активной станции
   ok("metrics: bottleneck определяется при наличии очереди", m.bottleneckStationId !== null, {bottleneck:m.bottleneckStationId});
+  ok("metrics: bottleneckQueue = глубина очереди перед узким местом", m.bottleneckQueue === 30, {q:m.bottleneckQueue, st:m.bottleneckStationId});
 }
 
 console.log(`\n===== RESULT: ${pass} passed, ${fail} failed =====`);
