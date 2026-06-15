@@ -11,6 +11,7 @@ import { ConnectionStatus } from "@/components/ConnectionStatus";
 import { MobileBlock } from "@/components/MobileBlock";
 import Game, { type GameSessionMode } from "@/pages/game";
 import type { GameSnapshot, SessionMetrics } from "@/lib/gameEngine";
+import { getMachineLabel } from "@/lib/gameConfig";
 
 interface MeResponse {
   team: {
@@ -118,7 +119,10 @@ export default function PlaySessionGame() {
           demand_drop: "📉 Падение спроса",
           wage_increase: "💸 Повысились расходы",
         };
-        const lbl = labels[ev.type] || ev.type;
+        let lbl = labels[ev.type] || ev.type;
+        if (ev.type === "machine_breakdown") {
+          lbl = `🔧 Поломка станка: ${getMachineLabel((ev.payload as any)?.machineId)}`;
+        }
         setForcedToast(lbl);
         setTimeout(() => setForcedToast(null), 5000);
       } else if (event.type === "game.state_sync") {

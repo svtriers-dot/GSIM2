@@ -215,3 +215,14 @@ export function getAllMachineIds(): string[] {
 export function getAllProductIds(): string[] {
   return PRODUCTS.map((p) => p.id);
 }
+
+// Человекочитаемая метка станка по id формата m_<color>_<i> -> «Голубой #1»
+export function getMachineLabel(machineId: string): string {
+  const m = /^m_([a-z]+)_(\d+)$/.exec(machineId || "");
+  if (!m) return machineId || "станок";
+  const color = m[1] as MachineColor;
+  const idx = parseInt(m[2], 10);
+  const mt = MACHINE_TYPES.find((t) => t.color === color);
+  const label = mt?.label ?? color;
+  return (mt?.count ?? 1) > 1 ? `${label} #${idx + 1}` : label;
+}

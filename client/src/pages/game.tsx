@@ -1104,6 +1104,8 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
               const isSetup = sState?.status === 'setup';
               const isIdle = hasMachine && sState?.status === 'idle';
               const isHighlightable = selectedMachineColor === stationDef.color;
+              const machineOnStation = sState?.machineId ? state.machines.find(m => m.id === sState.machineId) : null;
+              const isBroken = !!(machineOnStation?.brokenUntilMs && machineOnStation.brokenUntilMs > Date.now());
               const isFinal = PRODUCTS.some(p => p.finalStation === stationDef.id);
 
               let pulseOpacity = 1;
@@ -1184,7 +1186,17 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                           </circle>
                         )}
 
-                        {isIdle && state.running && (() => {
+                        {isBroken && (
+                          <>
+                            <rect x={sx} y={sy} width={w} height={h} rx={4} fill="#dc2626" opacity={0.35} stroke="#dc2626" strokeWidth={2.5}>
+                              <animate attributeName="opacity" values="0.2;0.5;0.2" dur="0.8s" repeatCount="indefinite" />
+                            </rect>
+                            <text x={pos.x} y={pos.y + 1} textAnchor="middle" dominantBaseline="middle" fontSize="17">🔧</text>
+                            <text x={pos.x} y={sy - 7} textAnchor="middle" fill="#dc2626" fontSize="9" fontWeight="bold" fontFamily="monospace">СЛОМАН</text>
+                          </>
+                        )}
+
+                        {isIdle && state.running && !isBroken && (() => {
                           const col = stationDef.col;
                           const onLeft = col === 'D' || col === 'E' || col === 'F';
                           const itx = onLeft ? sx - 4 : sx + w + 4;
@@ -1197,7 +1209,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                           );
                         })()}
 
-                        {isSetup && (() => {
+                        {isSetup && !isBroken && (() => {
                           const col = stationDef.col;
                           const onLeft = col === 'D' || col === 'E' || col === 'F';
                           const tx = onLeft ? sx - 4 : sx + w + 4;

@@ -135,7 +135,7 @@ export class GoldrattEngine {
     for (const mt of MACHINE_TYPES) {
       for (let i = 0; i < mt.count; i++) {
         this.machines.push({
-          id: `machine_${idx}`,
+          id: `m_${mt.color}_${i}`,
           color: mt.color,
           setupTime: mt.setupTime,
           assignedTo: null,

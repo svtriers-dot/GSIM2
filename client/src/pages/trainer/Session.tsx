@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useRoute } from "wouter";
-import { getAllMachineIds, getAllProductIds } from "@/lib/gameConfig";
+import { getAllMachineIds, getAllProductIds, getMachineLabel } from "@/lib/gameConfig";
 import { authJson, getTrainerToken } from "@/lib/auth";
 import { TrainerSocket, type SessionLiveState, type ConnectionStatus as WsStatus } from "@/lib/trainerSocket";
 import { confirmAction, promptAction } from "@/components/ConfirmDialog";
@@ -1384,9 +1384,9 @@ function ForcedEventsPanel({
                   key={mid}
                   disabled={busy !== null}
                   onClick={() => trigger("machine_breakdown", { machineId: mid }, 60000)}
-                  className="px-3 py-1.5 rounded text-xs border border-border hover:bg-elevate-1 disabled:opacity-50 font-mono"
+                  className="px-3 py-1.5 rounded text-xs border border-border hover:bg-elevate-1 disabled:opacity-50"
                 >
-                  {mid}
+                  {getMachineLabel(mid)}
                 </button>
               ))}
             </div>
