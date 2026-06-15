@@ -779,9 +779,11 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
         </div>
 
         <div className="grid grid-cols-4 gap-1 w-full">
-          <Button data-testid="button-toggle" size="icon" variant={state.running ? 'default' : 'secondary'} onClick={handleToggle} className="w-full">
-            {state.running ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-          </Button>
+          {!sessionMode && (
+            <Button data-testid="button-toggle" size="icon" variant={state.running ? 'default' : 'secondary'} onClick={handleToggle} className="w-full">
+              {state.running ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            </Button>
+          )}
           <Button data-testid="button-pace" size="icon" variant="secondary" onClick={handlePaceChange} className="w-full">
             <FastForward className="w-4 h-4" />
           </Button>
@@ -795,9 +797,11 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
           >
             x{state.pace}
           </span>
-          <Button data-testid="button-reset" size="icon" variant="secondary" onClick={handleReset} className="w-full">
-            <RotateCcw className="w-4 h-4" />
-          </Button>
+          {!sessionMode && (
+            <Button data-testid="button-reset" size="icon" variant="secondary" onClick={handleReset} className="w-full">
+              <RotateCcw className="w-4 h-4" />
+            </Button>
+          )}
           <Button data-testid="button-info" size="icon" variant="secondary" onClick={() => setShowInfo(true)} className="w-full">
             <Info className="w-4 h-4" />
           </Button>
