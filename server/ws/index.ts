@@ -26,10 +26,16 @@ export function setupWebSocket(httpServer: HttpServer): void {
   const wss = new WebSocketServer({ noServer: true });
 
   // MVP-2 Security: allowlist для Origin (защита от cross-origin WS-атак)
+  // Базовый allowlist + дополнительные хосты из env (ALLOWED_WS_ORIGINS,
+  // через запятую) — чтобы тест-стенды/Replit не требовали правки кода.
   const ALLOWED_ORIGINS = new Set<string>([
     "https://toc.tesstech.ru",
     "http://localhost:5000", // dev
     "http://127.0.0.1:5000", // dev
+    ...(process.env.ALLOWED_WS_ORIGINS ?? "")
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean),
   ]);
 
   httpServer.on("upgrade", (req, socket, head) => {

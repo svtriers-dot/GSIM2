@@ -177,7 +177,7 @@ export default function PlaySessionGame() {
     <div className="relative min-h-screen">
       <ConnectionStatus status={wsStatus} />
       {/* Бейдж команды */}
-      <div className="fixed top-2 left-2 z-30 bg-card border border-border rounded-lg px-3 py-1.5 shadow-sm text-xs">
+      <div className="fixed top-2 left-[208px] z-30 bg-card border border-border rounded-lg px-3 py-1.5 shadow-sm text-xs">
         <span
           className="inline-block w-2 h-2 rounded-full mr-1.5"
           style={{ background: meta?.color || me.team.color }}

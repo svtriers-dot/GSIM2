@@ -50,6 +50,9 @@ export default function PlayLobby() {
 
     const ws = new TeamSocket();
     ws.connect();
+    // Страховка: если WS-эвент о старте не доехал (разрыв сокета/origin),
+    // periodically перечитываем статус и сами уходим в игру/результат.
+    const poll = window.setInterval(() => { void load(); }, 5000);
     const off = ws.on((event) => {
       if (event.type === "game.timer_event") {
         const status = event.payload?.status;
@@ -68,6 +71,7 @@ export default function PlayLobby() {
     return () => {
       off();
       ws.close();
+      clearInterval(poll);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

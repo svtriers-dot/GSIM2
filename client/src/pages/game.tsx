@@ -331,6 +331,20 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
     return () => cancelAnimationFrame(animId);
   }, [updateState, sessionMode]);
 
+  // Session-mode: внутренний флаг движка управляется тренером (паузой сессии).
+  // Без этого tick() не двигает симуляцию, даже когда оверлей паузы снят.
+  useEffect(() => {
+    if (!sessionMode) return;
+    const engine = engineRef.current;
+    if (sessionMode.isEnded || engine.gameOver) {
+      engine.running = false;
+      return;
+    }
+    // Не перебиваем паузу междневной сводки — её снимает handleDismissSummary.
+    if (engine.dayEndSummary) return;
+    engine.running = !sessionMode.isPaused;
+  }, [sessionMode?.isPaused, sessionMode?.isEnded]);
+
   // Session-mode: восстановление состояния при reconnect
   useEffect(() => {
     if (sessionMode?.restoreSnapshot) {
