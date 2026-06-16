@@ -879,17 +879,33 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                 pathD = `M${x1},${y1} C${x1},${y1 - curveStrength} ${x2},${y2 + curveStrength} ${x2},${y2}`;
               }
 
+              // Поток материала: маршрут «живой», если источник или потребитель производит
+              const fromProd = state.stationStates[conn.from]?.status === 'prod';
+              const toProd = state.stationStates[conn.to]?.status === 'prod';
+              const active = state.running && (fromProd || toProd);
+              const flowLit = floorDark ? '#f5e09a' : '#b8860b';
+              const flowHalo = floorDark ? '#e8c84a' : '#d4af37';
+
               return (
-                <path
-                  key={`conn_${i}`}
-                  d={pathD}
-                  stroke={ft.connLine}
-                  strokeWidth={isRM ? 1 : 1.5}
-                  fill="none"
-                  strokeLinecap="round"
-                  opacity={isRM ? 0.5 : 0.8}
-                  markerEnd={isRM ? 'url(#arrowhead-rm)' : 'url(#arrowhead)'}
-                />
+                <g key={`conn_${i}`}>
+                  <path
+                    d={pathD}
+                    stroke={ft.connLine}
+                    strokeWidth={isRM ? 1 : 1.5}
+                    fill="none"
+                    strokeLinecap="round"
+                    opacity={isRM ? 0.5 : 0.8}
+                    markerEnd={isRM ? 'url(#arrowhead-rm)' : 'url(#arrowhead)'}
+                  />
+                  {active && (
+                    <>
+                      <path d={pathD} fill="none" stroke={flowHalo} strokeWidth={isRM ? 2.4 : 3.4} strokeLinecap="round" opacity={0.12} pointerEvents="none" />
+                      <path d={pathD} fill="none" stroke={flowLit} strokeWidth={isRM ? 1.3 : 1.7} strokeLinecap="round" strokeDasharray="7 26" opacity={0.9} pointerEvents="none">
+                        <animate attributeName="stroke-dashoffset" from="0" to="-33" dur="1s" repeatCount="indefinite" calcMode="linear" />
+                      </path>
+                    </>
+                  )}
+                </g>
               );
             })}
 
