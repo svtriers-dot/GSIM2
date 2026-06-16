@@ -44,6 +44,9 @@ function getColorStroke(color: MachineColor): string {
   return COLOR_MAP[color].stroke;
 }
 
+// Шрифт для словесных подписей (sans). Числа/метрики остаются monospace.
+const SANS = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+
 // Светлее/темнее базового цвета (p в [-1..1]) — для 3D-градиентов значков станков
 function shadeHex(hex: string, p: number): string {
   const n = parseInt(hex.replace('#', ''), 16);
@@ -637,7 +640,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
           className="rounded-md px-3 py-2 text-center"
           style={{ background: state.cash >= 0 ? '#2a6478' : '#7a1a1a' }}
         >
-          <div className="text-[10px] font-mono text-white/60 leading-tight">Касса</div>
+          <div className="text-[10px] text-white/60 leading-tight">Касса</div>
           <div className="text-[18px] font-mono font-bold text-white leading-tight">
             {state.cash.toLocaleString("ru-RU")}₽
           </div>
@@ -701,7 +704,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
           <div key={mt.color} className="flex flex-col gap-0.5">
             <div className="flex items-center gap-1">
               <MachineIcon color={getColorHex(mt.color)} size={14} isAssembly={mt.color === 'brown'} />
-              <span className="text-[11px] font-mono font-semibold" style={{ color: getColorHex(mt.color) }}>
+              <span className="text-[11px] font-semibold" style={{ color: getColorHex(mt.color) }}>
                 {mt.label}
               </span>
               <span className="text-[11px] text-muted-foreground font-mono">
@@ -774,9 +777,23 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                   <stop offset="100%" stopColor={vals.stroke} stopOpacity="1" />
                 </linearGradient>
               ))}
+              <pattern id="floorGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M40 0 H0 V40" fill="none" stroke={ft.connLine} strokeWidth="0.6" opacity={0.28} />
+              </pattern>
+              <pattern id="floorGridMajor" width="160" height="160" patternUnits="userSpaceOnUse">
+                <path d="M160 0 H0 V160" fill="none" stroke={ft.connLine} strokeWidth="1" opacity={0.22} />
+              </pattern>
+              <radialGradient id="floorVignette" cx="50%" cy="44%" r="75%">
+                <stop offset="58%" stopColor="#000000" stopOpacity="0" />
+                <stop offset="100%" stopColor="#000000" stopOpacity={floorDark ? 0.28 : 0.1} />
+              </radialGradient>
             </defs>
 
-            <text x={30} y={44} textAnchor="middle" fill={ft.rowLabel} fontSize="13" fontFamily="monospace">
+            <rect x="0" y="0" width={FLOOR_WIDTH} height={FLOOR_HEIGHT} fill="url(#floorGrid)" pointerEvents="none" />
+            <rect x="0" y="0" width={FLOOR_WIDTH} height={FLOOR_HEIGHT} fill="url(#floorGridMajor)" pointerEvents="none" />
+            <rect x="0" y="0" width={FLOOR_WIDTH} height={FLOOR_HEIGHT} fill="url(#floorVignette)" pointerEvents="none" />
+
+            <text x={30} y={44} textAnchor="middle" fill={ft.rowLabel} fontSize="13" fontFamily={SANS}>
               Рынок
             </text>
 
@@ -812,7 +829,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
             {['A', 'B', 'C', 'D', 'E', 'F'].map(col => {
               const x = getStationPos(`RM_${col}`).x;
               return (
-                <text key={`col_${col}`} x={x} y={FLOOR_HEIGHT - 10} textAnchor="middle" fill={ft.colLabel} fontSize="14" fontWeight="bold" fontFamily="monospace">
+                <text key={`col_${col}`} x={x} y={FLOOR_HEIGHT - 10} textAnchor="middle" fill={ft.colLabel} fontSize="14" fontWeight="bold" fontFamily={SANS}>
                   {col}
                 </text>
               );
@@ -822,10 +839,10 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
               const rmY = getStationPos('RM_A').y;
               return (
                 <>
-                  <text x={30} y={rmY - 8} textAnchor="middle" fill={ft.colLabel} fontSize="10" fontFamily="monospace">
+                  <text x={30} y={rmY - 8} textAnchor="middle" fill={ft.colLabel} fontSize="10" fontFamily={SANS}>
                     Закупка
                   </text>
-                  <text x={30} y={rmY + 4} textAnchor="middle" fill={ft.colLabel} fontSize="10" fontFamily="monospace">
+                  <text x={30} y={rmY + 4} textAnchor="middle" fill={ft.colLabel} fontSize="10" fontFamily={SANS}>
                     сырья
                   </text>
                   <text x={30} y={rmY + 16} textAnchor="middle" fill={ft.rmPrice} fontSize="10" fontWeight="bold" fontFamily="monospace">
@@ -1047,7 +1064,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                               <animate attributeName="opacity" values="0.2;0.5;0.2" dur="0.8s" repeatCount="indefinite" />
                             </rect>
                             <text x={pos.x} y={pos.y + 1} textAnchor="middle" dominantBaseline="middle" fontSize="17">🔧</text>
-                            <text x={pos.x} y={sy - 7} textAnchor="middle" fill="#dc2626" fontSize="9" fontWeight="bold" fontFamily="monospace">СЛОМАН</text>
+                            <text x={pos.x} y={sy - 7} textAnchor="middle" fill="#dc2626" fontSize="9" fontWeight="bold" fontFamily={SANS}>СЛОМАН</text>
                           </>
                         )}
 
@@ -1057,7 +1074,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                           const itx = onLeft ? sx - 4 : sx + w + 4;
                           const ianchor = onLeft ? 'end' : 'start';
                           return (
-                            <text x={itx} y={pos.y + 1} textAnchor={ianchor} dominantBaseline="middle" fill={ft.setupText} fontSize="10" fontFamily="monospace" fontWeight="bold" opacity={0.7}>
+                            <text x={itx} y={pos.y + 1} textAnchor={ianchor} dominantBaseline="middle" fill={ft.setupText} fontSize="10" fontFamily={SANS} fontWeight="bold" opacity={0.7}>
                               <animate attributeName="opacity" values="0.3;0.7;0.3" dur="2s" repeatCount="indefinite" />
                               ожид.
                             </text>
@@ -1070,7 +1087,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                           const tx = onLeft ? sx - 4 : sx + w + 4;
                           const anchor = onLeft ? 'end' : 'start';
                           return (
-                            <text x={tx} y={pos.y + 1} textAnchor={anchor} dominantBaseline="middle" fill={ft.setupText} fontSize="13" fontFamily="monospace" fontWeight="bold">
+                            <text x={tx} y={pos.y + 1} textAnchor={anchor} dominantBaseline="middle" fill={ft.setupText} fontSize="13" fontFamily={SANS} fontWeight="bold">
                               настр. {Math.ceil(sState?.setupRemaining || 0)}с
                             </text>
                           );
@@ -1086,7 +1103,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
             {[1, 2, 3, 5, 6, 7, 9].map(row => {
               const y = getStationPos(STATIONS.find(s => s.row === row)?.id || 'A1').y;
               return (
-                <text key={`row_${row}`} x={30} y={y + 4} textAnchor="middle" fill={ft.rowLabel} fontSize="13" fontFamily="monospace">
+                <text key={`row_${row}`} x={30} y={y + 4} textAnchor="middle" fill={ft.rowLabel} fontSize="13" fontFamily={SANS}>
                   {row}
                 </text>
               );
