@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo, useId } from 'react';
 import { confirmAction } from "@/components/ConfirmDialog";
 import { GoldrattEngine, type GameSnapshot, type MachineState, type SessionMetrics } from '@/lib/gameEngine';
 import {
@@ -44,6 +44,14 @@ function getColorStroke(color: MachineColor): string {
   return COLOR_MAP[color].stroke;
 }
 
+// Светлее/темнее базового цвета (p в [-1..1]) — для 3D-градиентов значков станков
+function shadeHex(hex: string, p: number): string {
+  const n = parseInt(hex.replace('#', ''), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const adj = (c: number) => Math.max(0, Math.min(255, Math.round(c + (p < 0 ? c * p : (255 - c) * p))));
+  return '#' + ((1 << 24) + (adj(r) << 16) + (adj(g) << 8) + adj(b)).toString(16).slice(1);
+}
+
 function StatusBadge({ title, lines, bgColor }: { title?: string; lines: string[]; bgColor: string }) {
   return (
     <div
@@ -68,27 +76,59 @@ function StatusBadge({ title, lines, bgColor }: { title?: string; lines: string[
 }
 
 function MachineIcon({ color, size = 24, isAssembly = false }: { color: string; size?: number; isAssembly?: boolean }) {
+  const uid = useId().replace(/:/g, '');
+  const bId = `mb-${uid}`;
+  const gId = `mg-${uid}`;
+  const light = shadeHex(color, 0.5);
+  const dark = shadeHex(color, -0.42);
+  const strk = shadeHex(color, -0.66);
+  const defs = (
+    <defs>
+      <linearGradient id={bId} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor={light} />
+        <stop offset="45%" stopColor={color} />
+        <stop offset="100%" stopColor={dark} />
+      </linearGradient>
+      <radialGradient id={gId} cx="35%" cy="28%" r="75%">
+        <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
+        <stop offset="55%" stopColor="#fff" stopOpacity="0.15" />
+        <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+  );
   if (isAssembly) {
     return (
       <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="8" width="18" height="13" rx="2" fill={color} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
-        <path d="M5,4 L9,8" stroke={color} strokeWidth="2" strokeLinecap="round" />
-        <path d="M19,4 L15,8" stroke={color} strokeWidth="2" strokeLinecap="round" />
-        <circle cx="5" cy="3.5" r="2.5" fill={color} stroke="rgba(0,0,0,0.3)" strokeWidth="0.8" />
-        <circle cx="19" cy="3.5" r="2.5" fill={color} stroke="rgba(0,0,0,0.3)" strokeWidth="0.8" />
-        <path d="M8,14 L12,11 L16,14 L12,17 Z" fill="rgba(255,255,255,0.35)" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
-        <line x1="12" y1="17" x2="12" y2="21" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" strokeLinecap="round" />
+        {defs}
+        <ellipse cx="12" cy="21.3" rx="8.6" ry="1.4" fill="#000" opacity="0.22" />
+        <line x1="6" y1="9" x2="4.5" y2="4.8" stroke={strk} strokeWidth="1.4" strokeLinecap="round" />
+        <line x1="18" y1="9" x2="19.5" y2="4.8" stroke={strk} strokeWidth="1.4" strokeLinecap="round" />
+        <circle cx="4.3" cy="4" r="2" fill={light} stroke={strk} strokeWidth="0.5" />
+        <circle cx="19.7" cy="4" r="2" fill={light} stroke={strk} strokeWidth="0.5" />
+        <rect x="2.4" y="8.3" width="19.2" height="11.6" rx="2.4" fill={`url(#${bId})`} stroke={strk} strokeWidth="0.8" />
+        <path d="M2.4 16.6 H21.6 V17.5 a2.4 2.4 0 0 1 -2.4 2.4 H4.8 a2.4 2.4 0 0 1 -2.4 -2.4 Z" fill={dark} opacity="0.5" />
+        <rect x="4" y="9" width="16" height="1.3" rx="0.65" fill="#fff" opacity="0.5" />
+        <path d="M12 10.4 L15.4 14 L12 17.6 L8.6 14 Z" fill={dark} stroke={strk} strokeWidth="0.5" />
+        <path d="M12 10.4 L15.4 14 L12 17.6 L8.6 14 Z" fill={`url(#${gId})`} />
       </svg>
     );
   }
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <rect x="2" y="8" width="20" height="12" rx="2" fill={color} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
-      <rect x="4" y="4" width="6" height="6" rx="1" fill={color} stroke="rgba(0,0,0,0.3)" strokeWidth="1" />
-      <circle cx="8" cy="14" r="3" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
-      <rect x="14" y="5" width="4" height="3" rx="0.5" fill={color} stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" />
-      <line x1="16" y1="5" x2="16" y2="2" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="17" cy="14" r="2" fill="rgba(255,255,255,0.25)" />
+      {defs}
+      <ellipse cx="12" cy="21.3" rx="8.6" ry="1.4" fill="#000" opacity="0.22" />
+      <rect x="4.2" y="3.4" width="6.4" height="6" rx="1.3" fill={`url(#${bId})`} stroke={strk} strokeWidth="0.7" />
+      <rect x="5.2" y="4.1" width="4.4" height="1.1" rx="0.5" fill="#fff" opacity="0.45" />
+      <line x1="16" y1="6" x2="16" y2="2.6" stroke={strk} strokeWidth="1.1" strokeLinecap="round" />
+      <circle cx="16" cy="2.3" r="1.1" fill={light} stroke={strk} strokeWidth="0.4" />
+      <rect x="2.4" y="8.3" width="19.2" height="11.6" rx="2.4" fill={`url(#${bId})`} stroke={strk} strokeWidth="0.8" />
+      <path d="M2.4 16.6 H21.6 V17.5 a2.4 2.4 0 0 1 -2.4 2.4 H4.8 a2.4 2.4 0 0 1 -2.4 -2.4 Z" fill={dark} opacity="0.5" />
+      <rect x="4" y="9" width="16" height="1.3" rx="0.65" fill="#fff" opacity="0.5" />
+      <circle cx="8.6" cy="14.2" r="3.3" fill={dark} stroke={strk} strokeWidth="0.6" />
+      <circle cx="8.6" cy="14.2" r="3.3" fill={`url(#${gId})`} />
+      <circle cx="8.6" cy="14.2" r="1.1" fill={light} />
+      <circle cx="16.5" cy="14.2" r="1.9" fill={dark} stroke={strk} strokeWidth="0.5" />
+      <circle cx="16.5" cy="14.2" r="1.9" fill={`url(#${gId})`} />
     </svg>
   );
 }
