@@ -489,6 +489,13 @@ function snapshotState(a: ActiveSession): SessionLiveState {
   };
 }
 
+// Живое состояние сессии (для HTTP poll-фолбэка тренера). null если сессия не
+// активна в памяти — тогда клиент сохраняет текущее (не затираем дефолтами).
+export function getLiveSessionState(sessionId: string): SessionLiveState | null {
+  const a = active.get(sessionId);
+  return a ? snapshotState(a) : null;
+}
+
 function broadcastToTrainers(a: ActiveSession, event: { type: string; payload: unknown }): void {
   const data = JSON.stringify(event);
   for (const ws of Array.from(a.trainerSockets)) {

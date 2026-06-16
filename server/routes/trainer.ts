@@ -37,6 +37,7 @@ import {
   broadcastMessage,
   annotateStation,
   finalizeRoundResults,
+  getLiveSessionState,
 } from "../services/orchestrator";
 import {
   createSession,
@@ -197,6 +198,18 @@ trainerRouter.post(
     const session = await resumeSession((req.params.id as string), req.trainer!.sub);
     await notifySessionStateChange(session.id);
     res.json({ session });
+  }),
+);
+
+// GET /api/trainer/sessions/:id/live — живое состояние (poll-фолбэк к WebSocket)
+trainerRouter.get(
+  "/sessions/:id/live",
+  requireActiveTrainer,
+  withErrorHandler(async (req, res) => {
+    const sessionId = req.params.id as string;
+    const session = await getSessionForTrainer(sessionId, req.trainer!.sub);
+    if (!session) throw new SessionNotFoundError();
+    res.json({ live: getLiveSessionState(sessionId) });
   }),
 );
 
@@ -478,7 +491,6 @@ trainerRouter.get(
 
 import {
   generateCertificatesForSession,
-  getCertificatePdf,
   listCertificatesForSession,
   getTrainerCertificatePdf,
 } from "../services/certificates";
@@ -516,26 +528,6 @@ trainerRouter.get(
     if (!session) throw new SessionNotFoundError();
     const certs = await listCertificatesForSession(sessionId);
     res.json({ certificates: certs });
-  }),
-);
-
-// GET /api/trainer/certificates/:certId/pdf — скачать PDF
-trainerRouter.get(
-  "/certificates/:certId/pdf",
-  requireActiveTrainer,
-  withErrorHandler(async (req, res) => {
-    const certId = req.params.certId as string;
-    const result = await getCertificatePdf(certId);
-    if (!result) {
-      res.status(404).json({ error: "not_found" });
-      return;
-    }
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename*=UTF-8\'\'${encodeURIComponent(result.filename)}`,
-    );
-    res.send(result.buffer);
   }),
 );
 

@@ -110,6 +110,23 @@ export default function TrainerSession() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId]);
 
+  // HTTP poll-фолбэк к WebSocket: каждые 5с подтягиваем живое состояние с сервера,
+  // чтобы дашборд не застывал, если WS «тихо» завис (без события close).
+  useEffect(() => {
+    if (!sessionId) return;
+    const id = window.setInterval(async () => {
+      try {
+        const data = await authJson<{ live: SessionLiveState | null }>(
+          `/api/trainer/sessions/${sessionId}/live`,
+        );
+        if (data.live) setLiveState(data.live);
+      } catch {
+        // молча — это лишь страховка поверх WS
+      }
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [sessionId]);
+
   async function loadInitial() {
     try {
       const data = await authJson<{ session: SessionDTO; teams: TeamDTO[] }>(

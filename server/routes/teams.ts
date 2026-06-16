@@ -19,7 +19,6 @@ import { notifyTeamJoined } from "../services/orchestrator";
 import { teamCheckRateLimit, teamJoinRateLimit } from "../middleware/rateLimit";
 import {
   generateCertificatesForSession,
-  getCertificatePdf,
   listCertificatesForSession,
 } from "../services/certificates";
 import { db } from "../db";
@@ -258,31 +257,3 @@ teamsRouter.get("/me/certificates", async (req, res) => {
   res.json({ ready: true, certificates: enriched });
 });
 
-teamsRouter.get("/me/certificates/:certId/pdf", async (req, res) => {
-  const team = await teamFromHeader(req);
-  if (!team) return res.status(404).json({ error: "team_not_found" });
-  const certId = String(req.params.certId);
-
-  // Проверяем что cert принадлежит члену этой команды
-  const [cert] = await db
-    .select()
-    .from(certificates)
-    .where(eq(certificates.id, certId))
-    .limit(1);
-  if (!cert) return res.status(404).json({ error: "certificate_not_found" });
-
-  const memberIds = team.members.map((m) => m.id);
-  if (!memberIds.includes(cert.teamMemberId)) {
-    return res.status(403).json({ error: "not_your_team" });
-  }
-
-  const result = await getCertificatePdf(certId);
-  if (!result) return res.status(404).json({ error: "pdf_unavailable" });
-
-  res.setHeader("Content-Type", "application/pdf");
-  res.setHeader(
-    "Content-Disposition",
-    `attachment; filename*=UTF-8\'\'${encodeURIComponent(result.filename)}`,
-  );
-  res.send(result.buffer);
-});
