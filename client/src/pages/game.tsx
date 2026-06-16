@@ -160,6 +160,10 @@ export interface GameSessionMode {
   onGameEnd?: (snapshot: GameSnapshot, metrics: SessionMetrics) => void;
   // ID станции, которую тренер сейчас аннотирует — её надо подсветить пульсирующим overlay
   highlightedStationId?: string | null;
+  // ФИО участников команды (с экрана входа) — для сертификатов, чтобы не вводить заново
+  memberNames?: string[];
+  // «Новая игра» в командном режиме — перезайти в эту же сессию (решает SessionGame)
+  onRestart?: () => void;
   // V2 — кастом-конфиг: пресет сложности + ручные overrides
   scenarioPreset?: string;
   constantsOverrides?: { startingCash?: number; fixedExpenses?: number; totalDays?: number; dayDurationSeconds?: number };
@@ -207,6 +211,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
   const [resultSaved, setResultSaved] = useState(false);
   const [floorDark, setFloorDark] = useState(false);
   const [showCertDialog, setShowCertDialog] = useState(false);
+  const [summaryClosed, setSummaryClosed] = useState(false);
   const [certNames, setCertNames] = useState<string[]>(['']);
   // MVP-2 Onboarding: режим практики для тренера (?practice=1)
   const [isPracticeMode] = useState<boolean>(() => {
@@ -520,16 +525,19 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
     ? state.machines.find(m => m.id === selectedMachine)?.color
     : null;
 
-  const generateCertificate = useCallback(() => {
-    const names = certNames.filter(n => n.trim().length > 0);
+  const generateCertificate = useCallback((rawNames: string[]) => {
+    const names = rawNames.map(n => n.trim()).filter(n => n.length > 0);
     if (names.length === 0) return;
 
+    // Отдельный файл-сертификат на КАЖДОГО участника
+    for (let ni = 0; ni < names.length; ni++) {
+    const certName = names[ni];
     const W = 1400, H = 1000;
     const canvas = document.createElement('canvas');
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) continue;
 
     const bgGrad = ctx.createLinearGradient(0, 0, W, H);
     bgGrad.addColorStop(0, '#fdfcfa');
@@ -614,12 +622,10 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
     nameGrad.addColorStop(1, '#1a4a7a');
     ctx.fillStyle = nameGrad;
     ctx.font = 'bold 32px Georgia, serif';
-    const nameY = names.length === 1 ? 305 : 295;
-    names.forEach((name, i) => {
-      ctx.fillText(name.trim(), W / 2, nameY + i * 42);
-    });
+    const nameY = 305;
+    ctx.fillText(certName, W / 2, nameY);
 
-    const underlineY = nameY + names.length * 42 + 2;
+    const underlineY = nameY + 42 + 2;
     const ulGrad = ctx.createLinearGradient(W / 2 - 200, 0, W / 2 + 200, 0);
     ulGrad.addColorStop(0, 'transparent');
     ulGrad.addColorStop(0.15, '#d4af37');
@@ -631,9 +637,8 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
     const afterNames = underlineY + 30;
     ctx.fillStyle = '#5a6a7a';
     ctx.font = '17px Georgia, serif';
-    const plural = names.length > 1;
-    ctx.fillText(plural ? 'завершили симуляцию управления производственным предприятием' : 'завершил(а) симуляцию управления производственным предприятием', W / 2, afterNames);
-    ctx.fillText(plural ? 'и продемонстрировали следующие результаты:' : 'и продемонстрировал(а) следующие результаты:', W / 2, afterNames + 26);
+    ctx.fillText('завершил(а) симуляцию управления производственным предприятием', W / 2, afterNames);
+    ctx.fillText('и продемонстрировал(а) следующие результаты:', W / 2, afterNames + 26);
 
     const summary = state.dayEndSummary;
     const profitLoss = summary?.profitLoss ?? 0;
@@ -755,10 +760,11 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
     ctx.fillText('Дата прохождения', W - 70, bottomY + 24);
 
     const link = document.createElement('a');
-    link.download = 'certificate_goldratt.png';
+    link.download = `Сертификат_${certName.replace(/\s+/g, '_')}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
-  }, [certNames, state]);
+    }
+  }, [state]);
 
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden">
@@ -1404,7 +1410,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!state.dayEndSummary} onOpenChange={() => {}}>
+      <Dialog open={!!state.dayEndSummary && !summaryClosed} onOpenChange={(o) => { if (!o) setSummaryClosed(true); }}>
         <DialogContent data-testid="dialog-day-end" className="max-h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
@@ -1563,11 +1569,15 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                           : "Засчитать как пробный прогон"}
                   </Button>
                 )}
-                <Button data-testid="button-certificate" variant="secondary" onClick={() => { setShowCertDialog(true); setCertNames(['']); }}>
+                <Button data-testid="button-certificate" variant="secondary" onClick={() => {
+                  const mn = (sessionMode?.memberNames ?? []).filter(n => n.trim().length > 0);
+                  if (mn.length > 0) { generateCertificate(mn); }
+                  else { setCertNames(['']); setShowCertDialog(true); }
+                }}>
                   <Download className="w-4 h-4 mr-1" />
                   Сертификат
                 </Button>
-                <Button data-testid="button-new-game" onClick={handleReset}>Новая игра</Button>
+                <Button data-testid="button-new-game" onClick={() => { if (sessionMode?.onRestart) sessionMode.onRestart(); else handleReset(); }}>Новая игра</Button>
               </div>
             ) : (
               <Button data-testid="button-next-day" onClick={handleDismissSummary}>Следующий день</Button>
@@ -1625,7 +1635,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
             <Button
               data-testid="button-download-cert"
               onClick={() => {
-                generateCertificate();
+                generateCertificate(certNames);
                 setShowCertDialog(false);
               }}
               disabled={certNames.every(n => n.trim().length === 0)}

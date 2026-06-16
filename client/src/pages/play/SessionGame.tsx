@@ -76,7 +76,9 @@ export default function PlaySessionGame() {
         // Reconnect: восстанавливаем engine state из БД
         const fs = data.team.factoryState;
         if (fs && typeof fs === "object" && "snapshot" in fs) {
-          setRestoreSnapshot((fs as any).snapshot as GameSnapshot);
+          const snap = (fs as any).snapshot as GameSnapshot;
+          // Не восстанавливаем завершённую игру — иначе сразу снова экран финала
+          if (!snap?.gameOver) setRestoreSnapshot(snap);
         }
       })
       .catch((e) => {
@@ -129,7 +131,8 @@ export default function PlaySessionGame() {
         // Сервер прислал текущий state команды (при первом подключении / reconnect)
         const fs = event.payload?.team?.factoryState;
         if (fs && typeof fs === "object" && "snapshot" in fs) {
-          setRestoreSnapshot((fs as any).snapshot as GameSnapshot);
+          const snap = (fs as any).snapshot as GameSnapshot;
+          if (!snap?.gameOver) setRestoreSnapshot(snap);
         }
       }
     });
@@ -171,8 +174,20 @@ export default function PlaySessionGame() {
       onGameEnd: (snapshot, metrics) => {
         wsRef.current?.send("team:game_over", { snapshot, metrics });
       },
+      // ФИО с экрана входа — для сертификатов без повторного ввода
+      memberNames: (me?.members ?? []).map((m) => m.fullName),
+      // «Новая игра»: если сессия ещё активна — заново в лобби; если закрыта — к результатам
+      onRestart: () => {
+        teamJson<MeResponse>("/api/teams/me")
+          .then((d) => {
+            const st = d.session?.status;
+            if (st === "running" || st === "paused" || st === "lobby") navigate("/play/lobby");
+            else navigate("/play/result");
+          })
+          .catch(() => navigate("/play/lobby"));
+      },
     }),
-    [paused, ended, restoreSnapshot, highlightedStationId, lastForcedEvent, scenarioPreset, constantsOverrides],
+    [paused, ended, restoreSnapshot, highlightedStationId, lastForcedEvent, scenarioPreset, constantsOverrides, me?.members, navigate],
   );
 
   if (!me) return <div className="p-8 text-center">Загрузка...</div>;
