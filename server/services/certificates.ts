@@ -13,7 +13,7 @@ import {
   teamRoundResults,
 } from "@shared/schema";
 import { and, eq, inArray, asc } from "drizzle-orm";
-import { isTeamCompleted, extractFinancials } from "../lib/certificateRules";
+import { isTeamCompleted, hasPlayableResult, extractFinancials } from "../lib/certificateRules";
 
 // Стандартные шрифты pdfmake (встроены в библиотеку)
 const fonts = {
@@ -110,9 +110,14 @@ export async function generateCertificatesForSession(
     const team = sessionTeams.find((t) => t.id === member.teamId);
     if (!team) continue;
     const result = allResults.find((r) => r.teamId === member.teamId);
-    // ГЕЙТ: сертификат только если команда реально прошла все 5 дней (gameOver).
-    // Если тренер остановил раньше — снапшот без gameOver → пропускаем.
-    if (requireCompletion && !isTeamCompleted(result?.stateSnapshot)) continue;
+    // ГЕЙТ выдачи сертификата:
+    //  - авто/lazy (requireCompletion=true): только полностью завершившие игру (gameOver/все дни);
+    //  - ручная генерация тренером (requireCompletion=false): любая команда, которая реально
+    //    отыграла (≥1 день / была выручка), но НИКОГДА — пустой результат (0 дней, cash=стартовый).
+    const eligible = requireCompletion
+      ? isTeamCompleted(result?.stateSnapshot)
+      : hasPlayableResult(result?.stateSnapshot);
+    if (!eligible) continue;
     const fin = extractFinancials(result?.stateSnapshot);
     const soldMap = ((result?.stateSnapshot as any)?.snapshot?.sold ?? {}) as Record<string, number>;
     const rank = result?.rankInRound ?? totalTeams;

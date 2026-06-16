@@ -9,6 +9,19 @@ export function isTeamCompleted(stateSnapshot: unknown): boolean {
   return ss.snapshot?.gameOver === true;
 }
 
+export function hasPlayableResult(stateSnapshot: unknown): boolean {
+  // Команда реально что-то отыграла: прошёл хотя бы 1 игровой день
+  // ИЛИ были продажи/выручка/проход. Защита от выдачи ПУСТОГО сертификата
+  // (0 дней, cash = стартовый) при ручной генерации тренером.
+  const fin = extractFinancials(stateSnapshot);
+  return (
+    fin.daysCompleted >= 1 ||
+    fin.totalRevenue > 0 ||
+    fin.throughput !== 0 ||
+    fin.profitLoss !== 0
+  );
+}
+
 export function extractFinancials(stateSnapshot: unknown): {
   finalCash: number;
   throughput: number;

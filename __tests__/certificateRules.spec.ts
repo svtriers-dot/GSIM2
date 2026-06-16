@@ -1,4 +1,4 @@
-import { isTeamCompleted, extractFinancials } from "../server/lib/certificateRules";
+import { isTeamCompleted, hasPlayableResult, extractFinancials } from "../server/lib/certificateRules";
 
 let pass = 0, fail = 0; const fails: string[] = [];
 function ok(name: string, cond: boolean, info?: any) {
@@ -49,6 +49,17 @@ ok("fin: finalCash fallback к ss.finalCash", flat.finalCash === 200, flat.final
 // мусор → нули
 const junk = extractFinancials({ snapshot: { cash: "x", day: null, dayEndSummary: { profitLoss: NaN } } });
 ok("fin: нечисловые значения → 0", junk.finalCash === 0 && junk.daysCompleted === 0 && junk.profitLoss === 0, junk);
+
+// ---------- hasPlayableResult (защита от пустых сертификатов) ----------
+ok("playable: пустой объект → false", hasPlayableResult({}) === false);
+ok("playable: null → false", hasPlayableResult(null) === false);
+ok("playable: 0 дней, cash=стартовый, без выручки → false",
+  hasPlayableResult({ snapshot: { day: 0, cash: 10000 } }) === false);
+ok("playable: прошёл 1 день → true", hasPlayableResult({ snapshot: { day: 1 } }) === true);
+ok("playable: была выручка → true", hasPlayableResult({ snapshot: { totalRevenue: 500 } }) === true);
+ok("playable: ненулевой profitLoss → true",
+  hasPlayableResult({ snapshot: { dayEndSummary: { profitLoss: -300 } } }) === true);
+ok("playable: полностью завершённая игра → true", hasPlayableResult(full) === true);
 
 console.log(`\n===== CERT RULES: ${pass} passed, ${fail} failed =====`);
 if (fails.length) { console.log("FAILED:"); for (const x of fails) console.log("  ✗ " + x); }
