@@ -110,7 +110,7 @@ export default function PlayResult() {
 
           {!certs || !certs.ready ? (
             <div className="text-sm text-muted-foreground text-center py-4">
-              Сертификаты будут доступны после завершения сессии тренером.
+              Сертификаты выдаются после завершения игры (все 5 дней).
               {certs?.status && certs.status !== "ended" ? (
                 <div className="text-xs mt-1">
                   Статус сессии: <span className="font-mono">{certs.status}</span>
@@ -119,7 +119,9 @@ export default function PlayResult() {
             </div>
           ) : certs.certificates.length === 0 ? (
             <div className="text-sm text-muted-foreground text-center py-4">
-              Сертификаты ещё не сгенерированы. Попробуйте обновить страницу через минуту.
+              Сертификаты выдаются только командам, прошедшим все 5 дней. Если игра
+              была остановлена тренером раньше — сертификат не выдаётся. Если игра
+              завершена, обновите страницу через минуту.
             </div>
           ) : (
             <ul className="space-y-2">

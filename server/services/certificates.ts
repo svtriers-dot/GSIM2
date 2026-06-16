@@ -13,6 +13,7 @@ import {
   teamRoundResults,
 } from "@shared/schema";
 import { and, eq, inArray, asc } from "drizzle-orm";
+import { isTeamCompleted, extractFinancials } from "../lib/certificateRules";
 
 // Стандартные шрифты pdfmake (встроены в библиотеку)
 const fonts = {
@@ -61,6 +62,11 @@ interface CertificateData {
   trainerOrganization: string | null;
   finalCash: number;
   throughput: number;
+  profitLoss: number;
+  daysCompleted: number;
+  totalRevenue: number;
+  totalRMCost: number;
+  fixedExpenses: number;
   rankInRound: number;
   totalTeams: number;
   badge: "top1" | "top2" | "top3" | null;
@@ -94,6 +100,12 @@ export function buildCertificatePdf(data: CertificateData): Promise<Buffer> {
     pageSize: "A4",
     pageOrientation: "landscape",
     pageMargins: [60, 50, 60, 50],
+    background: (_cur: number, pageSize: { width: number; height: number }) => ({
+      canvas: [
+        { type: "rect", x: 18, y: 18, w: pageSize.width - 36, h: pageSize.height - 36, lineWidth: 2.5, lineColor: "#11192d" },
+        { type: "rect", x: 26, y: 26, w: pageSize.width - 52, h: pageSize.height - 52, lineWidth: 1, lineColor: "#c9a84c" },
+      ],
+    }),
     content: [
       {
         text: "СЕРТИФИКАТ",
@@ -146,44 +158,37 @@ export function buildCertificatePdf(data: CertificateData): Promise<Buffer> {
         color: "#444",
         margin: [0, 0, 0, 30],
       },
-      // Результаты в виде колонок
+      {
+        text: `Все ${data.daysCompleted} дней игры пройдены`,
+        alignment: "center",
+        fontSize: 11,
+        color: "#888",
+        margin: [0, 0, 0, 14],
+      },
+      // Финансовый результат — крупно, с цветом
+      {
+        text: data.profitLoss >= 0 ? "ЧИСТАЯ ПРИБЫЛЬ" : "УБЫТОК",
+        style: "metricLabel",
+        alignment: "center",
+      },
+      {
+        text: `${data.profitLoss >= 0 ? "+" : ""}${data.profitLoss.toLocaleString("ru-RU")} руб.`,
+        alignment: "center",
+        fontSize: 30,
+        bold: true,
+        color: data.profitLoss >= 0 ? "#1a7a2a" : "#b82020",
+        margin: [0, 2, 0, 16],
+      },
+      // Полная сетка метрик
       {
         columns: [
-          {
-            width: "*",
-            stack: [
-              { text: "Итоговый cash", style: "metricLabel", alignment: "center" },
-              {
-                text: `$${data.finalCash.toLocaleString("en-US")}`,
-                style: "metricValue",
-                alignment: "center",
-              },
-            ],
-          },
-          {
-            width: "*",
-            stack: [
-              { text: "Throughput", style: "metricLabel", alignment: "center" },
-              {
-                text: data.throughput.toLocaleString("en-US"),
-                style: "metricValue",
-                alignment: "center",
-              },
-            ],
-          },
-          {
-            width: "*",
-            stack: [
-              { text: "Место в раунде", style: "metricLabel", alignment: "center" },
-              {
-                text: `${data.rankInRound} из ${data.totalTeams}`,
-                style: "metricValue",
-                alignment: "center",
-              },
-            ],
-          },
+          { width: "*", stack: [ { text: "Выручка", style: "metricLabel", alignment: "center" }, { text: `${data.totalRevenue.toLocaleString("ru-RU")} руб.`, style: "metricMid", alignment: "center" } ] },
+          { width: "*", stack: [ { text: "Затраты на сырьё", style: "metricLabel", alignment: "center" }, { text: `${data.totalRMCost.toLocaleString("ru-RU")} руб.`, style: "metricMid", alignment: "center" } ] },
+          { width: "*", stack: [ { text: "Проход (Throughput)", style: "metricLabel", alignment: "center" }, { text: `${data.throughput.toLocaleString("ru-RU")} руб.`, style: "metricMid", alignment: "center" } ] },
+          { width: "*", stack: [ { text: "Итоговый cash", style: "metricLabel", alignment: "center" }, { text: `${data.finalCash.toLocaleString("ru-RU")} руб.`, style: "metricMid", alignment: "center" } ] },
+          { width: "*", stack: [ { text: "Место", style: "metricLabel", alignment: "center" }, { text: `${data.rankInRound} из ${data.totalTeams}`, style: "metricMid", alignment: "center" } ] },
         ],
-        margin: [0, 0, 0, 30],
+        margin: [0, 0, 0, 26],
       },
       ...(badgeText
         ? [
@@ -246,11 +251,19 @@ export function buildCertificatePdf(data: CertificateData): Promise<Buffer> {
         ],
       },
       {
+        text: "Tess Technology · стратегия, основанная на цифрах",
+        fontSize: 10,
+        color: "#11192d",
+        bold: true,
+        alignment: "center",
+        margin: [0, 26, 0, 0],
+      },
+      {
         text: "TessTOC · симулятор Теории ограничений · toc.tesstech.ru",
         fontSize: 8,
         color: "#bbb",
         alignment: "center",
-        margin: [0, 30, 0, 0],
+        margin: [0, 4, 0, 0],
       },
     ],
     styles: {
@@ -259,6 +272,7 @@ export function buildCertificatePdf(data: CertificateData): Promise<Buffer> {
       name: { fontSize: 28, bold: true, color: "#11192d" },
       metricLabel: { fontSize: 10, color: "#888" },
       metricValue: { fontSize: 22, bold: true, color: "#11192d" },
+      metricMid: { fontSize: 14, bold: true, color: "#11192d" },
     },
     defaultStyle: { font: "Roboto", fontSize: 11 },
   };
@@ -329,6 +343,10 @@ export async function generateCertificatesForSession(sessionId: string): Promise
     const team = sessionTeams.find((t) => t.id === member.teamId);
     if (!team) continue;
     const result = allResults.find((r) => r.teamId === member.teamId);
+    // ГЕЙТ: сертификат только если команда реально прошла все 5 дней (gameOver).
+    // Если тренер остановил раньше — снапшот без gameOver → пропускаем.
+    if (!isTeamCompleted(result?.stateSnapshot)) continue;
+    const fin = extractFinancials(result?.stateSnapshot);
     const rank = result?.rankInRound ?? totalTeams;
     const badge: "top1" | "top2" | "top3" | null =
       rank === 1 ? "top1" : rank === 2 ? "top2" : rank === 3 ? "top3" : null;
@@ -352,10 +370,15 @@ export async function generateCertificatesForSession(sessionId: string): Promise
         teamMemberId: member.id,
         sessionId,
         scoreBreakdown: {
-          finalCash: result?.finalCash ?? 0,
-          throughput: result?.throughput ?? 0,
+          finalCash: fin.finalCash || (result?.finalCash ?? 0),
+          throughput: fin.throughput || (result?.throughput ?? 0),
           inventory: result?.inventory ?? 0,
           operatingExpense: result?.operatingExpense ?? 0,
+          profitLoss: fin.profitLoss,
+          daysCompleted: fin.daysCompleted,
+          totalRevenue: fin.totalRevenue,
+          totalRMCost: fin.totalRMCost,
+          fixedExpenses: fin.fixedExpenses,
           rankInRound: rank,
           totalTeams,
         },
@@ -415,6 +438,11 @@ export async function getCertificatePdf(certificateId: string): Promise<{
     trainerOrganization: trainer.organization,
     finalCash: Number(score.finalCash ?? 0),
     throughput: Number(score.throughput ?? 0),
+    profitLoss: Number(score.profitLoss ?? 0),
+    daysCompleted: Number(score.daysCompleted ?? 0),
+    totalRevenue: Number(score.totalRevenue ?? 0),
+    totalRMCost: Number(score.totalRMCost ?? 0),
+    fixedExpenses: Number(score.fixedExpenses ?? 0),
     rankInRound: Number(score.rankInRound ?? 0),
     totalTeams: Number(score.totalTeams ?? 0),
     badge: cert.badge as "top1" | "top2" | "top3" | null,

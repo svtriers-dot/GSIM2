@@ -373,8 +373,21 @@ export async function applyTeamGameOver(
   const team = a.teams.get(teamId);
   if (!team) return;
 
-  // Сохраняем полный snapshot для reconnect и snapshots тренера
-  team.factoryState = { ...team.factoryState, snapshot };
+  // Сохраняем полный snapshot + явные флаги завершения (для сертификатов)
+  const completed = (snapshot as any)?.gameOver === true;
+  const finalProfitLoss = (snapshot as any)?.dayEndSummary?.profitLoss;
+  team.factoryState = {
+    ...team.factoryState,
+    snapshot,
+    completedAllDays: completed,
+    ...(typeof finalProfitLoss === "number" ? { profitLoss: finalProfitLoss } : {}),
+  };
+  // Персистим в БД, чтобы завершённость пережила рестарт сервера
+  try {
+    await db.update(teams).set({ factoryState: team.factoryState as any }).where(eq(teams.id, teamId));
+  } catch (e) {
+    console.error("persist factoryState on game_over:", e);
+  }
   if (typeof metrics.cash === "number") team.metrics.cash = metrics.cash;
   if (typeof metrics.throughput === "number") team.metrics.throughput = metrics.throughput;
   if (typeof metrics.inventory === "number") team.metrics.inventory = metrics.inventory;
@@ -388,6 +401,40 @@ export async function applyTeamGameOver(
     type: "team.game_over",
     payload: { teamId },
   });
+
+  // Авто-финал: если ВСЕ команды прошли все дни — завершаем сессию и выдаём сертификаты
+  await maybeAutoFinalizeSession(sessionId, a);
+}
+
+// Гард против повторного авто-финала одной сессии
+const autoFinalized = new Set<string>();
+
+// Авто-завершение сессии, когда все команды доиграли все дни (gameOver).
+// Затем финализация результатов + генерация сертификатов + пуш статуса командам.
+async function maybeAutoFinalizeSession(sessionId: string, a: ActiveSession): Promise<void> {
+  if (autoFinalized.has(sessionId)) return;
+  if (a.session.status !== "running" && a.session.status !== "paused") return;
+  const teamsArr = Array.from(a.teams.values());
+  if (teamsArr.length === 0) return;
+  const allDone = teamsArr.every((t) => (t.factoryState as any)?.completedAllDays === true);
+  if (!allDone) return;
+
+  autoFinalized.add(sessionId);
+  try {
+    // Динамический импорт — исключает циклы на загрузке модуля
+    const { endSession } = await import("./sessions");
+    const { generateCertificatesForSession } = await import("./certificates");
+    await endSession(sessionId, a.session.trainerId);
+    const allRounds = await db.select().from(rounds).where(eq(rounds.sessionId, sessionId));
+    const lastRound = allRounds.sort((x, y) => y.roundNumber - x.roundNumber)[0];
+    if (lastRound) await finalizeRoundResults(sessionId, lastRound.id);
+    await generateCertificatesForSession(sessionId);
+    await notifySessionStateChange(sessionId);
+    console.log(`[orchestrator] auto-finalized session ${sessionId}: все команды завершили игру`);
+  } catch (e) {
+    autoFinalized.delete(sessionId); // дать шанс повторить (в т.ч. ручному завершению тренера)
+    console.error("maybeAutoFinalizeSession:", e);
+  }
 }
 
 // MVP-2.A5: при end сессии — фиксируем результаты раунда в team_round_results
