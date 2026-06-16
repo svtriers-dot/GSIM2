@@ -148,7 +148,7 @@ export default function PlayJoin() {
 
             <button
               type="submit"
-              disabled={code.length !== 6 || checking}
+              disabled={code.length !== 5 || checking}
               className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50"
             >
               {checking ? "Проверяю..." : "Дальше →"}
