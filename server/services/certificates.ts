@@ -593,7 +593,7 @@ export async function buildTrainerCertificatePdf(data: TrainerCertData): Promise
                     stack: [
                       { text: "Пробный прогон", style: "metricLabel", alignment: "center" },
                       {
-                        text: `$${data.practiceFinalCash.toLocaleString("en-US")}`,
+                        text: `${data.practiceFinalCash.toLocaleString("ru-RU")} руб.`,
                         style: "metricValue",
                         alignment: "center",
                       },

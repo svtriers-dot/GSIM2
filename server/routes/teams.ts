@@ -241,6 +241,7 @@ teamsRouter.get("/me/certificates", async (req, res) => {
       badge: certificates.badge,
       isTop3: certificates.isTop3,
       generatedAt: certificates.generatedAt,
+      scoreBreakdown: certificates.scoreBreakdown,
     })
     .from(certificates)
     .where(inArray(certificates.teamMemberId, memberIds));

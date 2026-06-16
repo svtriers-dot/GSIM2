@@ -61,7 +61,7 @@ export default function TrainerOnboarding() {
       label: "Сыграть пробный раунд",
       description: `Пройти 1 партию в одиночном режиме с итоговым cash $14000+. ${
         status.practiceFinalCash != null
-          ? `Лучший результат: $${status.practiceFinalCash.toLocaleString("en-US")}`
+          ? `Лучший результат: ${status.practiceFinalCash.toLocaleString("ru-RU")} ₽`
           : ""
       }`,
       done: status.practicePlayed,

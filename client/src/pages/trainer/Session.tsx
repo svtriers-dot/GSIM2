@@ -535,7 +535,7 @@ function LiveTab({ teams }: { teams: any[] }) {
                 <div>
                   <div className="text-xs text-muted-foreground">Cash</div>
                   <div className={`font-mono font-semibold ${cash < 0 ? "text-red-600" : ""}`}>
-                    ${cash.toLocaleString("en-US")}
+                    {cash.toLocaleString("ru-RU")} ₽
                   </div>
                 </div>
                 <div>
@@ -548,7 +548,7 @@ function LiveTab({ teams }: { teams: any[] }) {
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground">OE</div>
-                  <div className="font-mono">${(m.operatingExpense ?? 0).toLocaleString("en-US")}</div>
+                  <div className="font-mono">{(m.operatingExpense ?? 0).toLocaleString("ru-RU")} ₽</div>
                 </div>
               </div>
               <div className="mt-2 text-xs text-muted-foreground truncate">
@@ -597,11 +597,11 @@ function LiveTab({ teams }: { teams: any[] }) {
                     <span className="font-medium">{t.name}</span>
                   </td>
                   <td className={`px-4 py-3 text-right font-mono ${cash < 0 ? "text-red-600" : ""}`}>
-                    ${cash.toLocaleString("en-US")}
+                    {cash.toLocaleString("ru-RU")} ₽
                   </td>
                   <td className="px-4 py-3 text-right font-mono">{m.throughput ?? 0}</td>
                   <td className="px-4 py-3 text-right font-mono">{m.inventory ?? 0}</td>
-                  <td className="px-4 py-3 text-right font-mono">${(m.operatingExpense ?? 0).toLocaleString("en-US")}</td>
+                  <td className="px-4 py-3 text-right font-mono">{(m.operatingExpense ?? 0).toLocaleString("ru-RU")} ₽</td>
                   <td className="px-4 py-3">
                     {m.bottleneckStationId ? (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-100 text-amber-700 font-mono text-xs font-semibold">
@@ -835,7 +835,7 @@ function DebriefTab({
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground">Throughput R{lastRound.roundNumber}</div>
-                  <div className="font-mono font-semibold">{last?.throughput.toLocaleString("en-US") ?? "—"}</div>
+                  <div className="font-mono font-semibold">{last?.throughput.toLocaleString("ru-RU") ?? "—"}</div>
                 </div>
                 {prevRound && dt != null && (
                   <div className="col-span-2">
@@ -844,7 +844,7 @@ function DebriefTab({
                       className={`font-mono ${dt > 0 ? "text-green-700" : dt < 0 ? "text-red-600" : "text-muted-foreground"}`}
                     >
                       {dt > 0 ? "+" : ""}
-                      {dt.toLocaleString("en-US")}
+                      {dt.toLocaleString("ru-RU")}
                     </div>
                   </div>
                 )}
@@ -927,10 +927,10 @@ function DebriefTab({
                   {prevRound && (
                     <>
                       <td className="px-4 py-3 text-right font-mono text-muted-foreground">
-                        {prev ? `$${prev.finalCash.toLocaleString("en-US")}` : "—"}
+                        {prev ? `${prev.finalCash.toLocaleString("ru-RU")} ₽` : "—"}
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-muted-foreground">
-                        {prev ? prev.throughput.toLocaleString("en-US") : "—"}
+                        {prev ? prev.throughput.toLocaleString("ru-RU") : "—"}
                       </td>
                     </>
                   )}
@@ -939,19 +939,19 @@ function DebriefTab({
                       lastCash < 0 ? "text-red-600" : "font-semibold"
                     }`}
                   >
-                    ${lastCash.toLocaleString("en-US")}
+                    {lastCash.toLocaleString("ru-RU")} ₽
                   </td>
                   <td className="px-4 py-3 text-right font-mono font-semibold">
-                    {last?.throughput.toLocaleString("en-US") ?? "—"}
+                    {last?.throughput.toLocaleString("ru-RU") ?? "—"}
                   </td>
                   {prevRound && (
                     <td className="px-4 py-3 text-right font-mono">
                       {deltaThroughput == null ? (
                         <span className="text-muted-foreground">—</span>
                       ) : deltaThroughput > 0 ? (
-                        <span className="text-green-700">+{deltaThroughput.toLocaleString("en-US")}</span>
+                        <span className="text-green-700">+{deltaThroughput.toLocaleString("ru-RU")}</span>
                       ) : deltaThroughput < 0 ? (
-                        <span className="text-red-600">{deltaThroughput.toLocaleString("en-US")}</span>
+                        <span className="text-red-600">{deltaThroughput.toLocaleString("ru-RU")}</span>
                       ) : (
                         <span className="text-muted-foreground">0</span>
                       )}

@@ -585,7 +585,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
         >
           <div className="text-[10px] font-mono text-white/60 leading-tight">Касса</div>
           <div className="text-[18px] font-mono font-bold text-white leading-tight">
-            {state.cash.toLocaleString()}₽
+            {state.cash.toLocaleString("ru-RU")}₽
           </div>
         </div>
 
@@ -1052,14 +1052,14 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
 
         <div className="flex items-center justify-between px-3 py-1 border-t border-border bg-card/50">
           <span className="text-[12px] text-muted-foreground font-mono">
-            Д{state.day}/{GAME_CONSTANTS.totalDays} | {formatTime(state.timeInDay)} | {state.cash.toLocaleString()}₽
+            Д{state.day}/{GAME_CONSTANTS.totalDays} | {formatTime(state.timeInDay)} | {state.cash.toLocaleString("ru-RU")}₽
           </span>
           <div className="flex items-center gap-1.5">
             <Badge variant="secondary" className="font-mono text-[11px]">
-              +{state.totalRevenue.toLocaleString()}₽
+              +{state.totalRevenue.toLocaleString("ru-RU")}₽
             </Badge>
             <Badge variant="secondary" className="font-mono text-[11px]">
-              -{state.totalRMCost.toLocaleString()}₽
+              -{state.totalRMCost.toLocaleString("ru-RU")}₽
             </Badge>
           </div>
         </div>
@@ -1087,7 +1087,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                   На складе: <span className="font-bold text-foreground">{state.buffers[purchaseRM] || 0}</span> ед.
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Доступно средств: <span className="font-bold text-foreground">{state.cash.toLocaleString()}₽</span>
+                  Доступно средств: <span className="font-bold text-foreground">{state.cash.toLocaleString("ru-RU")}₽</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm">Количество:</span>
@@ -1102,7 +1102,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                   />
                 </div>
                 <div className="text-sm">
-                  Итого: <span className="font-bold text-foreground">{totalCost.toLocaleString()}₽</span>
+                  Итого: <span className="font-bold text-foreground">{totalCost.toLocaleString("ru-RU")}₽</span>
                 </div>
               </div>
             );
@@ -1205,8 +1205,8 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
 
             <div className="border-t border-border pt-2">
               <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground">
-                <div>Стартовый капитал:</div><div className="font-mono text-foreground">{GAME_CONSTANTS.startingCash.toLocaleString()}₽</div>
-                <div>Постоянные расходы:</div><div className="font-mono text-foreground">{GAME_CONSTANTS.fixedExpenses.toLocaleString()}₽/нед.</div>
+                <div>Стартовый капитал:</div><div className="font-mono text-foreground">{GAME_CONSTANTS.startingCash.toLocaleString("ru-RU")}₽</div>
+                <div>Постоянные расходы:</div><div className="font-mono text-foreground">{GAME_CONSTANTS.fixedExpenses.toLocaleString("ru-RU")}₽/нед.</div>
                 <div>Длительность дня:</div><div className="font-mono text-foreground">{GAME_CONSTANTS.dayDurationSeconds / 60} мин</div>
                 <div>Дней в игре:</div><div className="font-mono text-foreground">{GAME_CONSTANTS.totalDays}</div>
               </div>
@@ -1228,9 +1228,9 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                 <>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-0.5 text-xs">
                     <div className="text-muted-foreground">Выручка за день:</div>
-                    <div className="font-mono font-bold text-right">{state.dayEndSummary.revenue.toLocaleString()}₽</div>
+                    <div className="font-mono font-bold text-right">{state.dayEndSummary.revenue.toLocaleString("ru-RU")}₽</div>
                     <div className="text-muted-foreground">Затраты на сырье:</div>
-                    <div className="font-mono font-bold text-right">{state.dayEndSummary.rmCost.toLocaleString()}₽</div>
+                    <div className="font-mono font-bold text-right">{state.dayEndSummary.rmCost.toLocaleString("ru-RU")}₽</div>
                   </div>
                   <div className="border-t border-border pt-1.5">
                     <div className="text-[11px] text-muted-foreground mb-1">Продано за период:</div>
@@ -1264,7 +1264,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                   <div className="border-t border-border pt-1.5">
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Проход (П):</span>
-                      <span className="font-mono font-bold">{state.dayEndSummary!.throughput.toLocaleString()}₽</span>
+                      <span className="font-mono font-bold">{state.dayEndSummary!.throughput.toLocaleString("ru-RU")}₽</span>
                     </div>
                   </div>
                 </>
@@ -1303,32 +1303,32 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                   <div className="border-t border-border pt-1.5 space-y-0.5">
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Общая выручка:</span>
-                      <span className="font-mono font-bold">{state.totalRevenue.toLocaleString()}₽</span>
+                      <span className="font-mono font-bold">{state.totalRevenue.toLocaleString("ru-RU")}₽</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Затраты на сырье:</span>
-                      <span className="font-mono font-bold">-{state.totalRMCost.toLocaleString()}₽</span>
+                      <span className="font-mono font-bold">-{state.totalRMCost.toLocaleString("ru-RU")}₽</span>
                     </div>
                     <div className="flex justify-between text-xs border-t border-border pt-1 mt-1">
                       <span className="text-muted-foreground">Проход (П):</span>
-                      <span className="font-mono font-bold">{state.dayEndSummary!.throughput.toLocaleString()}₽</span>
+                      <span className="font-mono font-bold">{state.dayEndSummary!.throughput.toLocaleString("ru-RU")}₽</span>
                     </div>
                     <div className="flex justify-between text-xs">
                       <span className="text-muted-foreground">Постоянные расходы:</span>
-                      <span className="font-mono font-bold">-{state.fixedExpenses.toLocaleString()}₽</span>
+                      <span className="font-mono font-bold">-{state.fixedExpenses.toLocaleString("ru-RU")}₽</span>
                     </div>
                     <div className="flex justify-between text-xs font-bold border-t border-border pt-1 mt-1">
                       <span>{state.dayEndSummary!.profitLoss >= 0 ? 'Прибыль:' : 'Убыток:'}</span>
                       <span className="font-mono" style={{ color: state.dayEndSummary!.profitLoss >= 0 ? '#32CD32' : '#ff4444' }}>
                         {state.dayEndSummary!.profitLoss >= 0
-                          ? `+${state.dayEndSummary!.profitLoss.toLocaleString()}₽`
-                          : `${state.dayEndSummary!.profitLoss.toLocaleString()}₽`}
+                          ? `+${state.dayEndSummary!.profitLoss.toLocaleString("ru-RU")}₽`
+                          : `${state.dayEndSummary!.profitLoss.toLocaleString("ru-RU")}₽`}
                       </span>
                     </div>
                     <div className="flex justify-between text-xs text-muted-foreground pt-1">
                       <span>Итого касса:</span>
                       <span className="font-mono font-bold" style={{ color: state.cash >= 0 ? '#32CD32' : '#ff4444' }}>
-                        {state.cash.toLocaleString()}₽
+                        {state.cash.toLocaleString("ru-RU")}₽
                       </span>
                     </div>
                   </div>

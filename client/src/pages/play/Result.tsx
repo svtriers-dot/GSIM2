@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { teamJson, downloadTeamFile, getDeviceToken, clearTeamSession } from "@/lib/auth";
+import { teamJson, getDeviceToken, clearTeamSession } from "@/lib/auth";
+import { downloadCertificatePng } from "@/lib/certificateCanvas";
 
 interface MeResponse {
   team: { id: string; name: string; color: string; sessionId: string };
@@ -15,6 +16,7 @@ interface CertItem {
   badge: "top1" | "top2" | "top3" | null;
   isTop3: boolean;
   generatedAt: string;
+  scoreBreakdown?: Record<string, any> | null;
 }
 
 interface CertsResponse {
@@ -58,13 +60,23 @@ export default function PlayResult() {
     }
   }
 
-  async function download(cert: CertItem) {
+  function download(cert: CertItem) {
     setDownloading(cert.id);
     try {
-      await downloadTeamFile(
-        `/api/teams/me/certificates/${cert.id}/pdf`,
-        `${cert.fullName.replace(/\s+/g, "_")}.pdf`,
-      );
+      const sb = (cert.scoreBreakdown ?? {}) as Record<string, any>;
+      const num = (v: any) => (typeof v === "number" && isFinite(v) ? v : 0);
+      // Тот же рендерер, что у участника в игре и у тренера — единый сертификат
+      downloadCertificatePng({
+        name: cert.fullName,
+        totalRevenue: num(sb.totalRevenue),
+        totalRMCost: num(sb.totalRMCost),
+        fixedExpenses: num(sb.fixedExpenses),
+        finalCash: num(sb.finalCash),
+        throughput: num(sb.throughput),
+        profitLoss: num(sb.profitLoss),
+        sold: (sb.sold ?? {}) as Record<string, number>,
+        date: cert.generatedAt ? new Date(cert.generatedAt) : undefined,
+      });
     } finally {
       setDownloading(null);
     }

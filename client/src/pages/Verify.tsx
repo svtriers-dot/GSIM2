@@ -112,7 +112,7 @@ export default function Verify() {
 
             <p className="text-xs text-muted-foreground">
               Этот тренер прошёл сертификацию: тест на знание Теории ограничений и пробный
-              прогон симулятора с результатом ${data.practiceFinalCash?.toLocaleString("en-US")}.
+              прогон симулятора с результатом ${data.practiceFinalCash?.toLocaleString("ru-RU")} ₽.
             </p>
           </div>
         )}
