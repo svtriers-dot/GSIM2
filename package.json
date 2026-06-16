@@ -81,7 +81,7 @@
     "nanoid": "^5.0.7",
     "pdfmake": "^0.2.10",
     "helmet": "^7.1.0",
-    "express-rate-limit": "^7.4.0",
+    "express-rate-limit": "^8.5.1",
     "dompurify": "^3.1.6",
     "qrcode": "^1.5.3",
     "react-joyride": "^2.9.3"
