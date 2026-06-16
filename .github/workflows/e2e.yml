@@ -25,9 +25,10 @@ jobs:
           --health-timeout 5s
           --health-retries 12
     env:
+      # NODE_ENV НЕ ставим на весь job — иначе npm ci пропустит devDeps
+      # (drizzle-kit, vite, esbuild). production включаем только на старте сервера.
       DATABASE_URL: postgres://gsim:gsim@localhost:5432/gsim_test
       JWT_SECRET: e2e-test-secret
-      NODE_ENV: production
       PORT: "5000"
     steps:
       - uses: actions/checkout@v4
