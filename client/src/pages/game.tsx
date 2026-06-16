@@ -525,15 +525,6 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
     updateState();
   };
 
-  const handleQuickBuyRM = (rmId: string, qty: number) => {
-    const result = engineRef.current.buyRawMaterial(rmId, qty);
-    if (result.success) {
-      sessionMode?.onAction?.("buy_rm", { rmId, qty });
-    }
-    showNotif(result.message);
-    updateState();
-  };
-
   const handleToggle = () => {
     if (sessionMode) return; // в session-mode таймер контролирует тренер
     engineRef.current.toggleRunning();
@@ -910,22 +901,6 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                   <text x={pos.x} y={pos.y} textAnchor="middle" dominantBaseline="middle" fill={ft.rmText} fontSize="16" fontWeight="bold" fontFamily="monospace">
                     {bufVal}
                   </text>
-                  <g
-                    className="cursor-pointer"
-                    onClick={(e) => { e.stopPropagation(); handleQuickBuyRM(rm.id, 5); }}
-                    data-testid={`rm-quick-5-${rm.col}`}
-                  >
-                    <rect x={pos.x - 22} y={pos.y + 20} width={20} height={14} rx={3} fill={ft.rmInner} stroke={ft.rmStroke} strokeWidth={0.8} />
-                    <text x={pos.x - 12} y={pos.y + 28} textAnchor="middle" dominantBaseline="middle" fill={ft.rmText} fontSize="9" fontWeight="bold" fontFamily="monospace">+5</text>
-                  </g>
-                  <g
-                    className="cursor-pointer"
-                    onClick={(e) => { e.stopPropagation(); handleQuickBuyRM(rm.id, 10); }}
-                    data-testid={`rm-quick-10-${rm.col}`}
-                  >
-                    <rect x={pos.x + 2} y={pos.y + 20} width={20} height={14} rx={3} fill={ft.rmInner} stroke={ft.rmStroke} strokeWidth={0.8} />
-                    <text x={pos.x + 12} y={pos.y + 28} textAnchor="middle" dominantBaseline="middle" fill={ft.rmText} fontSize="9" fontWeight="bold" fontFamily="monospace">+10</text>
-                  </g>
                 </g>
               );
             })}
@@ -1107,9 +1082,6 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                   Столбец <span className="font-bold text-foreground">{rm.col}</span> | Цена: <span className="font-bold text-foreground">{rm.cost}₽</span>/ед.
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  На складе: <span className="font-bold text-foreground">{state.buffers[purchaseRM] || 0}</span> ед.
-                </div>
-                <div className="text-sm text-muted-foreground">
                   Доступно средств: <span className="font-bold text-foreground">{state.cash.toLocaleString("ru-RU")}₽</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -1158,7 +1130,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
               <div className="font-semibold mb-2">Шаги</div>
               <ol className="space-y-2 list-decimal list-inside leading-relaxed">
                 <li><strong>Расставьте станки.</strong> Перетащите 8 машин 5 цветов на станции производственной линии. Каждый цвет может работать только на станциях своего типа. У всех машин разное время переналадки (от 0 до 120 секунд).</li>
-                <li><strong>Закупите сырьё.</strong> 4 типа сырья по 20 ₽. Кнопками <span className="font-mono">+5 / +10</span> добавляйте сырьё в очередь. Слишком мало — простой машин. Слишком много — заморозка денег.</li>
+                <li><strong>Закупите сырьё.</strong> 4 типа сырья по 20 ₽. Кликните по ящику сырья и укажите количество. Слишком мало — простой машин. Слишком много — заморозка денег.</li>
                 <li><strong>Запустите неделю.</strong> Кнопка <Play className="inline w-3 h-3" /> запускает симуляцию. <FastForward className="inline w-3 h-3" /> и <span className="font-mono">×10</span> ускоряют время. Следите за очередями перед станциями — там видно узкие места.</li>
                 <li><strong>Заработайте максимум.</strong> Производство → продажи → прибыль. В пятницу — итоговый расчёт и сравнение с другими игроками в рейтинге.</li>
               </ol>
