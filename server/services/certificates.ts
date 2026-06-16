@@ -146,16 +146,6 @@ export function buildCertificatePdf(data: CertificateData): Promise<Buffer> {
         alignment: "center",
         fontSize: 13,
         color: "#444",
-        margin: [0, 0, 0, 6],
-      },
-      {
-        text: [
-          "в составе команды ",
-          { text: `«${data.teamName}»`, bold: true },
-        ],
-        alignment: "center",
-        fontSize: 13,
-        color: "#444",
         margin: [0, 0, 0, 30],
       },
       {
@@ -295,10 +285,14 @@ export function buildCertificatePdf(data: CertificateData): Promise<Buffer> {
 // Batch: создание сертификатов для всех team_members сессии после её завершения
 // =============================================================================
 
-export async function generateCertificatesForSession(sessionId: string): Promise<{
+export async function generateCertificatesForSession(
+  sessionId: string,
+  opts: { requireCompletion?: boolean } = {},
+): Promise<{
   generated: number;
   total: number;
 }> {
+  const requireCompletion = opts.requireCompletion !== false; // default true (авто/lazy выдача)
   const [session] = await db.select().from(sessions).where(eq(sessions.id, sessionId)).limit(1);
   if (!session) throw new Error("session_not_found");
 
@@ -345,7 +339,7 @@ export async function generateCertificatesForSession(sessionId: string): Promise
     const result = allResults.find((r) => r.teamId === member.teamId);
     // ГЕЙТ: сертификат только если команда реально прошла все 5 дней (gameOver).
     // Если тренер остановил раньше — снапшот без gameOver → пропускаем.
-    if (!isTeamCompleted(result?.stateSnapshot)) continue;
+    if (requireCompletion && !isTeamCompleted(result?.stateSnapshot)) continue;
     const fin = extractFinancials(result?.stateSnapshot);
     const rank = result?.rankInRound ?? totalTeams;
     const badge: "top1" | "top2" | "top3" | null =

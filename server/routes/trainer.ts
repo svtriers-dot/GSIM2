@@ -493,7 +493,7 @@ trainerRouter.post(
     if (!session) throw new SessionNotFoundError();
 
     try {
-      const result = await generateCertificatesForSession(sessionId);
+      const result = await generateCertificatesForSession(sessionId, { requireCompletion: false });
       const certs = await listCertificatesForSession(sessionId);
       res.json({ ...result, certificates: certs });
     } catch (e: any) {

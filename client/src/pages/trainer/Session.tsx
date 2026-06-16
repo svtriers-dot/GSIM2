@@ -1052,6 +1052,8 @@ function CertificatesAndExport({
         { method: "POST" },
       );
       setCerts(data.certificates);
+      // Авто-скачивание PDF на КАЖДОГО участника (имя файла — ФИО)
+      await downloadAll(data.certificates);
     } catch (e: any) {
       setError(
         String(e.message).includes("no_finished_round")
@@ -1084,6 +1086,31 @@ function CertificatesAndExport({
       alert(`Ошибка экспорта: ${e.message}`);
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function downloadAll(list: any[]) {
+    const tok = getTrainerToken();
+    for (const c of list) {
+      try {
+        const res = await fetch(`/api/trainer/certificates/${c.id}/pdf`, {
+          headers: tok ? { Authorization: `Bearer ${tok}` } : {},
+        });
+        if (!res.ok) continue;
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${String(c.memberFullName || "Сертификат").replace(/\s+/g, "_")}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        // небольшой стаггер — иначе браузер блокирует множественные загрузки
+        await new Promise((r) => setTimeout(r, 400));
+      } catch {
+        // пропускаем сбойный, продолжаем остальные
+      }
     }
   }
 
