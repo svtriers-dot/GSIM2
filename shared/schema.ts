@@ -565,7 +565,7 @@ export const createSessionSchema = z.object({
 export type CreateSessionInput = z.infer<typeof createSessionSchema>;
 
 export const teamJoinSchema = z.object({
-  code: z.string().regex(/^[A-Z0-9]{6}$/),
+  code: z.string().regex(/^\d{5}$/),
   pin: z.string().regex(/^\d{4,6}$/).optional(),
   teamName: z.string().min(1).max(100),
   members: z

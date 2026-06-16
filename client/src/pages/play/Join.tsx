@@ -22,10 +22,10 @@ export default function PlayJoin() {
     if (getDeviceToken()) {
       navigate("/play/lobby");
     }
-    // Авто-fill кода из URL: /play/join?code=ABC123
+    // Авто-fill кода из URL: /play/join?code=12345
     const q = new URLSearchParams(location.search);
     const c = q.get("code");
-    if (c) setCode(c.toUpperCase());
+    if (c) setCode(c.replace(/\D/g, "").slice(0, 5));
   }, []);
 
   function addMember() {
@@ -98,7 +98,7 @@ export default function PlayJoin() {
                   : data.error === "session_not_accepting"
                     ? `Сессия не принимает участников (статус: ${data.currentStatus})`
                     : data.error === "validation"
-                      ? "Проверьте данные: код 6 знаков, ФИО ≥ 2 символов"
+                      ? "Проверьте данные: код 5 цифр, ФИО ≥ 2 символов"
                       : `Ошибка: ${data.error || res.statusText}`;
         throw new Error(msg);
       }
@@ -128,15 +128,16 @@ export default function PlayJoin() {
         {step === "code" && (
           <form onSubmit={checkCode} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Код сессии (6 знаков)</label>
+              <label className="block text-sm font-medium mb-1">Код сессии (5 цифр)</label>
               <input
                 type="text"
                 required
-                maxLength={6}
+                inputMode="numeric"
+                maxLength={5}
                 value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 5))}
                 className="w-full px-4 py-3 text-center text-2xl font-mono tracking-widest rounded-lg border border-border bg-background"
-                placeholder="ABC123"
+                placeholder="12345"
               />
             </div>
 {error && (

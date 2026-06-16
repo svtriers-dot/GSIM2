@@ -1,8 +1,7 @@
 import { customAlphabet } from "nanoid";
 
-// Без 0/O/I/1/L — чтобы не путать на проекторе
-const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-const generate = customAlphabet(ALPHABET, 6);
+// 5-значный цифровой код — проще диктовать и вводить на проекторе/телефоне
+const generate = customAlphabet("0123456789", 5);
 
 export function generateAccessCode(): string {
   return generate();

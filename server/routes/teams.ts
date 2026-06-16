@@ -36,13 +36,13 @@ async function teamFromHeader(req: any): Promise<TeamWithMembers | null> {
   return getTeamByDeviceToken(token);
 }
 
-// --- GET /api/teams/check?code=XXXXXX (pre-check для UX) ---
+// --- GET /api/teams/check?code=XXXXX (pre-check для UX, 5 цифр) ---
 // Проверяет существование сессии и требуется ли PIN. Без PIN-валидации.
 // Защита: возвращает только поверхностную инфо, не раскрывает реквизиты.
 
 teamsRouter.get("/check", teamCheckRateLimit, async (req, res) => {
   const codeRaw = req.query.code;
-  if (typeof codeRaw !== "string" || !/^[A-Z0-9]{6}$/.test(codeRaw.toUpperCase())) {
+  if (typeof codeRaw !== "string" || !/^\d{5}$/.test(codeRaw)) {
     return res.status(400).json({ error: "validation" });
   }
   const { getSessionByCode } = await import("../services/sessions");
