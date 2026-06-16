@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { confirmAction } from "@/components/ConfirmDialog";
 import { GoldrattEngine, type GameSnapshot, type MachineState, type SessionMetrics } from '@/lib/gameEngine';
 import {
   STATIONS,
@@ -459,17 +460,31 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
     setTimeout(() => setNotification(null), 2000);
   };
 
-  const handleStationClick = (stationId: string) => {
-    if (!selectedMachine) return;
-    const result = engineRef.current.placeMachine(selectedMachine, stationId);
-    if (result.success) {
-      sessionMode?.onAction?.("place_machine", { machineId: selectedMachine, stationId });
-      setSelectedMachine(null);
+  const handleStationClick = async (stationId: string) => {
+    // С выбранным станком — установка (приоритет)
+    if (selectedMachine) {
+      const result = engineRef.current.placeMachine(selectedMachine, stationId);
+      if (result.success) {
+        sessionMode?.onAction?.("place_machine", { machineId: selectedMachine, stationId });
+        setSelectedMachine(null);
+      }
       showNotif(result.message);
-    } else {
-      showNotif(result.message);
+      updateState();
+      return;
     }
+    // Без выбора — снятие станка кликом по полю (с подтверждением)
+    const machineId = state.stationStates[stationId]?.machineId;
+    if (!machineId) return;
+    const ok = await confirmAction(
+      "Снять станок?",
+      "Станок вернётся в пул. Прогресс наладки и текущей операции на этой позиции сбросится.",
+      true,
+    );
+    if (!ok) return;
+    engineRef.current.removeMachine(machineId);
+    sessionMode?.onAction?.("remove_machine", { machineId });
     updateState();
+    showNotif("Станок снят");
   };
 
   const handleMachineClick = (machineId: string) => {
@@ -937,7 +952,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
               return (
                 <g
                   key={stationDef.id}
-                  className={isHighlightable ? 'cursor-pointer' : ''}
+                  className={(isHighlightable || hasMachine) ? 'cursor-pointer' : ''}
                   onClick={() => handleStationClick(stationDef.id)}
                   data-testid={`station-${stationDef.id}`}
                 >
