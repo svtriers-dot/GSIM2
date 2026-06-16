@@ -258,6 +258,53 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
   const [showCertDialog, setShowCertDialog] = useState(false);
   const [summaryClosed, setSummaryClosed] = useState(false);
   const [certNames, setCertNames] = useState<string[]>(['']);
+
+  // --- Микро-фидбек на ключевые события ---
+  const [floaters, setFloaters] = useState<{ id: string; x: number; y: number; text: string; color: string }[]>([]);
+  const [ripples, setRipples] = useState<{ id: string; x: number; y: number }[]>([]);
+  const [cashFlash, setCashFlash] = useState<null | 'up' | 'down'>(null);
+  const prevSoldRef = useRef<Record<string, number> | null>(null);
+  const prevCashRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (prevSoldRef.current === null) {
+      prevSoldRef.current = { ...state.sold };
+      prevCashRef.current = state.cash;
+      return;
+    }
+    // Продажа: всплывающее «+цена ₽» у рынка
+    const fresh: { id: string; x: number; y: number; text: string; color: string }[] = [];
+    for (const p of PRODUCTS) {
+      const prev = prevSoldRef.current[p.id] ?? 0;
+      const cur = state.sold[p.id] ?? 0;
+      if (cur > prev) {
+        const dp = getDemandPos(p.id);
+        if (dp) fresh.push({
+          id: `s-${p.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          x: dp.x, y: dp.y - 24,
+          text: `+${((cur - prev) * p.price).toLocaleString('ru-RU')} ₽`,
+          color: '#22c55e',
+        });
+      }
+    }
+    prevSoldRef.current = { ...state.sold };
+    if (fresh.length) {
+      setFloaters(f => [...f, ...fresh]);
+      fresh.forEach(fl => setTimeout(() => setFloaters(f => f.filter(x => x.id !== fl.id)), 1100));
+    }
+    // Касса: вспышка зелёным/красным при изменении
+    if (prevCashRef.current !== null && state.cash !== prevCashRef.current) {
+      setCashFlash(state.cash > prevCashRef.current ? 'up' : 'down');
+    }
+    prevCashRef.current = state.cash;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.sold, state.cash]);
+
+  useEffect(() => {
+    if (!cashFlash) return;
+    const t = setTimeout(() => setCashFlash(null), 550);
+    return () => clearTimeout(t);
+  }, [cashFlash]);
   // MVP-2 Onboarding: режим практики для тренера (?practice=1)
   const [isPracticeMode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -510,6 +557,12 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
       if (result.success) {
         sessionMode?.onAction?.("place_machine", { machineId: selectedMachine, stationId });
         setSelectedMachine(null);
+        const rp = getStationPos(stationId);
+        if (rp) {
+          const rid = `r-${Date.now()}`;
+          setRipples(r => [...r, { id: rid, x: rp.x, y: rp.y }]);
+          setTimeout(() => setRipples(r => r.filter(x => x.id !== rid)), 650);
+        }
       }
       showNotif(result.message);
       updateState();
@@ -638,7 +691,15 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
         <div
           data-testid="status-cash"
           className="rounded-md px-3 py-2 text-center"
-          style={{ background: state.cash >= 0 ? '#2a6478' : '#7a1a1a' }}
+          style={{
+            background: state.cash >= 0 ? '#2a6478' : '#7a1a1a',
+            boxShadow: cashFlash === 'up'
+              ? '0 0 0 2px #4ade80, 0 0 14px rgba(34,197,94,0.55)'
+              : cashFlash === 'down'
+                ? '0 0 0 2px #f87171, 0 0 14px rgba(239,68,68,0.5)'
+                : 'none',
+            transition: 'box-shadow 0.25s ease',
+          }}
         >
           <div className="text-[10px] text-white/60 leading-tight">Касса</div>
           <div className="text-[18px] font-mono font-bold text-white leading-tight">
@@ -1124,6 +1185,21 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                 </text>
               );
             })}
+
+            {ripples.map(rp => (
+              <circle key={rp.id} cx={rp.x} cy={rp.y} r={12} fill="none" stroke="#ffffff" strokeWidth={2.5} opacity={0.7} pointerEvents="none">
+                <animate attributeName="r" from="10" to="34" dur="0.6s" fill="freeze" />
+                <animate attributeName="opacity" from="0.7" to="0" dur="0.6s" fill="freeze" />
+                <animate attributeName="stroke-width" from="2.5" to="0.4" dur="0.6s" fill="freeze" />
+              </circle>
+            ))}
+            {floaters.map(fl => (
+              <text key={fl.id} x={fl.x} y={fl.y} textAnchor="middle" fill={fl.color} fontSize="15" fontWeight="bold" fontFamily={SANS} pointerEvents="none">
+                {fl.text}
+                <animateTransform attributeName="transform" type="translate" from="0 0" to="0 -24" dur="1s" fill="freeze" />
+                <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.15;0.7;1" dur="1s" fill="freeze" />
+              </text>
+            ))}
           </svg>
         </div>
 
