@@ -10,7 +10,8 @@
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "grant-super-admin": "tsx script/grant-super-admin.ts",
-    "test": "tsx __tests__/engine.spec.ts && tsx __tests__/certificateRules.spec.ts"
+    "test": "tsx __tests__/engine.spec.ts && tsx __tests__/certificateRules.spec.ts",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

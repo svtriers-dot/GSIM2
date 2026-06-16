@@ -1,0 +1,63 @@
+name: E2E smoke (Playwright)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: gsim
+          POSTGRES_PASSWORD: gsim
+          POSTGRES_DB: gsim_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gsim"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: postgres://gsim:gsim@localhost:5432/gsim_test
+      JWT_SECRET: e2e-test-secret
+      NODE_ENV: production
+      PORT: "5000"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm i -D @playwright/test
+      - run: npx playwright install --with-deps chromium
+      - name: DB push (схема в тестовую БД)
+        run: bash -c 'yes "" | npm run db:push'
+      - run: npm run build
+      - name: Start server
+        run: |
+          NODE_ENV=production node dist/index.cjs &
+          echo $! > server.pid
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:5000/ >/dev/null && echo "up" && exit 0
+            sleep 2
+          done
+          echo "server did not start"; exit 1
+      - name: Run Playwright
+        run: npx playwright test
+      - name: Stop server
+        if: always()
+        run: kill "$(cat server.pid)" 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
