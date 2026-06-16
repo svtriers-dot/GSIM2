@@ -434,17 +434,25 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionMode?.lastForcedEvent?.triggeredAt]);
 
-  // Session-mode: при isEnded — финализация
+  // Session-mode: команда ДОИГРАЛА игру (engine.gameOver) → шлём финальный
+  // снапшот серверу (team:game_over). Раньше триггер стоял на sessionMode.isEnded
+  // (завершение сессии тренером) — из-за чего сервер не получал финал команды:
+  // сертификаты тренера/реестр выходили с нулями, а авто-финал был в дедлоке
+  // (ждал completedAllDays, который ставится только из team:game_over).
+  const gameOverSentRef = useRef(false);
   useEffect(() => {
-    if (sessionMode?.isEnded && sessionMode.onGameEnd) {
+    if (!sessionMode?.onGameEnd) return;
+    if (state.gameOver && !gameOverSentRef.current) {
+      gameOverSentRef.current = true;
       try {
         sessionMode.onGameEnd(engineRef.current.getSnapshot(), engineRef.current.getMetrics());
       } catch (e) {
         console.error("onGameEnd error:", e);
       }
     }
+    if (!state.gameOver) gameOverSentRef.current = false; // сброс для новой игры
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionMode?.isEnded]);
+  }, [state.gameOver]);
 
   const showNotif = (msg: string) => {
     setNotification(msg);

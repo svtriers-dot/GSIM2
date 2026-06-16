@@ -22,6 +22,7 @@ import {
   type Round,
 } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
+import { isTeamCompleted } from "../lib/certificateRules";
 import type { WebSocket } from "ws";
 
 // --- типы ---
@@ -452,6 +453,15 @@ export async function finalizeRoundResults(sessionId: string, roundId: string): 
         .from(teamRoundResults)
         .where(and(eq(teamRoundResults.teamId, team.id), eq(teamRoundResults.roundId, roundId)))
         .limit(1);
+      // Не затираем уже зафиксированный ЗАВЕРШЁННЫЙ результат пустышкой/дефолтами
+      // (напр. при позднем финализе с перезагруженной из БД сессией — defaultMetrics).
+      if (
+        existing.length > 0 &&
+        !isTeamCompleted(team.factoryState) &&
+        isTeamCompleted(existing[0].stateSnapshot)
+      ) {
+        continue;
+      }
       const row = {
         teamId: team.id,
         roundId,
