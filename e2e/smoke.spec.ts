@@ -20,7 +20,7 @@ test("кабинет тренера: страница входа", async ({ page
 test("подключение участника по коду", async ({ page }) => {
   await page.goto("/play/join");
   await expect(page.getByRole("heading", { name: /Мастер-класс/ })).toBeVisible();
-  await expect(page.getByPlaceholder("ABC123")).toBeVisible();
+  await expect(page.getByPlaceholder("12345")).toBeVisible();
 });
 
 test("верификация несуществующего сертификата не падает (нет 500)", async ({ page }) => {
