@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useRoute } from "wouter";
 import { getAllMachineIds, getAllProductIds, getMachineLabel } from "@/lib/gameConfig";
 import { authJson, getTrainerToken } from "@/lib/auth";
+import { downloadCertificatePng } from "@/lib/certificateCanvas";
 import { TrainerSocket, type SessionLiveState, type ConnectionStatus as WsStatus } from "@/lib/trainerSocket";
 import { confirmAction, promptAction } from "@/components/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -1089,24 +1090,27 @@ function CertificatesAndExport({
     }
   }
 
+  function certDataFrom(c: any) {
+    const sb = (c.scoreBreakdown ?? {}) as Record<string, any>;
+    const num = (v: any) => (typeof v === "number" && isFinite(v) ? v : 0);
+    return {
+      name: String(c.memberFullName || "Участник"),
+      totalRevenue: num(sb.totalRevenue),
+      totalRMCost: num(sb.totalRMCost),
+      fixedExpenses: num(sb.fixedExpenses),
+      finalCash: num(sb.finalCash),
+      throughput: num(sb.throughput),
+      profitLoss: num(sb.profitLoss),
+      sold: (sb.sold ?? {}) as Record<string, number>,
+      date: c.generatedAt ? new Date(c.generatedAt) : undefined,
+    };
+  }
+
   async function downloadAll(list: any[]) {
-    const tok = getTrainerToken();
     for (const c of list) {
       try {
-        const res = await fetch(`/api/trainer/certificates/${c.id}/pdf`, {
-          headers: tok ? { Authorization: `Bearer ${tok}` } : {},
-        });
-        if (!res.ok) continue;
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${String(c.memberFullName || "Сертификат").replace(/\s+/g, "_")}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        // небольшой стаггер — иначе браузер блокирует множественные загрузки
+        downloadCertificatePng(certDataFrom(c));
+        // стаггер против блокировки множественных загрузок браузером
         await new Promise((r) => setTimeout(r, 400));
       } catch {
         // пропускаем сбойный, продолжаем остальные
@@ -1114,23 +1118,10 @@ function CertificatesAndExport({
     }
   }
 
-  async function downloadCert(certId: string, fullName: string) {
-    setBusy(certId);
+  function downloadCert(c: any) {
+    setBusy(c.id);
     try {
-      const tok = getTrainerToken();
-      const res = await fetch(`/api/trainer/certificates/${certId}/pdf`, {
-        headers: tok ? { Authorization: `Bearer ${tok}` } : {},
-      });
-      if (!res.ok) throw new Error(`${res.status}`);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${fullName.replace(/\s+/g, "_")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      downloadCertificatePng(certDataFrom(c));
     } catch (e: any) {
       alert(`Ошибка: ${e.message}`);
     } finally {
@@ -1207,11 +1198,11 @@ function CertificatesAndExport({
                   </td>
                   <td className="px-3 py-2 text-right">
                     <button
-                      onClick={() => downloadCert(c.id, c.memberFullName)}
+                      onClick={() => downloadCert(c)}
                       disabled={busy === c.id}
                       className="text-primary hover:underline text-xs disabled:opacity-50"
                     >
-                      {busy === c.id ? "..." : "Скачать PDF →"}
+                      {busy === c.id ? "..." : "Скачать →"}
                     </button>
                   </td>
                 </tr>

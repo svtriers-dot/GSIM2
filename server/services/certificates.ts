@@ -341,6 +341,7 @@ export async function generateCertificatesForSession(
     // Если тренер остановил раньше — снапшот без gameOver → пропускаем.
     if (requireCompletion && !isTeamCompleted(result?.stateSnapshot)) continue;
     const fin = extractFinancials(result?.stateSnapshot);
+    const soldMap = ((result?.stateSnapshot as any)?.snapshot?.sold ?? {}) as Record<string, number>;
     const rank = result?.rankInRound ?? totalTeams;
     const badge: "top1" | "top2" | "top3" | null =
       rank === 1 ? "top1" : rank === 2 ? "top2" : rank === 3 ? "top3" : null;
@@ -373,6 +374,7 @@ export async function generateCertificatesForSession(
           totalRevenue: fin.totalRevenue,
           totalRMCost: fin.totalRMCost,
           fixedExpenses: fin.fixedExpenses,
+          sold: soldMap,
           rankInRound: rank,
           totalTeams,
         },
