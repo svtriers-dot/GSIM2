@@ -336,6 +336,33 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
     return () => cancelAnimationFrame(animId);
   }, [updateState, sessionMode]);
 
+  // Фоновая устойчивость (session-mode): браузер останавливает requestAnimationFrame
+  // в скрытой вкладке — тогда симуляция команды и отправка метрик замирают, и у
+  // тренера в Live/Debrief данные застывают. Здесь через setInterval двигаем движок
+  // в фоне и шлём метрики всегда (страховка против троттлинга rAF).
+  useEffect(() => {
+    if (!sessionMode) return;
+    let last = performance.now();
+    const id = window.setInterval(() => {
+      const now = performance.now();
+      const dt = Math.min((now - last) / 1000, 2);
+      last = now;
+      if (typeof document !== "undefined" && document.hidden) {
+        const blocked = sessionMode.isPaused || sessionMode.isEnded;
+        if (!blocked) {
+          engineRef.current.tick(dt);
+          updateState();
+        }
+      }
+      try {
+        sessionMode.onMetricsUpdate?.(engineRef.current.getMetrics());
+      } catch (e) {
+        console.error("metrics heartbeat error:", e);
+      }
+    }, 2000);
+    return () => window.clearInterval(id);
+  }, [sessionMode, updateState]);
+
   // Session-mode: внутренний флаг движка управляется тренером (паузой сессии).
   // Без этого tick() не двигает симуляцию, даже когда оверлей паузы снят.
   useEffect(() => {
