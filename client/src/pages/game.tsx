@@ -958,12 +958,9 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
               const isBroken = !!(machineOnStation?.brokenUntilMs && machineOnStation.brokenUntilMs > Date.now());
               const isFinal = PRODUCTS.some(p => p.finalStation === stationDef.id);
 
-              let pulseOpacity = 1;
-              if (isProducing) {
-                pulseOpacity = 0.85;
-              } else if (isIdle) {
-                pulseOpacity = 0.5;
-              }
+              // Занятость позиции = яркость: пусто — тускло (призрак-слот),
+              // установлен — ярко. Статус работы показывают прогресс-бар, пульсация и подписи.
+              const pulseOpacity = hasMachine ? 1 : 0.3;
 
               return (
                 <g
@@ -1008,7 +1005,11 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                           </>
                         )}
 
-                        <rect x={sx} y={sy} width={w} height={h} rx={4} fill={colorFill} stroke={colorStroke} strokeWidth={sw} opacity={pulseOpacity}>
+                        {hasMachine && (
+                          <rect x={sx - 3} y={sy - 3} width={w + 6} height={h + 6} rx={7} fill="none" stroke={getColorHex(stationDef.color)} strokeWidth={2.5} opacity={0.32} pointerEvents="none" />
+                        )}
+
+                        <rect x={sx} y={sy} width={w} height={h} rx={4} fill={colorFill} stroke={colorStroke} strokeWidth={sw} strokeDasharray={hasMachine ? undefined : '3 2'} opacity={pulseOpacity}>
                           {isProducing && (
                             <animate attributeName="opacity" values="0.6;1;0.6" dur="1s" repeatCount="indefinite" />
                           )}
@@ -1034,9 +1035,10 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                         </text>
 
                         {hasMachine && (
-                          <circle cx={sx + w - 3} cy={sy - 2} r={5} fill={ft.machineMarker} opacity={0.9}>
-                            <animate attributeName="r" values="4;5.5;4" dur="2s" repeatCount="indefinite" />
-                          </circle>
+                          <>
+                            <circle cx={sx + w - 3} cy={sy - 2} r={5.5} fill="#ffffff" opacity={0.95} />
+                            <circle cx={sx + w - 3} cy={sy - 2} r={3.8} fill={getColorHex(stationDef.color)} />
+                          </>
                         )}
 
                         {isBroken && (
