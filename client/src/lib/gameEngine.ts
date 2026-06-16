@@ -19,7 +19,7 @@ export interface MachineState {
   assignedTo: string | null;
   status: 'idle' | 'setup' | 'prod';
   setupRemaining: number;
-  brokenUntilMs?: number; // V2 forced events
+  brokenRemainingMs?: number; // V2 forced events — остаток поломки в ИГРОВЫХ мс
 }
 
 export interface StationRuntimeState {
@@ -216,9 +216,20 @@ export class GoldrattEngine {
   tick(dt: number) {
     if (!this.running || this.gameOver) return;
 
+    const gameDt = dt * this.pace;
+
+    // V2: поломка станка идёт по ИГРОВОМУ времени, а не по wall-clock.
+    // Иначе при ускоренном темпе (pace>1) реальный день короче 60 сек и
+    // поломка «переживает» смену дня. Тикаем здесь — пауза дня её замораживает.
+    for (const bm of this.machines) {
+      if (bm.brokenRemainingMs && bm.brokenRemainingMs > 0) {
+        const left = bm.brokenRemainingMs - gameDt * 1000;
+        bm.brokenRemainingMs = left > 0 ? left : undefined;
+      }
+    }
+
     this.updateForcedEffects();
 
-    const gameDt = dt * this.pace;
     this.timeInDay += gameDt;
 
     if (this.timeInDay >= this.constants.dayDurationSeconds) {
@@ -229,7 +240,7 @@ export class GoldrattEngine {
 
     for (const m of this.machines) {
       // Сломанные машины не накапливают workTime
-      if (m.brokenUntilMs && m.brokenUntilMs > Date.now()) continue;
+      if (m.brokenRemainingMs && m.brokenRemainingMs > 0) continue;
       if (m.assignedTo && m.status === 'prod') {
         this.machineWorkTime[m.id] = (this.machineWorkTime[m.id] || 0) + gameDt;
       }
@@ -243,7 +254,7 @@ export class GoldrattEngine {
 
       // V2 forced events: если машина на этой станции сломана, прогресс не идёт
       const machineOnStation = state.machineId ? this.machines.find((m) => m.id === state.machineId) : null;
-      const isBroken = !!(machineOnStation?.brokenUntilMs && machineOnStation.brokenUntilMs > Date.now());
+      const isBroken = !!(machineOnStation?.brokenRemainingMs && machineOnStation.brokenRemainingMs > 0);
       if (isBroken) continue;
 
       if (state.status === 'setup') {
@@ -499,7 +510,7 @@ export class GoldrattEngine {
   applyMachineBreakdown(machineId: string, durationMs: number): boolean {
     const m = this.machines.find((mm) => mm.id === machineId);
     if (!m) return false;
-    m.brokenUntilMs = Date.now() + durationMs;
+    m.brokenRemainingMs = durationMs; // ИГРОВЫЕ мс, тикаются в tick()
     return true;
   }
 
@@ -522,11 +533,6 @@ export class GoldrattEngine {
 
   private updateForcedEffects(): void {
     const now = Date.now();
-    for (const m of this.machines) {
-      if (m.brokenUntilMs && m.brokenUntilMs <= now) {
-        m.brokenUntilMs = undefined;
-      }
-    }
     this.demandMultipliers = this.demandMultipliers ?? {};
     for (const [pid, eff] of Object.entries(this.demandMultipliers)) {
       if (eff.dueAtMs <= now) {

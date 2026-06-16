@@ -167,7 +167,14 @@ export default function PlayResult() {
           )}
         </div>
 
-        <div className="flex gap-3 justify-center">
+        <div className="flex gap-3 justify-center flex-wrap">
+          <button
+            data-testid="button-replay"
+            onClick={() => navigate("/play/session?replay=1")}
+            className="px-5 py-2.5 rounded-lg bg-secondary text-secondary-foreground font-medium border border-border"
+          >
+            🔄 Сыграть заново
+          </button>
           <button
             onClick={() => {
               clearTeamSession();

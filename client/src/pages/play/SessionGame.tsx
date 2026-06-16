@@ -52,6 +52,10 @@ export default function PlaySessionGame() {
   const [wsStatus, setWsStatus] = useState<TeamConnectionStatus>("disconnected");
   const meta = getTeamMeta();
   const wsRef = useRef<TeamSocket | null>(null);
+  // «Сыграть заново» с экрана сертификатов: свежий прогон той же командой.
+  const replay = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("replay") === "1";
+  // Команда сама доиграла игру — чтобы авто-финал сессии не перебивал итоговое окно.
+  const localGameOverRef = useRef(false);
 
   useEffect(() => {
     if (!getDeviceToken()) {
@@ -66,10 +70,11 @@ export default function PlaySessionGame() {
           navigate("/play/lobby");
           return;
         }
-        if (data.session?.status === "ended" || data.session?.status === "archived") {
+        if ((data.session?.status === "ended" || data.session?.status === "archived") && !replay) {
           navigate("/play/result");
           return;
         }
+        if (replay) { setPaused(false); setEnded(false); }
         if (data.session?.status === "running") setPaused(false);
         if (data.session?.status === "paused") setPaused(true);
 
@@ -78,7 +83,7 @@ export default function PlaySessionGame() {
         if (fs && typeof fs === "object" && "snapshot" in fs) {
           const snap = (fs as any).snapshot as GameSnapshot;
           // Не восстанавливаем завершённую игру — иначе сразу снова экран финала
-          if (!snap?.gameOver) setRestoreSnapshot(snap);
+          if (!snap?.gameOver && !replay) setRestoreSnapshot(snap);
         }
       })
       .catch((e) => {
@@ -100,6 +105,8 @@ export default function PlaySessionGame() {
           setPaused(false);
           setEnded(false);
         } else if (status === "ended" || status === "archived") {
+          // Игрок сам доиграл → показываем итоговое окно, не перебиваем авто-переходом.
+          if (localGameOverRef.current) return;
           setEnded(true);
           setTimeout(() => navigate("/play/result"), 1500);
         } else if (status === "lobby") {
@@ -172,8 +179,11 @@ export default function PlaySessionGame() {
         wsRef.current?.send("team:action", { actionType, payload });
       },
       onGameEnd: (snapshot, metrics) => {
+        localGameOverRef.current = true;
         wsRef.current?.send("team:game_over", { snapshot, metrics });
       },
+      // «Получить сертификат» из итогового окна → экран сертификатов.
+      onGoToCertificates: () => navigate("/play/result"),
       // ФИО с экрана входа — для сертификатов без повторного ввода
       memberNames: (me?.members ?? []).map((m) => m.fullName),
       // «Новая игра»: если сессия ещё активна — заново в лобби; если закрыта — к результатам

@@ -201,6 +201,8 @@ export interface GameSessionMode {
   memberNames?: string[];
   // «Новая игра» в командном режиме — перезайти в эту же сессию (решает SessionGame)
   onRestart?: () => void;
+  // «Получить сертификат» в командном режиме — переход на экран сертификатов (решает SessionGame)
+  onGoToCertificates?: () => void;
   // V2 — кастом-конфиг: пресет сложности + ручные overrides
   scenarioPreset?: string;
   constantsOverrides?: { startingCash?: number; fixedExpenses?: number; totalDays?: number; dayDurationSeconds?: number };
@@ -983,7 +985,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
               const isIdle = hasMachine && sState?.status === 'idle';
               const isHighlightable = selectedMachineColor === stationDef.color;
               const machineOnStation = sState?.machineId ? state.machines.find(m => m.id === sState.machineId) : null;
-              const isBroken = !!(machineOnStation?.brokenUntilMs && machineOnStation.brokenUntilMs > Date.now());
+              const isBroken = !!(machineOnStation?.brokenRemainingMs && machineOnStation.brokenRemainingMs > 0);
               const isFinal = PRODUCTS.some(p => p.finalStation === stationDef.id);
 
               // Занятость позиции = яркость: пусто — тускло (призрак-слот),
@@ -1459,12 +1461,11 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                   </Button>
                 )}
                 <Button data-testid="button-certificate" variant="secondary" onClick={() => {
-                  const mn = (sessionMode?.memberNames ?? []).filter(n => n.trim().length > 0);
-                  if (mn.length > 0) { generateCertificate(mn); }
-                  else { setCertNames(['']); setShowCertDialog(true); }
+                  if (sessionMode) { sessionMode.onGoToCertificates?.(); return; }
+                  setCertNames(['']); setShowCertDialog(true);
                 }}>
                   <Download className="w-4 h-4 mr-1" />
-                  Сертификат
+                  {sessionMode ? 'Получить сертификат' : 'Сертификат'}
                 </Button>
                 <Button data-testid="button-new-game" onClick={() => { if (sessionMode?.onRestart) sessionMode.onRestart(); else handleReset(); }}>Новая игра</Button>
               </div>

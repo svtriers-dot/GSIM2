@@ -143,15 +143,17 @@ function run(e: GoldrattEngine, seconds: number) {
   const c1m = e.machines.find(m=>m.color==="green")!;
   e.placeMachine(c1m.id, "C1"); e.buyRawMaterial("RM_C", 3);
   run(e, c1m.setupTime + 0.5); // завершить setup -> idle
-  ok("breakdown: applyMachineBreakdown по валидному id = true", e.applyMachineBreakdown(c1m.id, 100000)===true);
+  // Поломка измеряется в ИГРОВОМ времени: 30 игровых секунд (а не wall-clock).
+  ok("breakdown: applyMachineBreakdown по валидному id = true", e.applyMachineBreakdown(c1m.id, 30000)===true);
   ok("breakdown: невалидный id = false", e.applyMachineBreakdown("machine_999", 1000)===false);
+  ok("breakdown: остаток выставлен в игровых мс", c1m.brokenRemainingMs===30000, c1m.brokenRemainingMs);
   const outBefore = e.buffers["C1_out"]; const rmBefore = e.buffers["RM_C"];
-  run(e, c1m.setupTime + 50); // долго крутим, но станок сломан
-  ok("breakdown: производство НЕ идёт (out не растёт)", e.buffers["C1_out"]===outBefore, e.buffers["C1_out"]);
-  ok("breakdown: вход НЕ потребляется", e.buffers["RM_C"]===rmBefore, e.buffers["RM_C"]);
-  // снять поломку
-  c1m.brokenUntilMs = Date.now()-1; e.running=true; e.tick(0.1);
-  ok("breakdown: updateForcedEffects снял поломку", c1m.brokenUntilMs===undefined);
+  run(e, 20); // 20с < 30с — станок ещё сломан
+  ok("breakdown: пока сломан — производство НЕ идёт", e.buffers["C1_out"]===outBefore, e.buffers["C1_out"]);
+  ok("breakdown: пока сломан — вход НЕ потребляется", e.buffers["RM_C"]===rmBefore, e.buffers["RM_C"]);
+  ok("breakdown: остаток ещё положителен (~10с)", (c1m.brokenRemainingMs ?? 0) > 0, c1m.brokenRemainingMs);
+  run(e, 15); // суммарно 35с > 30с — поломка снимается игровым временем
+  ok("breakdown: снят по игровому времени", c1m.brokenRemainingMs===undefined, c1m.brokenRemainingMs);
   run(e, e.stationStates["C1"].processRemaining + c1m.setupTime + 1);
   ok("breakdown: после восстановления производит", e.buffers["C1_out"] > outBefore, e.buffers["C1_out"]);
 }
