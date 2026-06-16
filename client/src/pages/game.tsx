@@ -16,6 +16,7 @@ import {
   type MachineColor,
 } from '@/lib/gameConfig';
 import { downloadCertificatePng } from '@/lib/certificateCanvas';
+import { SANS, shadeHex, TOKENS, makeFloorTheme } from '@/lib/gameTheme';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -44,16 +45,7 @@ function getColorStroke(color: MachineColor): string {
   return COLOR_MAP[color].stroke;
 }
 
-// Шрифт для словесных подписей (sans). Числа/метрики остаются monospace.
-const SANS = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
-// Светлее/темнее базового цвета (p в [-1..1]) — для 3D-градиентов значков станков
-function shadeHex(hex: string, p: number): string {
-  const n = parseInt(hex.replace('#', ''), 16);
-  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-  const adj = (c: number) => Math.max(0, Math.min(255, Math.round(c + (p < 0 ? c * p : (255 - c) * p))));
-  return '#' + ((1 << 24) + (adj(r) << 16) + (adj(g) << 8) + adj(b)).toString(16).slice(1);
-}
 
 function StatusBadge({ title, lines, bgColor }: { title?: string; lines: string[]; bgColor: string }) {
   return (
@@ -283,7 +275,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
           id: `s-${p.id}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           x: dp.x, y: dp.y - 24,
           text: `+${((cur - prev) * p.price).toLocaleString('ru-RU')} ₽`,
-          color: '#22c55e',
+          color: TOKENS.color.success,
         });
       }
     }
@@ -314,65 +306,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
   const [practiceSubmitting, setPracticeSubmitting] = useState(false);
   const [practiceResult, setPracticeResult] = useState<{ accepted: boolean; minCashRequired: number } | null>(null);
 
-  const ft = floorDark
-    ? {
-        bg: '#0d1b2a',
-        text: '#8899aa',
-        textBright: '#aabbcc',
-        demandBox: '#1b2838',
-        demandStroke: '#445566',
-        demandAccent: '#00CED1',
-        soldBox: '#1a2535',
-        soldStroke: '#334455',
-        colLabel: '#556677',
-        connLine: '#334466',
-        arrow: '#556',
-        bufBox: '#1a2535',
-        bufStroke: '#445566',
-        rmBox: '#2a3a4a',
-        rmInner: '#3d5a78',
-        rmStroke: '#5a7a9a',
-        rmBar: '#5a7a9a',
-        rmCounter: '#1b2b3b',
-        rmText: '#8ab4d8',
-        rmPrice: '#667788',
-        stationText: 'white',
-        machineMarker: 'white',
-        setupText: '#ffcc00',
-        priceText: '#66aacc',
-        rowLabel: '#445566',
-        highlight: 'white',
-        progressBar: 'white',
-      }
-    : {
-        bg: '#f7f4ec',          /* светло-бежевый, чуть светлее основного */
-        text: '#5a6478',        /* muted из палитры */
-        textBright: '#11192d',  /* fg из палитры */
-        demandBox: '#ffffff',
-        demandStroke: '#dcd5c4',
-        demandAccent: '#11192d',
-        soldBox: '#f0ebe0',
-        soldStroke: '#dcd5c4',
-        colLabel: '#5a6478',
-        connLine: '#c0b9a4',
-        arrow: '#5a6478',
-        bufBox: '#ffffff',
-        bufStroke: '#dcd5c4',
-        rmBox: '#eae4d6',
-        rmInner: '#dcd5c4',
-        rmStroke: '#a8a25a',
-        rmBar: '#a8a25a',
-        rmCounter: '#eae4d6',
-        rmText: '#11192d',
-        rmPrice: '#5a6478',
-        stationText: 'white',
-        machineMarker: '#11192d',
-        setupText: '#c87a4a',
-        priceText: '#11192d',
-        rowLabel: '#5a6478',
-        highlight: '#11192d',
-        progressBar: 'white',
-      };
+  const ft = makeFloorTheme(floorDark);
 
 
   const saveResultMutation = useMutation({
@@ -692,11 +626,11 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
           data-testid="status-cash"
           className="rounded-md px-3 py-2 text-center"
           style={{
-            background: state.cash >= 0 ? '#2a6478' : '#7a1a1a',
+            background: state.cash >= 0 ? TOKENS.color.cashPos : TOKENS.color.cashNeg,
             boxShadow: cashFlash === 'up'
-              ? '0 0 0 2px #4ade80, 0 0 14px rgba(34,197,94,0.55)'
+              ? TOKENS.shadow.flashUp
               : cashFlash === 'down'
-                ? '0 0 0 2px #f87171, 0 0 14px rgba(239,68,68,0.5)'
+                ? TOKENS.shadow.flashDown
                 : 'none',
             transition: 'box-shadow 0.25s ease',
           }}
@@ -944,8 +878,8 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
               const fromProd = state.stationStates[conn.from]?.status === 'prod';
               const toProd = state.stationStates[conn.to]?.status === 'prod';
               const active = state.running && (fromProd || toProd);
-              const flowLit = floorDark ? '#f5e09a' : '#b8860b';
-              const flowHalo = floorDark ? '#e8c84a' : '#d4af37';
+              const flowLit = ft.flowLit;
+              const flowHalo = ft.flowHalo;
 
               return (
                 <g key={`conn_${i}`}>
@@ -1187,7 +1121,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
             })}
 
             {ripples.map(rp => (
-              <circle key={rp.id} cx={rp.x} cy={rp.y} r={12} fill="none" stroke="#ffffff" strokeWidth={2.5} opacity={0.7} pointerEvents="none">
+              <circle key={rp.id} cx={rp.x} cy={rp.y} r={12} fill="none" stroke={TOKENS.color.ripple} strokeWidth={2.5} opacity={0.7} pointerEvents="none">
                 <animate attributeName="r" from="10" to="34" dur="0.6s" fill="freeze" />
                 <animate attributeName="opacity" from="0.7" to="0" dur="0.6s" fill="freeze" />
                 <animate attributeName="stroke-width" from="2.5" to="0.4" dur="0.6s" fill="freeze" />
