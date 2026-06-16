@@ -769,7 +769,8 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
               </marker>
               {Object.entries(COLOR_MAP).map(([color, vals]) => (
                 <linearGradient key={color} id={`grad_${color}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={vals.fill} stopOpacity="1" />
+                  <stop offset="0%" stopColor={shadeHex(vals.fill, 0.5)} stopOpacity="1" />
+                  <stop offset="42%" stopColor={vals.fill} stopOpacity="1" />
                   <stop offset="100%" stopColor={vals.stroke} stopOpacity="1" />
                 </linearGradient>
               ))}
@@ -1012,6 +1013,9 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
                             <animate attributeName="opacity" values="0.6;1;0.6" dur="1s" repeatCount="indefinite" />
                           )}
                         </rect>
+
+                        <rect x={sx + 3} y={sy + 2.5} width={w - 6} height={2} rx={1} fill="#ffffff" opacity={0.3 * pulseOpacity} pointerEvents="none" />
+                        <rect x={sx + 2} y={sy + h - 4} width={w - 4} height={2.5} rx={1.2} fill={getColorStroke(stationDef.color)} opacity={0.4 * pulseOpacity} pointerEvents="none" />
 
                         {isProducing && sState && (
                           <rect
