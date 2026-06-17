@@ -523,6 +523,47 @@ function LobbyTab({
 }
 
 function LiveTab({ teams }: { teams: any[] }) {
+  type SortKey = "name" | "day" | "cash" | "throughput" | "forecastProfit" | "inventory" | "operatingExpense";
+  const [sortKey, setSortKey] = useState<SortKey>("cash");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  function toggleSort(k: SortKey) {
+    if (k === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(k);
+      // По имени логичнее по возрастанию, по числам — по убыванию.
+      setSortDir(k === "name" ? "asc" : "desc");
+    }
+  }
+
+  const sorted = useMemo(() => {
+    const val = (t: any): number | string => {
+      const m = t.metrics || {};
+      switch (sortKey) {
+        case "name": return (t.name || "").toLowerCase();
+        case "day": return m.day ?? 0;
+        case "cash": return m.cash ?? 0;
+        case "throughput": return m.throughput ?? 0;
+        case "forecastProfit": return m.forecastProfit ?? 0;
+        case "inventory": return m.inventory ?? 0;
+        case "operatingExpense": return m.operatingExpense ?? 0;
+        default: return 0;
+      }
+    };
+    const arr = [...teams];
+    arr.sort((a, b) => {
+      const va = val(a), vb = val(b);
+      let cmp: number;
+      if (typeof va === "string" || typeof vb === "string") cmp = String(va).localeCompare(String(vb), "ru");
+      else cmp = (va as number) - (vb as number);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return arr;
+  }, [teams, sortKey, sortDir]);
+
+  const arrow = (k: SortKey) => (sortKey === k ? (sortDir === "asc" ? " \u25B2" : " \u25BC") : "");
+
   if (teams.length === 0)
     return (
       <div className="text-center py-12 border border-dashed border-border rounded-xl text-muted-foreground">
@@ -531,11 +572,25 @@ function LiveTab({ teams }: { teams: any[] }) {
     );
   return (
     <>
+      {/* Сортировка (для мобильных и как явный контрол) */}
+      <div className="md:hidden mb-3 flex flex-wrap gap-2 text-xs">
+        {([["day","День"],["cash","Cash"],["throughput","Throughput"],["forecastProfit","Прогноз"],["name","Имя"]] as [SortKey,string][]).map(([k,label]) => (
+          <button
+            key={k}
+            onClick={() => toggleSort(k)}
+            className={`px-2.5 py-1 rounded border ${sortKey===k ? "bg-primary text-primary-foreground border-primary" : "border-border"}`}
+          >
+            {label}{arrow(k)}
+          </button>
+        ))}
+      </div>
+
       {/* Mobile: cards */}
       <div className="md:hidden space-y-3">
-        {teams.map((t) => {
+        {sorted.map((t) => {
           const m = t.metrics || {};
           const cash = m.cash ?? 0;
+          const fp = m.forecastProfit ?? 0;
           return (
             <div
               key={t.id}
@@ -544,9 +599,7 @@ function LiveTab({ teams }: { teams: any[] }) {
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="font-semibold">{t.name}</div>
-                {m.bottleneckStationId && (
-                  <span className="text-xs text-amber-600 font-mono">⚠ {m.bottleneckStationId}{m.bottleneckQueue ? ` ·${m.bottleneckQueue}` : ""}</span>
-                )}
+                <span className="text-xs text-muted-foreground">День {m.day ?? 1}/5</span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
@@ -560,14 +613,19 @@ function LiveTab({ teams }: { teams: any[] }) {
                   <div className="font-mono">{m.throughput ?? 0}</div>
                 </div>
                 <div>
+                  <div className="text-xs text-muted-foreground">Прогноз прибыли</div>
+                  <div className={`font-mono font-semibold ${fp < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                    {fp >= 0 ? "+" : ""}{fp.toLocaleString("ru-RU")} ₽
+                  </div>
+                </div>
+                <div>
                   <div className="text-xs text-muted-foreground">WIP</div>
                   <div className="font-mono">{m.inventory ?? 0}</div>
                 </div>
-                <div>
-                  <div className="text-xs text-muted-foreground">OE</div>
-                  <div className="font-mono">{(m.operatingExpense ?? 0).toLocaleString("ru-RU")} ₽</div>
-                </div>
               </div>
+              {m.bottleneckStationId && (
+                <div className="mt-2 text-xs text-amber-600 font-mono">⚠ {m.bottleneckStationId}{m.bottleneckQueue ? ` ·${m.bottleneckQueue}` : ""}</div>
+              )}
               <div className="mt-2 text-xs text-muted-foreground truncate">
                 {(t.members || []).map((mm: any) => mm.fullName).join(", ")}
               </div>
@@ -581,18 +639,24 @@ function LiveTab({ teams }: { teams: any[] }) {
         <table className="w-full text-sm">
           <thead className="bg-elevate-1 text-left">
             <tr>
-              <th className="px-4 py-3 font-medium">Команда</th>
-              <th className="px-4 py-3 font-medium text-right">
-                <MetricHeader label="Cash, ₽" hint="Сколько денег у команды сейчас. Если в минус — операционные расходы превышают throughput. По ТОС: throughput < operating expense." />
+              <th className="px-4 py-3 font-medium cursor-pointer select-none" onClick={() => toggleSort("name")}>Команда{arrow("name")}</th>
+              <th className="px-4 py-3 font-medium text-center cursor-pointer select-none" onClick={() => toggleSort("day")}>
+                <MetricHeader label={`День${arrow("day")}`} hint="Текущий игровой день команды (1–5). Команды идут в своём темпе — день у каждой свой." />
               </th>
-              <th className="px-4 py-3 font-medium text-right">
-                <MetricHeader label="Throughput" hint="Throughput — выручка от продажи готовой продукции минус сырьё. Главный показатель ТОС: максимизируется через расширение узкого места." />
+              <th className="px-4 py-3 font-medium text-right cursor-pointer select-none" onClick={() => toggleSort("cash")}>
+                <MetricHeader label={`Cash, ₽${arrow("cash")}`} hint="Сколько денег у команды сейчас. Если в минус — операционные расходы превышают throughput. По ТОС: throughput < operating expense." />
               </th>
-              <th className="px-4 py-3 font-medium text-right">
-                <MetricHeader label="WIP / Inv" hint="Work in Progress / Inventory — полуфабрикаты в буферах между станциями. Высокий WIP перед станцией указывает на узкое место." />
+              <th className="px-4 py-3 font-medium text-right cursor-pointer select-none" onClick={() => toggleSort("throughput")}>
+                <MetricHeader label={`Throughput${arrow("throughput")}`} hint="Throughput — выручка от продажи готовой продукции минус сырьё. Главный показатель ТОС: максимизируется через расширение узкого места." />
               </th>
-              <th className="px-4 py-3 font-medium text-right">
-                <MetricHeader label="OE" hint="Operating Expense — операционные расходы (сырьё + постоянка). По ТОС снижают только после максимизации throughput." />
+              <th className="px-4 py-3 font-medium text-right cursor-pointer select-none" onClick={() => toggleSort("forecastProfit")}>
+                <MetricHeader label={`Прогноз прибыли${arrow("forecastProfit")}`} hint="Прогноз прибыли на конец недели: текущий проход экстраполируется на всю игру по доле пройденного времени, минус постоянные расходы (11 000 ₽)." />
+              </th>
+              <th className="px-4 py-3 font-medium text-right cursor-pointer select-none" onClick={() => toggleSort("inventory")}>
+                <MetricHeader label={`WIP / Inv${arrow("inventory")}`} hint="Work in Progress / Inventory — полуфабрикаты в буферах между станциями. Высокий WIP перед станцией указывает на узкое место." />
+              </th>
+              <th className="px-4 py-3 font-medium text-right cursor-pointer select-none" onClick={() => toggleSort("operatingExpense")}>
+                <MetricHeader label={`OE${arrow("operatingExpense")}`} hint="Operating Expense — операционные расходы (сырьё + постоянка). По ТОС снижают только после максимизации throughput." />
               </th>
               <th className="px-4 py-3 font-medium">
                 <MetricHeader label="Bottleneck" hint="Станция-узкое место: ограничивает throughput всей системы. По ТОС 5 шагов: найти, использовать максимально, подчинить остальные, расширить, не дать инерции стать новым ограничением." />
@@ -601,9 +665,10 @@ function LiveTab({ teams }: { teams: any[] }) {
             </tr>
           </thead>
           <tbody>
-            {teams.map((t) => {
+            {sorted.map((t) => {
               const m = t.metrics || {};
               const cash = m.cash ?? 0;
+              const fp = m.forecastProfit ?? 0;
               return (
                 <tr key={t.id} className="border-t border-border">
                   <td className="px-4 py-3">
@@ -613,10 +678,14 @@ function LiveTab({ teams }: { teams: any[] }) {
                     />
                     <span className="font-medium">{t.name}</span>
                   </td>
+                  <td className="px-4 py-3 text-center font-mono">{m.day ?? 1}<span className="text-muted-foreground">/5</span></td>
                   <td className={`px-4 py-3 text-right font-mono ${cash < 0 ? "text-red-600" : ""}`}>
                     {cash.toLocaleString("ru-RU")} ₽
                   </td>
                   <td className="px-4 py-3 text-right font-mono">{m.throughput ?? 0}</td>
+                  <td className={`px-4 py-3 text-right font-mono font-semibold ${fp < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                    {fp >= 0 ? "+" : ""}{fp.toLocaleString("ru-RU")} ₽
+                  </td>
                   <td className="px-4 py-3 text-right font-mono">{m.inventory ?? 0}</td>
                   <td className="px-4 py-3 text-right font-mono">{(m.operatingExpense ?? 0).toLocaleString("ru-RU")} ₽</td>
                   <td className="px-4 py-3">
@@ -641,6 +710,7 @@ function LiveTab({ teams }: { teams: any[] }) {
     </>
   );
 }
+
 interface RoundDTO {
   id: string;
   roundNumber: number;

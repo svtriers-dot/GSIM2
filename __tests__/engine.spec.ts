@@ -83,6 +83,39 @@ function run(e: GoldrattEngine, seconds: number) {
   ok("prod: выходной буфер C1_out пополнен", e.buffers["C1_out"] > outBefore, e.buffers["C1_out"]);
 }
 
+// ---------- 4b. СНЯТИЕ СТАНКА В ПРОЦЕССЕ: деталь возвращается в WIP ----------
+{
+  const e = new GoldrattEngine();
+  const green = e.machines.find(m=>m.color==="green")!;
+  e.placeMachine(green.id, "C1");
+  e.buyRawMaterial("RM_C", 3);
+  // Доводим станок до состояния "в процессе обработки" (вход уже списан движком).
+  let guard = 0;
+  while (e.stationStates["C1"].status !== "prod" && guard < 4000) { run(e, 0.5); guard++; }
+  ok("снятие: станция в процессе обработки", e.stationStates["C1"].status === "prod", e.stationStates["C1"].status);
+  const rmInProd = e.buffers["RM_C"]; // часть сырья уже ушла в незавершёнку
+  e.removeMachine(green.id);
+  ok("снятие: незавершёнка вернулась во вход (+1, деталь не пропала)", e.buffers["RM_C"] === rmInProd + 1, {after: e.buffers["RM_C"], during: rmInProd});
+  ok("снятие: станция освобождена", e.stationStates["C1"].status === "empty", e.stationStates["C1"].status);
+}
+
+// ---------- 4c. ПЕРЕНОС СТАНКА В ПРОЦЕССЕ: деталь не теряется ----------
+{
+  const e = new GoldrattEngine();
+  const greens = e.machines.filter(m=>m.color==="green");
+  const g = greens[0];
+  e.placeMachine(g.id, "C1");
+  e.buyRawMaterial("RM_C", 3);
+  run(e, g.setupTime + 1); // setup + старт обработки
+  const rmDuring = e.buffers["RM_C"];
+  if (e.stationStates["C1"].status === "prod") {
+    e.placeMachine(g.id, "A1"); // переносим станок на другую зелёную позицию
+    ok("перенос: незавершёнка C1 вернулась в RM_C", e.buffers["RM_C"] === rmDuring + 1, {after: e.buffers["RM_C"], during: rmDuring});
+  } else {
+    ok("перенос: (станция не в prod — пропуск)", true);
+  }
+}
+
 // ---------- 5. ПРОДАЖА на финальной станции ----------
 {
   const e = new GoldrattEngine();

@@ -41,6 +41,8 @@ export interface OrchestratedTeam {
     operatingExpense: number;
     bottleneckStationId?: string | null;
     bottleneckQueue?: number;
+    day?: number;
+    forecastProfit?: number;
   };
   lastSeenAt: Date;
 }
@@ -87,6 +89,8 @@ function defaultMetrics(): OrchestratedTeam["metrics"] {
     operatingExpense: 0,
     bottleneckStationId: null,
     bottleneckQueue: 0,
+    day: 1,
+    forecastProfit: 0,
   };
 }
 
@@ -314,7 +318,7 @@ export async function applyTeamAction(
 export async function applyTeamMetrics(
   sessionId: string,
   teamId: string,
-  metrics: Partial<OrchestratedTeam["metrics"]> & { day?: number; timeInDay?: number; running?: boolean; gameOver?: boolean },
+  metrics: Partial<OrchestratedTeam["metrics"]> & { day?: number; timeInDay?: number; running?: boolean; gameOver?: boolean; forecastProfit?: number },
 ): Promise<void> {
   const a = await ensureActive(sessionId);
   const team = a.teams.get(teamId);
@@ -335,6 +339,9 @@ export async function applyTeamMetrics(
       "bottleneckStationId" in metrics ? (metrics.bottleneckStationId ?? null) : team.metrics.bottleneckStationId,
     bottleneckQueue:
       typeof metrics.bottleneckQueue === "number" ? metrics.bottleneckQueue : team.metrics.bottleneckQueue,
+    day: typeof metrics.day === "number" ? metrics.day : team.metrics.day,
+    forecastProfit:
+      typeof metrics.forecastProfit === "number" ? metrics.forecastProfit : team.metrics.forecastProfit,
   };
   team.lastSeenAt = new Date();
 

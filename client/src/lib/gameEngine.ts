@@ -89,6 +89,7 @@ export interface SessionMetrics {
   timeInDay: number;
   running: boolean;
   gameOver: boolean;
+  forecastProfit: number;      // прогноз прибыли на конец недели (экстраполяция прохода − постоянные расходы)
 }
 
 export class GoldrattEngine {
@@ -429,6 +430,7 @@ export class GoldrattEngine {
     }
 
     if (machine.assignedTo && machine.assignedTo !== stationId) {
+      this.refundWip(machine.assignedTo);
       const prevStation = this.stationStates[machine.assignedTo];
       if (prevStation) {
         prevStation.machineId = null;
@@ -454,10 +456,30 @@ export class GoldrattEngine {
     return { success: true, message: `Станок установлен на ${stationId}` };
   }
 
+  // При снятии/переносе станка с позиции, которая СЕЙЧАС обрабатывает деталь
+  // (status==='prod'), вход уже был списан при старте обработки. Возвращаем его
+  // обратно во входной буфер, чтобы незавершёнка не пропадала.
+  private refundWip(stationId: string): void {
+    const state = this.stationStates[stationId];
+    if (!state || state.status !== 'prod') return;
+    const def = STATIONS.find(s => s.id === stationId);
+    if (!def) return;
+    if (def.isAssembly) {
+      const lb = this.getLeftBufferId(stationId);
+      const rb = this.getRightBufferId(stationId);
+      if (lb) this.buffers[lb] = (this.buffers[lb] || 0) + 1;
+      if (rb) this.buffers[rb] = (this.buffers[rb] || 0) + 1;
+    } else {
+      const ib = this.getInputBufferId(stationId);
+      if (ib) this.buffers[ib] = (this.buffers[ib] || 0) + 1;
+    }
+  }
+
   removeMachine(machineId: string) {
     const machine = this.machines.find(m => m.id === machineId);
     if (!machine || !machine.assignedTo) return;
 
+    this.refundWip(machine.assignedTo);
     const station = this.stationStates[machine.assignedTo];
     if (station) {
       station.machineId = null;
@@ -596,9 +618,19 @@ export class GoldrattEngine {
       }
     }
 
+    const throughputNow = this.totalRevenue - this.totalRMCost;
+    // Прогноз прибыли: экстраполируем текущий проход на всю неделю по доле
+    // пройденного игрового времени и вычитаем постоянные расходы (списываются 1 раз в конце).
+    const dayDur = this.constants.dayDurationSeconds;
+    const elapsed = (this.day - 1) * dayDur + this.timeInDay;
+    const total = this.constants.totalDays * dayDur;
+    const frac = total > 0 ? Math.min(1, Math.max(elapsed / total, 0)) : 1;
+    const projected = this.gameOver ? throughputNow : frac > 0.05 ? throughputNow / frac : throughputNow;
+    const forecastProfit = Math.round(projected - this.fixedExpenses);
+
     return {
       cash: Math.round(this.cash),
-      throughput: Math.round(this.totalRevenue - this.totalRMCost),
+      throughput: Math.round(throughputNow),
       inventory,
       operatingExpense: Math.round(this.totalRMCost),
       bottleneckStationId,
@@ -607,6 +639,7 @@ export class GoldrattEngine {
       timeInDay: this.timeInDay,
       running: this.running,
       gameOver: this.gameOver,
+      forecastProfit,
     };
   }
 }

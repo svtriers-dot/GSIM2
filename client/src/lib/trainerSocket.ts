@@ -18,6 +18,9 @@ export interface SessionLiveState {
       inventory: number;
       operatingExpense: number;
       bottleneckStationId?: string | null;
+      bottleneckQueue?: number;
+      day?: number;
+      forecastProfit?: number;
     };
     lastSeenAt: string;
   }>;
