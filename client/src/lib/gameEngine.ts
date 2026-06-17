@@ -168,10 +168,10 @@ export class GoldrattEngine {
       this.buffers[`${s.id}_out`] = 0;
     }
     this.buffers['B3_shared'] = 0;
-
-    this.buffers['B3_shared'] = 25;
-    this.buffers['E2_out'] = 15;
-    this.buffers['F3_out'] = 10;
+    // ВАЖНО: никакого бесплатного стартового WIP. Раньше здесь зашивались
+    // B3_shared=25 / E2_out=15 / F3_out=10 (отладочный сид) — это давало готовые
+    // полуфабрикаты без покупки сырья, из-за чего проход и прибыль превышали
+    // потолок симулятора (≈21 000 ₽ прохода / 10 000 ₽ прибыли). Старт — холодный.
   }
 
   private initDemand() {

@@ -26,7 +26,7 @@ function run(e: GoldrattEngine, seconds: number) {
   ok("init: cash = startingCash", e.cash === GAME_CONSTANTS.startingCash, e.cash);
   ok("init: fixedExpenses", e.fixedExpenses === GAME_CONSTANTS.fixedExpenses, e.fixedExpenses);
   ok("init: спрос = weeklyDemand", PRODUCTS.every(p => e.demandRemaining[p.id] === p.weeklyDemand));
-  ok("init: стартовые буферы B3_shared=25", e.buffers["B3_shared"] === 25, e.buffers["B3_shared"]);
+  ok("init: стартовые буферы пустые (нет бесплатного WIP)", e.buffers["B3_shared"] === 0 && e.buffers["E2_out"] === 0 && e.buffers["F3_out"] === 0, {b3:e.buffers["B3_shared"], e2:e.buffers["E2_out"], f3:e.buffers["F3_out"]});
 }
 
 // ---------- 2. ЗАКУПКА СЫРЬЯ ----------
