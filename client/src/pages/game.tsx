@@ -250,7 +250,6 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
   const [resultSaved, setResultSaved] = useState(false);
   const [floorDark, setFloorDark] = useState(false);
   const [showCertDialog, setShowCertDialog] = useState(false);
-  const [summaryClosed, setSummaryClosed] = useState(false);
   const [certNames, setCertNames] = useState<string[]>(['']);
 
   // --- Микро-фидбек на ключевые события ---
@@ -1301,8 +1300,16 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!state.dayEndSummary && !summaryClosed} onOpenChange={(o) => { if (!o) setSummaryClosed(true); }}>
-        <DialogContent data-testid="dialog-day-end" className="max-h-[85vh] flex flex-col">
+      {/* Окно итогов дня/игры закрывается ТОЛЬКО кнопкой (Следующий день / Новая игра).
+          Раньше клик мимо окна или Esc прятал его без продвижения дня — игра зависала намертво. */}
+      <Dialog open={!!state.dayEndSummary} onOpenChange={() => {}}>
+        <DialogContent
+          data-testid="dialog-day-end"
+          className="max-h-[85vh] flex flex-col [&>button]:hidden"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle>
               {state.gameOver ? 'Игра окончена!' : `Конец дня ${state.dayEndSummary?.day}`}
