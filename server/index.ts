@@ -5,6 +5,11 @@ import { runStartupBootstrap } from "./lib/bootstrap";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import { sanitizeForLog } from "./lib/sanitize";
+import { initSentry, captureException, installProcessHandlers } from "./lib/observability";
+
+// Инициализируем Sentry ДО создания приложения, чтобы поймать ранние ошибки.
+initSentry();
+installProcessHandlers();
 
 const app = express();
 const httpServer = createServer(app);
@@ -83,6 +88,7 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
 
     console.error("Internal Server Error:", err);
+    captureException(err, { path: _req.path, method: _req.method, status });
 
     if (res.headersSent) {
       return next(err);

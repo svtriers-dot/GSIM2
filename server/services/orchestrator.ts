@@ -66,6 +66,17 @@ interface ActiveSession {
 
 const active: Map<string /* sessionId */, ActiveSession> = new Map();
 
+// Наблюдаемость: лёгкая статистика для /api/health (без побочных эффектов).
+export function getActiveStats(): { sessions: number; teams: number; trainerSockets: number } {
+  let teams = 0;
+  let trainerSockets = 0;
+  for (const a of Array.from(active.values())) {
+    teams += a.teams.size;
+    trainerSockets += a.trainerSockets.size;
+  }
+  return { sessions: active.size, teams, trainerSockets };
+}
+
 // --- helpers ---
 
 function defaultMetrics(): OrchestratedTeam["metrics"] {

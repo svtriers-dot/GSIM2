@@ -7,6 +7,11 @@ import { teamsRouter } from "./routes/teams";
 import { adminRouter } from "./routes/admin";
 import { verifyRouter } from "./routes/verify";
 import { setupWebSocket } from "./ws";
+import { getActiveStats } from "./services/orchestrator";
+import { db } from "./db";
+import { sql } from "drizzle-orm";
+
+const SERVER_STARTED_AT = Date.now();
 
 export async function registerRoutes(
   httpServer: Server,
@@ -26,6 +31,39 @@ export async function registerRoutes(
   app.get("/api/game-results", async (_req, res) => {
     const results = await storage.getTopGameResults(20);
     res.json(results);
+  });
+
+  // --- Наблюдаемость: health + клиентский конфиг (без авторизации, лёгкие) ---
+
+  app.get("/api/health", async (_req, res) => {
+    let dbOk = false;
+    try {
+      await db.execute(sql`SELECT 1`);
+      dbOk = true;
+    } catch (e) {
+      console.error("[health] db check failed:", e);
+    }
+    const stats = getActiveStats();
+    res.status(dbOk ? 200 : 503).json({
+      status: dbOk ? "ok" : "degraded",
+      uptimeSec: Math.round((Date.now() - SERVER_STARTED_AT) / 1000),
+      version: process.env.SENTRY_RELEASE || process.env.APP_VERSION || "dev",
+      db: dbOk ? "ok" : "fail",
+      activeSessions: stats.sessions,
+      activeTeams: stats.teams,
+      trainerSockets: stats.trainerSockets,
+      ts: new Date().toISOString(),
+    });
+  });
+
+  // Клиентский Sentry DSN отдаётся в рантайме (DSN клиента не секрет — он всё равно
+  // в JS), чтобы не завязывать сборку клиента на build-time env.
+  app.get("/api/client-config", (_req, res) => {
+    res.json({
+      sentryDsn: process.env.SENTRY_DSN_CLIENT || null,
+      release: process.env.SENTRY_RELEASE || null,
+      environment: process.env.NODE_ENV || "production",
+    });
   });
 
   // --- ТРЕНЕРСКИЙ РЕЖИМ (ADR-002) ---

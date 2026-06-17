@@ -28,3 +28,21 @@ test("верификация несуществующего сертификат
   expect(res?.status() ?? 200).toBeLessThan(500);
   await expect(page.locator("#root")).not.toBeEmpty();
 });
+
+test("health-эндпоинт отвечает ok с метриками", async ({ request }) => {
+  const res = await request.get("/api/health");
+  expect(res.status()).toBe(200);
+  const body = await res.json();
+  expect(body.status).toBe("ok");
+  expect(body.db).toBe("ok");
+  expect(typeof body.uptimeSec).toBe("number");
+  expect(typeof body.activeSessions).toBe("number");
+});
+
+test("client-config отдаёт поля для клиентского Sentry", async ({ request }) => {
+  const res = await request.get("/api/client-config");
+  expect(res.status()).toBe(200);
+  const body = await res.json();
+  expect(body).toHaveProperty("sentryDsn");
+  expect(body).toHaveProperty("environment");
+});

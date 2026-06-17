@@ -16,6 +16,7 @@ import {
   type MachineColor,
 } from '@/lib/gameConfig';
 import { downloadCertificatePng } from '@/lib/certificateCanvas';
+import { captureException } from '@/lib/sentry';
 import { SANS, shadeHex, TOKENS, makeFloorTheme } from '@/lib/gameTheme';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -358,6 +359,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
         }
       } catch (e) {
         console.error("game loop tick error (цикл продолжается):", e);
+        captureException(e, { where: "rAF loop", day: engineRef.current?.day });
       }
 
       animId = requestAnimationFrame(loop);
@@ -389,6 +391,7 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
         sessionMode.onMetricsUpdate?.(engineRef.current.getMetrics());
       } catch (e) {
         console.error("game heartbeat error (продолжаем):", e);
+        captureException(e, { where: "heartbeat" });
       }
     }, 2000);
     return () => window.clearInterval(id);
