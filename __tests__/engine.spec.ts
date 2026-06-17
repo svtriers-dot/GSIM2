@@ -162,12 +162,21 @@ function run(e: GoldrattEngine, seconds: number) {
   ok("lastDay: fixedExpenses списаны (cash уменьшилась на fixedExpenses в конце)", true); // проверим отдельно ниже
 }
 
-// ---------- 7b. fixedExpenses списываются один раз в конце ----------
+// ---------- 7b. fixedExpenses накапливаются равномерно по дням ----------
 {
+  // Полная игра (5 дней): суммарно списан весь fixedExpenses — потолок не изменился.
   const e = new GoldrattEngine();
   const startCash = e.cash;
   for (let d=0; d<GAME_CONSTANTS.totalDays; d++){ e.running=true; e.tick(GAME_CONSTANTS.dayDurationSeconds+1); if(d<GAME_CONSTANTS.totalDays-1) e.dismissDaySummary(); }
-  ok("fixedExpenses: cash в конце = старт - fixedExpenses (без продаж)", e.cash === startCash - GAME_CONSTANTS.fixedExpenses, {cash:e.cash, exp:startCash-GAME_CONSTANTS.fixedExpenses});
+  ok("fixedExpenses: полная игра — cash = старт - fixedExpenses", Math.round(e.cash) === startCash - GAME_CONSTANTS.fixedExpenses, {cash:e.cash, exp:startCash-GAME_CONSTANTS.fixedExpenses});
+
+  // Недоигранная игра (3 дня): списано РОВНО 3/5 расходов (нет «бесплатного» пропуска).
+  const e2 = new GoldrattEngine();
+  const start2 = e2.cash;
+  for (let d=0; d<3; d++){ e2.running=true; e2.tick(GAME_CONSTANTS.dayDurationSeconds+1); e2.dismissDaySummary(); }
+  const expected = start2 - (GAME_CONSTANTS.fixedExpenses/GAME_CONSTANTS.totalDays)*3;
+  ok("fixedExpenses: 3 дня — списано 3/5 расходов", Math.round(e2.cash) === Math.round(expected), {cash:e2.cash, expected});
+  ok("fixedExpenses: 3 дня — НЕ списан полный fixedExpenses (нет раздувания)", Math.round(e2.cash) > start2 - GAME_CONSTANTS.fixedExpenses, {cash:e2.cash});
 }
 
 // ---------- 8. FORCED: поломка ----------

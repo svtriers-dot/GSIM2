@@ -368,7 +368,12 @@ export class GoldrattEngine {
     const throughput = this.totalRevenue - this.totalRMCost;
 
     const isLastDay = this.day >= this.constants.totalDays;
-    const profitLoss = isLastDay ? throughput - this.fixedExpenses : throughput;
+    // Постоянные расходы накапливаются РАВНОМЕРНО по дням (1/totalDays за день),
+    // а не списываются разово в конце. Иначе недоигранная игра (тренер остановил
+    // раньше / досрочный финал) не платит их вовсе и прибыль/касса раздуваются
+    // выше реального потолка. Сумма за все 5 дней = fixedExpenses (потолок не меняется).
+    const dailyFixed = this.fixedExpenses / this.constants.totalDays;
+    const profitLoss = Math.round(throughput - dailyFixed * this.day);
 
     this.dayEndSummary = {
       day: this.day,
@@ -383,8 +388,8 @@ export class GoldrattEngine {
       profitLoss,
     };
 
+    this.cash -= dailyFixed; // ежедневное списание постоянных расходов
     if (isLastDay) {
-      this.cash -= this.fixedExpenses;
       this.gameOver = true;
     }
   }
