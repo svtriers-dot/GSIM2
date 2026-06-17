@@ -26,7 +26,10 @@ function run(e: GoldrattEngine, seconds: number) {
   ok("init: cash = startingCash", e.cash === GAME_CONSTANTS.startingCash, e.cash);
   ok("init: fixedExpenses", e.fixedExpenses === GAME_CONSTANTS.fixedExpenses, e.fixedExpenses);
   ok("init: спрос = weeklyDemand", PRODUCTS.every(p => e.demandRemaining[p.id] === p.weeklyDemand));
-  ok("init: стартовые буферы пустые (нет бесплатного WIP)", e.buffers["B3_shared"] === 0 && e.buffers["E2_out"] === 0 && e.buffers["F3_out"] === 0, {b3:e.buffers["B3_shared"], e2:e.buffers["E2_out"], f3:e.buffers["F3_out"]});
+  ok("init: стартовая незавершёнка на месте (дизайн)", e.buffers["B3_shared"] === 25 && e.buffers["E2_out"] === 15 && e.buffers["F3_out"] === 10, {b3:e.buffers["B3_shared"], e2:e.buffers["E2_out"], f3:e.buffers["F3_out"]});
+  // Незавершёнка — бесплатный стартовый актив: касса и затраты на старте не тронуты.
+  ok("init: касса = startingCash (WIP бесплатна)", e.cash === GAME_CONSTANTS.startingCash, e.cash);
+  ok("init: totalRMCost = 0 на старте", e.totalRMCost === 0, e.totalRMCost);
 }
 
 // ---------- 2. ЗАКУПКА СЫРЬЯ ----------
