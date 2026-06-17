@@ -332,28 +332,32 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
     let animId: number;
 
     const loop = (now: number) => {
-      const dt = Math.min((now - lastTime) / 1000, 0.1);
-      lastTime = now;
+      // КРИТИЧНО: любое исключение в tick()/updateState() НЕ должно убивать rAF-цикл.
+      // Иначе одна ошибка (в т.ч. на стыке дня) навсегда замораживает игру без окна
+      // и без восстановления. Поэтому тело в try/catch, а следующий кадр планируется
+      // всегда — даже если кадр упал.
+      try {
+        const dt = Math.min((now - lastTime) / 1000, 0.1);
+        lastTime = now;
 
-      // Session-mode: тренер управляет таймером
-      const blockedBySession = sessionMode && (sessionMode.isPaused || sessionMode.isEnded);
-      if (!blockedBySession) {
-        engineRef.current.tick(dt);
-      }
-
-      if (now - lastRender > 80) {
-        updateState();
-        lastRender = now;
-      }
-
-      // Session-mode: каждые 2 сек отправляем метрики
-      if (sessionMode?.onMetricsUpdate && now - lastMetricsSent > 2000) {
-        try {
-          sessionMode.onMetricsUpdate(engineRef.current.getMetrics());
-        } catch (e) {
-          console.error("metrics callback error:", e);
+        // Session-mode: тренер управляет таймером
+        const blockedBySession = sessionMode && (sessionMode.isPaused || sessionMode.isEnded);
+        if (!blockedBySession) {
+          engineRef.current.tick(dt);
         }
-        lastMetricsSent = now;
+
+        if (now - lastRender > 80) {
+          updateState();
+          lastRender = now;
+        }
+
+        // Session-mode: каждые 2 сек отправляем метрики
+        if (sessionMode?.onMetricsUpdate && now - lastMetricsSent > 2000) {
+          sessionMode.onMetricsUpdate(engineRef.current.getMetrics());
+          lastMetricsSent = now;
+        }
+      } catch (e) {
+        console.error("game loop tick error (цикл продолжается):", e);
       }
 
       animId = requestAnimationFrame(loop);
@@ -371,20 +375,20 @@ export default function Game({ sessionMode }: { sessionMode?: GameSessionMode } 
     if (!sessionMode) return;
     let last = performance.now();
     const id = window.setInterval(() => {
-      const now = performance.now();
-      const dt = Math.min((now - last) / 1000, 2);
-      last = now;
-      if (typeof document !== "undefined" && document.hidden) {
-        const blocked = sessionMode.isPaused || sessionMode.isEnded;
-        if (!blocked) {
-          engineRef.current.tick(dt);
-          updateState();
-        }
-      }
       try {
+        const now = performance.now();
+        const dt = Math.min((now - last) / 1000, 2);
+        last = now;
+        if (typeof document !== "undefined" && document.hidden) {
+          const blocked = sessionMode.isPaused || sessionMode.isEnded;
+          if (!blocked) {
+            engineRef.current.tick(dt);
+            updateState();
+          }
+        }
         sessionMode.onMetricsUpdate?.(engineRef.current.getMetrics());
       } catch (e) {
-        console.error("metrics heartbeat error:", e);
+        console.error("game heartbeat error (продолжаем):", e);
       }
     }, 2000);
     return () => window.clearInterval(id);
