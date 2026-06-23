@@ -7,24 +7,13 @@ import {
 import tessLogo from '@assets/tess_logo-final_152_1773757415772.png';
 
 const palette = {
-  bg: '#192333',
-  fg: '#ffffff',
-  card: '#1E2E47',
-  panel: '#131B28',
-  border: 'rgba(255,255,255,0.08)',
-  primary: '#AAAB5B',
-  accent: '#AAAB5B',
-  primaryFg: '#192333',
-  muted: '#9aa3b2',
-};
-
-// Палитра «скриншота» фабрики в hero — остаётся светлой (это product-mockup на тёмном фоне)
-const mockPalette = {
   bg: '#f0ebe0',
   fg: '#11192d',
   card: '#eae4d6',
   border: '#dcd5c4',
   primary: '#a8a25a',
+  accent: '#11192d',
+  primaryFg: '#ffffff',
   muted: '#5a6478',
 };
 
@@ -53,65 +42,65 @@ function FactoryIllustration() {
           <feDropShadow dx="0" dy="4" stdDeviation="8" floodColor="#11192d" floodOpacity="0.08" />
         </filter>
       </defs>
-      <rect x="6" y="8" width="508" height="368" rx="14" fill="white" stroke={mockPalette.border} strokeWidth="1" filter="url(#shadow)" />
-      <rect x="6" y="8" width="508" height="28" rx="14" fill={mockPalette.card} />
-      <rect x="6" y="22" width="508" height="14" fill={mockPalette.card} />
+      <rect x="6" y="8" width="508" height="368" rx="14" fill="white" stroke={palette.border} strokeWidth="1" filter="url(#shadow)" />
+      <rect x="6" y="8" width="508" height="28" rx="14" fill={palette.card} />
+      <rect x="6" y="22" width="508" height="14" fill={palette.card} />
       <circle cx="20" cy="22" r="4" fill="#e8b4b4" />
       <circle cx="34" cy="22" r="4" fill="#e8d4a8" />
       <circle cx="48" cy="22" r="4" fill="#b4d4b4" />
-      <rect x="120" y="14" width="180" height="16" rx="8" fill="white" stroke={mockPalette.border} />
-      <text x="210" y="25" fontSize="9" textAnchor="middle" fill={mockPalette.muted} fontFamily={fontSans}>toc.tesstech.ru/play</text>
+      <rect x="120" y="14" width="180" height="16" rx="8" fill="white" stroke={palette.border} />
+      <text x="210" y="25" fontSize="9" textAnchor="middle" fill={palette.muted} fontFamily={fontSans}>toc.tesstech.ru/play</text>
 
       <g transform="translate(20, 50)">
-        <rect width="480" height="44" rx="8" fill={mockPalette.fg} />
+        <rect width="480" height="44" rx="8" fill={palette.fg} />
         <text x="20" y="18" fontSize="9" fill="#a8a395" fontFamily={fontSans} letterSpacing="1">ДЕНЬ</text>
         <text x="20" y="36" fontSize="16" fill="white" fontWeight="700" fontFamily={fontSans} style={{ transition: 'opacity 0.4s' }}>{s.day}</text>
         <text x="80" y="18" fontSize="9" fill="#a8a395" fontFamily={fontSans} letterSpacing="1">ВРЕМЯ</text>
         <text x="80" y="36" fontSize="16" fill="white" fontWeight="700" fontFamily={fontSans}>{s.time}</text>
         <text x="180" y="18" fontSize="9" fill="#a8a395" fontFamily={fontSans} letterSpacing="1">×СКОРОСТЬ</text>
-        <text x="180" y="36" fontSize="16" fill={mockPalette.primary} fontWeight="700" fontFamily={fontSans}>×10</text>
+        <text x="180" y="36" fontSize="16" fill={palette.primary} fontWeight="700" fontFamily={fontSans}>×10</text>
         <text x="460" y="18" fontSize="9" fill="#a8a395" fontFamily={fontSans} letterSpacing="1" textAnchor="end">КАССА</text>
         <text x="460" y="36" fontSize="16" fill="white" fontWeight="700" fontFamily={fontSans} textAnchor="end">{s.cash}</text>
       </g>
 
-      <text x="20" y="116" fontSize="9" fill={mockPalette.muted} fontFamily={fontSans} letterSpacing="1">ПРОИЗВОДСТВЕННАЯ ЛИНИЯ</text>
+      <text x="20" y="116" fontSize="9" fill={palette.muted} fontFamily={fontSans} letterSpacing="1">ПРОИЗВОДСТВЕННАЯ ЛИНИЯ</text>
       <g transform="translate(20, 130)">
-        <rect width="60" height="56" rx="8" fill="white" stroke={mockPalette.border} strokeWidth="1.5" strokeDasharray="3 2" />
-        <text x="30" y="22" fontSize="9" textAnchor="middle" fill={mockPalette.muted}>Сырьё</text>
-        <text x="30" y="40" fontSize="13" textAnchor="middle" fill={mockPalette.fg} fontWeight="700" fontFamily={fontSans}>RM</text>
-        <line x1="68" y1="28" x2="92" y2="28" stroke={mockPalette.muted} strokeWidth="1.5" />
-        <polygon points="92,28 86,25 86,31" fill={mockPalette.muted} />
+        <rect width="60" height="56" rx="8" fill="white" stroke={palette.border} strokeWidth="1.5" strokeDasharray="3 2" />
+        <text x="30" y="22" fontSize="9" textAnchor="middle" fill={palette.muted}>Сырьё</text>
+        <text x="30" y="40" fontSize="13" textAnchor="middle" fill={palette.fg} fontWeight="700" fontFamily={fontSans}>RM</text>
+        <line x1="68" y1="28" x2="92" y2="28" stroke={palette.muted} strokeWidth="1.5" />
+        <polygon points="92,28 86,25 86,31" fill={palette.muted} />
         <g transform="translate(100, 0)">
-          <rect width="80" height="56" rx="8" fill="white" stroke={mockPalette.primary} strokeWidth="2" />
-          <circle cx="40" cy="22" r="7" fill={mockPalette.primary} />
-          <text x="40" y="44" fontSize="11" textAnchor="middle" fill={mockPalette.fg} fontWeight="700" fontFamily={fontSans}>A1</text>
+          <rect width="80" height="56" rx="8" fill="white" stroke={palette.primary} strokeWidth="2" />
+          <circle cx="40" cy="22" r="7" fill={palette.primary} />
+          <text x="40" y="44" fontSize="11" textAnchor="middle" fill={palette.fg} fontWeight="700" fontFamily={fontSans}>A1</text>
         </g>
-        <line x1="188" y1="28" x2="212" y2="28" stroke={mockPalette.muted} strokeWidth="1.5" />
-        <polygon points="212,28 206,25 206,31" fill={mockPalette.muted} />
+        <line x1="188" y1="28" x2="212" y2="28" stroke={palette.muted} strokeWidth="1.5" />
+        <polygon points="212,28 206,25 206,31" fill={palette.muted} />
         <g transform="translate(220, 0)">
           <rect width="80" height="56" rx="8" fill="white" stroke="#c8423a" strokeWidth="2.5" />
-          <circle cx="40" cy="22" r="7" fill={mockPalette.fg} />
-          <text x="40" y="44" fontSize="11" textAnchor="middle" fill={mockPalette.fg} fontWeight="700" fontFamily={fontSans}>B3</text>
+          <circle cx="40" cy="22" r="7" fill={palette.fg} />
+          <text x="40" y="44" fontSize="11" textAnchor="middle" fill={palette.fg} fontWeight="700" fontFamily={fontSans}>B3</text>
           <g transform="translate(0, 64)">
             {[0,1,2,3,4,5,6].map((i) => (
-              <rect key={i} x={6 + i*10} y="0" width="8" height="8" rx="1.5" fill={mockPalette.fg} opacity={1 - i*0.1} />
+              <rect key={i} x={6 + i*10} y="0" width="8" height="8" rx="1.5" fill={palette.fg} opacity={1 - i*0.1} />
             ))}
           </g>
           <text x="40" y="-6" fontSize="9" textAnchor="middle" fill="#c8423a" fontWeight="700" fontFamily={fontSans}>УЗКОЕ МЕСТО</text>
         </g>
-        <line x1="308" y1="28" x2="332" y2="28" stroke={mockPalette.muted} strokeWidth="1.5" strokeDasharray="2 2" opacity="0.5" />
-        <polygon points="332,28 326,25 326,31" fill={mockPalette.muted} opacity="0.5" />
+        <line x1="308" y1="28" x2="332" y2="28" stroke={palette.muted} strokeWidth="1.5" strokeDasharray="2 2" opacity="0.5" />
+        <polygon points="332,28 326,25 326,31" fill={palette.muted} opacity="0.5" />
         <g transform="translate(340, 0)">
-          <rect width="80" height="56" rx="8" fill={mockPalette.card} stroke={mockPalette.border} strokeWidth="1.5" strokeDasharray="3 2" />
-          <circle cx="40" cy="22" r="7" fill={mockPalette.muted} opacity="0.4" />
-          <text x="40" y="44" fontSize="11" textAnchor="middle" fill={mockPalette.muted} fontWeight="700" fontFamily={fontSans}>F3</text>
+          <rect width="80" height="56" rx="8" fill={palette.card} stroke={palette.border} strokeWidth="1.5" strokeDasharray="3 2" />
+          <circle cx="40" cy="22" r="7" fill={palette.muted} opacity="0.4" />
+          <text x="40" y="44" fontSize="11" textAnchor="middle" fill={palette.muted} fontWeight="700" fontFamily={fontSans}>F3</text>
         </g>
-        <line x1="428" y1="28" x2="452" y2="28" stroke={mockPalette.muted} strokeWidth="1.5" />
-        <polygon points="452,28 446,25 446,31" fill={mockPalette.muted} />
-        <rect x="460" width="20" height="56" rx="6" fill={mockPalette.primary} opacity="0.2" />
+        <line x1="428" y1="28" x2="452" y2="28" stroke={palette.muted} strokeWidth="1.5" />
+        <polygon points="452,28 446,25 446,31" fill={palette.muted} />
+        <rect x="460" width="20" height="56" rx="6" fill={palette.primary} opacity="0.2" />
       </g>
 
-      <text x="20" y="244" fontSize="9" fill={mockPalette.muted} fontFamily={fontSans} letterSpacing="1">ПРОДУКТЫ</text>
+      <text x="20" y="244" fontSize="9" fill={palette.muted} fontFamily={fontSans} letterSpacing="1">ПРОДУКТЫ</text>
       <g transform="translate(20, 256)">
         {[
           { id: 'A', price: '180 ₽', sold: s.a, demand: 40, hl: false },
@@ -122,13 +111,13 @@ function FactoryIllustration() {
           const pct = p.sold / p.demand;
           return (
             <g key={p.id} transform={`translate(${x}, 0)`}>
-              <rect width="150" height="80" rx="8" fill={p.hl ? mockPalette.fg : 'white'} stroke={p.hl ? mockPalette.fg : mockPalette.border} strokeWidth="1" />
-              <text x="14" y="22" fontSize="10" fill={p.hl ? '#a8a395' : mockPalette.muted} fontFamily={fontSans}>Продукт {p.id}</text>
-              <text x="136" y="22" fontSize="10" fill={p.hl ? '#a8a395' : mockPalette.muted} fontFamily={fontSans} textAnchor="end">{p.price}</text>
-              <text x="14" y="50" fontSize="20" fill={p.hl ? 'white' : mockPalette.fg} fontWeight="700" fontFamily={fontSans}>{p.sold}</text>
-              <text x={p.sold < 10 ? 32 : 46} y="50" fontSize="12" fill={p.hl ? '#a8a395' : mockPalette.muted} fontFamily={fontSans}>/ {p.demand}</text>
-              <rect x="14" y="60" width="122" height="4" rx="2" fill={p.hl ? '#3a4360' : mockPalette.bg} />
-              <rect x="14" y="60" width={122 * pct} height="4" rx="2" fill={mockPalette.primary} style={{ transition: 'width 0.6s' }} />
+              <rect width="150" height="80" rx="8" fill={p.hl ? palette.fg : 'white'} stroke={p.hl ? palette.fg : palette.border} strokeWidth="1" />
+              <text x="14" y="22" fontSize="10" fill={p.hl ? '#a8a395' : palette.muted} fontFamily={fontSans}>Продукт {p.id}</text>
+              <text x="136" y="22" fontSize="10" fill={p.hl ? '#a8a395' : palette.muted} fontFamily={fontSans} textAnchor="end">{p.price}</text>
+              <text x="14" y="50" fontSize="20" fill={p.hl ? 'white' : palette.fg} fontWeight="700" fontFamily={fontSans}>{p.sold}</text>
+              <text x={p.sold < 10 ? 32 : 46} y="50" fontSize="12" fill={p.hl ? '#a8a395' : palette.muted} fontFamily={fontSans}>/ {p.demand}</text>
+              <rect x="14" y="60" width="122" height="4" rx="2" fill={p.hl ? '#3a4360' : palette.bg} />
+              <rect x="14" y="60" width={122 * pct} height="4" rx="2" fill={palette.primary} style={{ transition: 'width 0.6s' }} />
             </g>
           );
         })}
@@ -171,7 +160,7 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between transition-all duration-300" style={{ height: scrolled ? 56 : 72 }}>
           <Link href="/">
             <a className="flex items-center gap-3 transition-all">
-              <img src={tessLogo} alt="Tess Technology" className="transition-all duration-300" style={{ height: scrolled ? 28 : 36, filter: 'brightness(0) invert(1)' }} />
+              <img src={tessLogo} alt="Tess Technology" className="transition-all duration-300" style={{ height: scrolled ? 28 : 36 }} />
               <div className="hidden sm:block transition-all duration-300 overflow-hidden" style={{ maxHeight: scrolled ? 0 : 40, opacity: scrolled ? 0 : 1 }}>
                 <div className="text-sm font-semibold leading-tight">Tess Technology</div>
                 <div className="text-xs leading-tight" style={{ color: palette.muted }}>tesstech.ru</div>
@@ -188,21 +177,18 @@ export default function Landing() {
           </nav>
 
           <div className="flex items-center gap-2">
-            <a href="https://tesstech.ru" className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-opacity hover:opacity-70" style={{ color: palette.muted }}>
-              ← Tess Technology
-            </a>
             <Link href="/trainer">
-              <a className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all hover:-translate-y-0.5" style={{ color: palette.fg, border: `1px solid ${palette.border}`, background: palette.card }}>
+              <a className="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all hover:-translate-y-0.5" style={{ color: palette.fg, border: `1px solid ${palette.border}`, background: 'white' }}>
                 Кабинет тренера
               </a>
             </Link>
             <Link href="/play/join">
-              <a className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
+              <a className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 1px 2px rgba(0,0,0,0.1)' }}>
                 В мастер-класс <ArrowRight className="h-4 w-4" />
               </a>
             </Link>
             <Link href="/play">
-              <a className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all hover:-translate-y-0.5" style={{ color: palette.fg, border: `1px solid ${palette.border}`, background: palette.card }}>
+              <a className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all hover:-translate-y-0.5" style={{ color: palette.fg, border: `1px solid ${palette.border}`, background: 'white' }}>
                 Играть
               </a>
             </Link>
@@ -214,7 +200,7 @@ export default function Landing() {
       <section className="max-w-6xl mx-auto px-6 pt-12 pb-10 sm:pt-16 lg:pt-20">
         <div className="grid md:grid-cols-2 gap-10 md:gap-12 lg:gap-16 items-center">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold mb-6 tracking-wider uppercase" style={{ background: palette.card, color: palette.fg, border: `1px solid ${palette.border}` }}>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold mb-6 tracking-wider uppercase" style={{ background: 'white', color: palette.fg, border: `1px solid ${palette.border}` }}>
               <Target className="h-3.5 w-3.5" style={{ color: palette.primary }} />
               По методологии Голдратта
             </div>
@@ -226,12 +212,12 @@ export default function Landing() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Link href="/play/join">
-                <a className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full text-base font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 2px 6px rgba(17,25,45,0.2)' }}>
+                <a className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 2px 6px rgba(17,25,45,0.2)' }}>
                   Войти по коду <ArrowRight className="h-5 w-5" />
                 </a>
               </Link>
               <Link href="/play">
-                <a className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full text-base font-semibold transition-colors hover:bg-white/10" style={{ background: 'transparent', color: palette.fg, border: `2px solid ${palette.fg}` }}>
+                <a className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-semibold transition-colors hover:bg-white/60" style={{ background: 'transparent', color: palette.fg, border: `2px solid ${palette.fg}` }}>
                   Играть одному
                 </a>
               </Link>
@@ -283,8 +269,8 @@ export default function Landing() {
           </div>
 
           {/* #3 Quote — упрощённый: левое выравнивание, без декоративной кавычки, имя справа с чертой */}
-          <figure className="rounded-xl p-10 md:p-14 mb-12" style={{ background: palette.panel }}>
-            <blockquote className="text-xl md:text-2xl leading-relaxed" style={{ color: '#ffffff', fontFamily: fontSerif }}>
+          <figure className="rounded-xl p-10 md:p-14 mb-12" style={{ background: palette.fg }}>
+            <blockquote className="text-xl md:text-2xl leading-relaxed" style={{ color: palette.primaryFg, fontFamily: fontSerif }}>
               Производительность системы ограничена производительностью её самого медленного звена. Чтобы улучшить систему, нужно улучшить ограничение. Всё остальное — потеря времени.
             </blockquote>
             <figcaption className="flex items-center justify-end gap-3 mt-6 text-sm tracking-wider" style={{ color: '#c8c0a8' }}>
@@ -365,13 +351,13 @@ export default function Landing() {
               const isFlag = f.flagship;
               return (
                 <div key={i} className="p-6 rounded-lg transition-shadow hover:shadow-md relative" style={{
-                  background: isFlag ? palette.panel : palette.card,
+                  background: isFlag ? palette.fg : palette.card,
                   border: `1px solid ${isFlag ? palette.fg : palette.border}`,
-                  color: isFlag ? '#ffffff' : palette.fg,
+                  color: isFlag ? palette.primaryFg : palette.fg,
                 }}>
                   {/* #8 — number badge 01 вместо «ГЛАВНОЕ» */}
                   {isFlag && (
-                    <div className="absolute -top-3 left-6 px-3 py-1 rounded text-xs font-bold tracking-wider" style={{ background: palette.primary, color: palette.bg }}>
+                    <div className="absolute -top-3 left-6 px-3 py-1 rounded text-xs font-bold tracking-wider" style={{ background: palette.primary, color: palette.fg }}>
                       ОСНОВА
                     </div>
                   )}
@@ -416,10 +402,10 @@ export default function Landing() {
       </section>
 
       {/* Как играть — со стрелками между шагами (#5) */}
-      <section id="how-to-play" className="py-20" style={{ background: palette.panel, color: '#ffffff' }}>
+      <section id="how-to-play" className="py-20" style={{ background: palette.fg, color: palette.bg }}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4 tracking-tight" style={{ fontFamily: fontSans, color: '#ffffff' }}>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 tracking-tight" style={{ fontFamily: fontSans, color: palette.bg }}>
               Как играть
             </h2>
             <p className="text-lg max-w-2xl mx-auto" style={{ color: '#c8c0a8' }}>
@@ -476,12 +462,12 @@ export default function Landing() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/play/join">
-              <a className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full text-base font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 4px 12px rgba(17,25,45,0.25)' }}>
+              <a className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-semibold transition-all hover:-translate-y-0.5" style={{ background: palette.accent, color: palette.primaryFg, boxShadow: '0 4px 12px rgba(17,25,45,0.25)' }}>
                 Войти по коду <ArrowRight className="h-5 w-5" />
               </a>
             </Link>
             <Link href="/play">
-              <a className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-full text-base font-semibold transition-colors hover:bg-white/10" style={{ background: 'transparent', color: palette.fg, border: `2px solid ${palette.fg}` }}>
+              <a className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-md text-base font-semibold transition-colors hover:bg-white/60" style={{ background: 'transparent', color: palette.fg, border: `2px solid ${palette.fg}` }}>
                 Играть одному
               </a>
             </Link>
@@ -496,7 +482,7 @@ export default function Landing() {
           <div className="md:grid md:grid-cols-4 md:gap-8 mb-8 space-y-4 md:space-y-0">
             <div className="md:block">
               <div className="flex items-center gap-2 mb-4">
-                <img src={tessLogo} alt="Tess Technology" className="h-7 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+                <img src={tessLogo} alt="Tess Technology" className="h-7 w-auto" />
                 <div className="text-sm font-bold">Tess Technology</div>
               </div>
               <p className="text-xs leading-relaxed" style={{ color: palette.muted }}>

@@ -4,13 +4,13 @@ import { ArrowLeft } from 'lucide-react';
 import tessLogo from '@assets/tess_logo-final_152_1773757415772.png';
 
 const palette = {
-  bg: '#192333',
-  fg: '#ffffff',
-  card: '#1E2E47',
-  border: 'rgba(255,255,255,0.08)',
-  primary: '#AAAB5B',
-  primaryFg: '#192333',
-  muted: '#9aa3b2',
+  bg: '#f0ebe0',
+  fg: '#11192d',
+  card: '#eae4d6',
+  border: '#dcd5c4',
+  primary: '#a8a25a',
+  primaryFg: '#ffffff',
+  muted: '#5a6478',
 };
 
 const fontSans = 'Inter, sans-serif';
@@ -48,7 +48,7 @@ export default function LegalPage({ title, subtitle, contentHtml }: LegalPagePro
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/">
             <a className="flex items-center gap-3 transition-opacity hover:opacity-80">
-              <img src={tessLogo} alt="Tess Technology" className="h-9 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+              <img src={tessLogo} alt="Tess Technology" className="h-9 w-auto" />
               <div className="hidden sm:block">
                 <div className="text-sm font-semibold leading-tight">Tess Technology</div>
                 <div className="text-xs leading-tight" style={{ color: palette.muted }}>tesstech.ru</div>
