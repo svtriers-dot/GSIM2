@@ -17,6 +17,56 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express,
 ): Promise<Server> {
+  // SEO: robots.txt — индексируем публичный лендинг, закрываем внутренние разделы.
+  app.get("/robots.txt", (_req, res) => {
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.send(
+      [
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /play/join",
+        "Disallow: /play/lobby",
+        "Disallow: /play/session",
+        "Disallow: /play/result",
+        "Disallow: /verify/",
+        "Disallow: /trainer",
+        "Disallow: /admin",
+        "Disallow: /api/",
+        "",
+        "Sitemap: https://toc.tesstech.ru/sitemap.xml",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  // SEO: sitemap.xml — только публичные страницы.
+  app.get("/sitemap.xml", (_req, res) => {
+    const base = "https://toc.tesstech.ru";
+    const now = new Date().toISOString().split("T")[0];
+    const urls = [
+      { loc: "/", priority: "1.0", changefreq: "weekly" },
+      { loc: "/play", priority: "0.8", changefreq: "monthly" },
+      { loc: "/about", priority: "0.6", changefreq: "monthly" },
+      { loc: "/legal/eula", priority: "0.3", changefreq: "yearly" },
+      { loc: "/legal/oferta", priority: "0.3", changefreq: "yearly" },
+      { loc: "/legal/privacy", priority: "0.3", changefreq: "yearly" },
+    ];
+    const xml =
+      '<?xml version="1.0" encoding="UTF-8"?>\n' +
+      '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+      urls
+        .map(
+          (u) =>
+            `  <url>\n    <loc>${base}${u.loc}</loc>\n    <lastmod>${now}</lastmod>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`,
+        )
+        .join("\n") +
+      "\n</urlset>\n";
+    res.setHeader("Content-Type", "application/xml; charset=utf-8");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.send(xml);
+  });
+
   // --- legacy: индивидуальный режим (НЕ ТРОГАТЬ) ---
 
   app.post("/api/game-results", async (req, res) => {

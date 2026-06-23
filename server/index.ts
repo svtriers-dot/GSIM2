@@ -20,15 +20,42 @@ declare module "http" {
   }
 }
 
-// MVP-2 Security: helmet применяет дефолтные security headers
-// (CSP — выключен по умолчанию, т.к. SPA + Vite ассеты с CDN-шрифтами;
-// HSTS, X-Frame-Options=DENY, X-Content-Type-Options=nosniff остаются)
+// Security headers (helmet) + CSP, унифицировано с tesstech.ru.
+// Источники TessTOC: self (Vite-бандл, без inline-скриптов), Google Fonts
+// (googleapis/gstatic), WebSocket wss://toc.tesstech.ru (тренер/команда),
+// внешние логотипы команд (img https:), inline-стили React (style-attr).
 app.use(
   helmet({
-    contentSecurityPolicy: false, // SPA: CSP позже отдельно; пока nginx-уровень
+    contentSecurityPolicy: {
+      useDefaults: true,
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        connectSrc: ["'self'", "wss://toc.tesstech.ru", "ws://toc.tesstech.ru"],
+        workerSrc: ["'self'", "blob:"],
+        frameSrc: ["'none'"],
+        frameAncestors: ["'self'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
     crossOriginEmbedderPolicy: false, // не нужно для SPA + WS
   }),
 );
+
+// Permissions-Policy (унификация с tesstech.ru): отключаем неиспользуемые API.
+app.use((_req, res, next) => {
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()",
+  );
+  next();
+});
 
 app.use(
   express.json({
