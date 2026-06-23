@@ -11,7 +11,6 @@ const palette = {
   muted: '#5a6478',
 };
 
-const fontSerif = 'Playfair Display, Georgia, serif';
 const fontSans = 'Inter, sans-serif';
 
 export default function About() {
@@ -38,7 +37,7 @@ export default function About() {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
-        <h1 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: fontSerif, fontWeight: 700 }}>
+        <h1 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: fontSans, fontWeight: 700 }}>
           О программе TessTOC
         </h1>
         <p className="text-sm mb-10" style={{ color: palette.muted }}>
@@ -46,7 +45,7 @@ export default function About() {
         </p>
 
         <section className="mb-10">
-          <h2 className="text-xl mb-4" style={{ fontFamily: fontSerif, fontWeight: 700 }}>Описание</h2>
+          <h2 className="text-xl mb-4" style={{ fontFamily: fontSans, fontWeight: 700 }}>Описание</h2>
           <p className="leading-relaxed" style={{ color: palette.muted }}>
             «TessTOC» — обучающий веб-симулятор Теории ограничений, реализующий классическую задачу Product Mix Problem.
             Игрок управляет виртуальной фабрикой в течение пяти рабочих дней, оптимизирует продуктовый микс и ищет узкое место производственной системы.
@@ -54,7 +53,7 @@ export default function About() {
         </section>
 
         <section className="mb-10">
-          <h2 className="text-xl mb-4" style={{ fontFamily: fontSerif, fontWeight: 700 }}>Реквизиты правообладателя</h2>
+          <h2 className="text-xl mb-4" style={{ fontFamily: fontSans, fontWeight: 700 }}>Реквизиты правообладателя</h2>
           <div className="rounded-lg p-6 space-y-2 text-sm" style={{ background: palette.card, border: `1px solid ${palette.border}` }}>
             <div><strong>Полное наименование:</strong> Общество с ограниченной ответственностью «ТЕСС ТЕХНОЛОДЖИ»</div>
             <div><strong>ОГРН:</strong> 1177746806181</div>
@@ -67,7 +66,7 @@ export default function About() {
         </section>
 
         <section className="mb-10">
-          <h2 className="text-xl mb-4" style={{ fontFamily: fontSerif, fontWeight: 700 }}>Соответствие требованиям</h2>
+          <h2 className="text-xl mb-4" style={{ fontFamily: fontSans, fontWeight: 700 }}>Соответствие требованиям</h2>
           <ul className="space-y-2 text-sm leading-relaxed" style={{ color: palette.muted }}>
             <li>· Класс программного обеспечения по классификатору Минцифры России: <strong>04.13 «Образовательное программное обеспечение»</strong>.</li>
             <li>· Программа полностью разработана на территории Российской Федерации.</li>
@@ -78,7 +77,7 @@ export default function About() {
         </section>
 
         <section className="mb-10">
-          <h2 className="text-xl mb-4" style={{ fontFamily: fontSerif, fontWeight: 700 }}>Юридические документы</h2>
+          <h2 className="text-xl mb-4" style={{ fontFamily: fontSans, fontWeight: 700 }}>Юридические документы</h2>
           <div className="grid sm:grid-cols-2 gap-3 text-sm">
             <a href="/legal/eula" className="rounded-lg p-4 transition-opacity hover:opacity-70" style={{ background: palette.card, border: `1px solid ${palette.border}` }}>
               <div className="font-semibold mb-1">Лицензионное соглашение (EULA)</div>
@@ -100,7 +99,7 @@ export default function About() {
         </section>
 
         <section className="mb-10">
-          <h2 className="text-xl mb-4" style={{ fontFamily: fontSerif, fontWeight: 700 }}>Технический стек</h2>
+          <h2 className="text-xl mb-4" style={{ fontFamily: fontSans, fontWeight: 700 }}>Технический стек</h2>
           <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2 text-sm" style={{ color: palette.muted }}>
             <div><strong style={{ color: palette.fg }}>Клиент:</strong> React 18 · TypeScript · Vite 7</div>
             <div><strong style={{ color: palette.fg }}>UI:</strong> Tailwind CSS · shadcn/ui</div>
@@ -114,7 +113,7 @@ export default function About() {
         </section>
 
         <section>
-          <h2 className="text-xl mb-4" style={{ fontFamily: fontSerif, fontWeight: 700 }}>Контакты</h2>
+          <h2 className="text-xl mb-4" style={{ fontFamily: fontSans, fontWeight: 700 }}>Контакты</h2>
           <p className="text-sm leading-relaxed" style={{ color: palette.muted }}>
             По вопросам приобретения корпоративных лицензий, проведения мастер-классов и технической поддержки — <a href="mailto:mail@tesstech.ru" style={{ color: palette.primary }}>mail@tesstech.ru</a>.
           </p>
