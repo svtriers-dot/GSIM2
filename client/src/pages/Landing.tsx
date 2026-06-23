@@ -2,8 +2,9 @@ import { useState, useEffect, Fragment } from 'react';
 import { Link } from 'wouter';
 import {
   Target, TrendingUp, Factory, Brain, Briefcase, GraduationCap, Users,
-  ArrowRight, Clock, Wallet, Package, ChevronRight,
+  ArrowRight, Clock, Wallet, Package, ChevronRight, Mail, Phone, MapPin,
 } from 'lucide-react';
+import { SiTelegram, SiLinkedin } from 'react-icons/si';
 import tessLogo from '@assets/tess_logo-final_152_1773757415772.png';
 
 const palette = {
@@ -135,7 +136,6 @@ const navItems = [
 
 export default function Landing() {
   const [scrolled, setScrolled] = useState(false);
-  const [mobileFooter, setMobileFooter] = useState(false); // #9
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -475,62 +475,86 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Footer (#9 — collapsible на mobile) */}
-      <footer className="py-12" style={{ background: palette.card, borderTop: `1px solid ${palette.border}` }}>
+      {/* Footer — структура и контент как на tesstech.ru */}
+      <footer className="py-14" style={{ background: palette.card, borderTop: `1px solid ${palette.border}` }}>
         <div className="max-w-6xl mx-auto px-6">
-          {/* На md+ — открытый sitemap, на mobile — collapsible */}
-          <div className="md:grid md:grid-cols-4 md:gap-8 mb-8 space-y-4 md:space-y-0">
-            <div className="md:block">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8 pb-10 mb-8" style={{ borderBottom: `1px solid ${palette.border}` }}>
+            <div className="md:col-span-4">
               <div className="flex items-center gap-2 mb-4">
                 <img src={tessLogo} alt="Tess Technology" className="h-7 w-auto" />
                 <div className="text-sm font-bold">Tess Technology</div>
               </div>
-              <p className="text-xs leading-relaxed" style={{ color: palette.muted }}>
-                Аналитика, операционная эффективность и обучающие продукты для российских компаний.
+              <p className="text-sm leading-relaxed mb-5" style={{ color: palette.muted, maxWidth: '22rem' }}>
+                Аналитическое агентство. Анализ технологических рынков, экономическое моделирование, ТОС-консалтинг.
               </p>
+              <div className="flex items-center gap-3">
+                <a href="https://t.me/tesstechnology" target="_blank" rel="noopener noreferrer" aria-label="Telegram"
+                   className="w-9 h-9 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+                   style={{ background: palette.bg, border: `1px solid ${palette.border}`, color: palette.fg }}>
+                  <SiTelegram size={15} />
+                </a>
+                <a href="https://www.linkedin.com/company/tess-technology/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"
+                   className="w-9 h-9 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+                   style={{ background: palette.bg, border: `1px solid ${palette.border}`, color: palette.fg }}>
+                  <SiLinkedin size={15} />
+                </a>
+              </div>
             </div>
 
-            {/* Mobile collapsible toggle */}
-            <button
-              className="md:hidden w-full flex items-center justify-between py-3 border-y text-sm font-bold tracking-wider uppercase"
-              style={{ borderColor: palette.border, color: palette.fg }}
-              onClick={() => setMobileFooter(v => !v)}
-            >
-              <span>Навигация и контакты</span>
-              <ChevronRight className="h-4 w-4 transition-transform" style={{ transform: mobileFooter ? 'rotate(90deg)' : 'none' }} />
-            </button>
+            <div className="md:col-span-2">
+              <h4 className="text-xs font-bold tracking-widest uppercase mb-5" style={{ color: palette.fg }}>Компания</h4>
+              <ul className="space-y-3 text-sm" style={{ color: palette.muted }}>
+                <li><a href="https://tesstech.ru/services/" className="hover:underline">Услуги</a></li>
+                <li><a href="https://tesstech.ru/blog/" className="hover:underline">Аналитика</a></li>
+                <li><a href="https://tesstech.ru/company/" className="hover:underline">О компании</a></li>
+              </ul>
+            </div>
 
-            <div className={`${mobileFooter ? 'block' : 'hidden'} md:block`}>
-              <h4 className="text-xs font-bold tracking-wider uppercase mb-3" style={{ color: palette.fg }}>Продукт</h4>
-              <ul className="space-y-2 text-sm" style={{ color: palette.muted }}>
-                <li><Link href="/"><a className="hover:underline">Главная</a></Link></li>
-                <li><Link href="/play/join"><a className="hover:underline">В мастер-класс</a></Link></li>
-                <li><Link href="/play"><a className="hover:underline">Играть одному</a></Link></li>
-                <li><Link href="/trainer"><a className="hover:underline">Кабинет тренера</a></Link></li>
-                <li><Link href="/about"><a className="hover:underline">О программе</a></Link></li>
+            <div className="md:col-span-3">
+              <h4 className="text-xs font-bold tracking-widest uppercase mb-5" style={{ color: palette.fg }}>Услуги</h4>
+              <ul className="space-y-3 text-sm" style={{ color: palette.muted }}>
+                <li><a href="https://tesstech.ru/services/technology-market-analysis/" className="hover:underline">Анализ рынков</a></li>
+                <li><a href="https://tesstech.ru/services/the-theory-of-constraints-toc/" className="hover:underline">Операционная эффективность</a></li>
+                <li><a href="https://tesstech.ru/services/ai-transformation/" className="hover:underline">Системная ИИ трансформация</a></li>
+                <li><a href="https://tesstech.ru/services/mathematical-modeling-ml/" className="hover:underline">Матмоделирование</a></li>
+                <li><a href="https://tesstech.ru/services/databases/" className="hover:underline">Базы данных</a></li>
+                <li><a href="https://tesstech.ru/services/foresight-sessions/" className="hover:underline">Стратегические сессии</a></li>
               </ul>
             </div>
-            <div className={`${mobileFooter ? 'block' : 'hidden'} md:block`}>
-              <h4 className="text-xs font-bold tracking-wider uppercase mb-3" style={{ color: palette.fg }}>Юридическое</h4>
-              <ul className="space-y-2 text-sm" style={{ color: palette.muted }}>
-                <li><a href="/legal/eula" className="hover:underline">Лицензия (EULA)</a></li>
-                <li><a href="/legal/oferta" className="hover:underline">Публичная оферта</a></li>
-                <li><a href="/legal/privacy" className="hover:underline">Политика ПДн</a></li>
-              </ul>
-            </div>
-            <div className={`${mobileFooter ? 'block' : 'hidden'} md:block`}>
-              <h4 className="text-xs font-bold tracking-wider uppercase mb-3" style={{ color: palette.fg }}>Связаться</h4>
-              <ul className="space-y-2 text-sm" style={{ color: palette.muted }}>
-                <li><a href="mailto:mail@tesstech.ru" className="hover:underline">mail@tesstech.ru</a></li>
-                <li><a href="tel:+79167290716" className="hover:underline">+7 (916) 729-07-16</a></li>
-                <li><a href="https://tesstech.ru" className="hover:underline">tesstech.ru</a></li>
+
+            <div className="md:col-span-3">
+              <h4 className="text-xs font-bold tracking-widest uppercase mb-5" style={{ color: palette.fg }}>Контакты</h4>
+              <ul className="space-y-4 text-sm" style={{ color: palette.muted }}>
+                <li><a href="mailto:mail@tesstech.ru" className="flex items-start gap-2.5 hover:underline"><Mail size={14} className="mt-0.5 flex-shrink-0" />mail@tesstech.ru</a></li>
+                <li><a href="tel:+79167290716" className="flex items-start gap-2.5 hover:underline"><Phone size={14} className="mt-0.5 flex-shrink-0" />+7 (916) 729-07-16</a></li>
+                <li className="flex items-start gap-2.5"><MapPin size={14} className="mt-0.5 flex-shrink-0" />Москва, Россия</li>
               </ul>
             </div>
           </div>
 
-          <div className="pt-6 border-t flex flex-col sm:flex-row items-center justify-between gap-3 text-xs" style={{ borderColor: palette.border, color: palette.muted }}>
-            <div className="text-center sm:text-left">
-              © 2026 ООО «ТЕСС ТЕХНОЛОДЖИ» · ОГРН 1177746806181 · ИНН 7702421130
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-8 mb-6" style={{ borderBottom: `1px solid ${palette.border}` }}>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest mb-1.5" style={{ color: palette.muted }}>Основной вид деятельности по ОКВЭД</p>
+              <p className="text-xs" style={{ color: palette.muted }}>73.20.1 Исследование конъюнктуры рынка</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest mb-1.5" style={{ color: palette.muted }}>Виды деятельности в сфере ИТ</p>
+              <p className="text-xs" style={{ color: palette.muted }}>62.01 Разработка компьютерного программного обеспечения</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-widest mb-1.5" style={{ color: palette.muted }}>По перечню приказа Минцифры № 449 от 11.05.2023</p>
+              <p className="text-xs" style={{ color: palette.muted }}>3.01 — Создание баз данных и информационных ресурсов</p>
+              <p className="text-xs mt-2" style={{ color: palette.muted }}>26.01 — Услуги (работы) по обработке информации</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs" style={{ color: palette.muted }}>
+            <p>© 2016–{new Date().getFullYear()} TESS Technology. Все права защищены.</p>
+            <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-5 gap-y-2">
+              <a href="/legal/privacy" className="hover:underline">Политика конфиденциальности</a>
+              <a href="/legal/oferta" className="hover:underline">Публичная оферта</a>
+              <Link href="/about"><a className="hover:underline">Реквизиты</a></Link>
+              <span className="hidden md:inline">ООО «ТЕСС ТЕХНОЛОДЖИ» · ИНН 7702421130 · ОКВЭД 73.20.1</span>
             </div>
           </div>
         </div>
