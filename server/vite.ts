@@ -50,7 +50,8 @@ export async function setupVite(server: Server, app: Express) {
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
       const transformed = await vite.transformIndexHtml(url, template);
-      const { html, page, status } = renderSeoHtml(transformed, req.path);
+      const requestPath = new URL(req.originalUrl, "http://localhost").pathname;
+      const { html, page, status } = renderSeoHtml(transformed, requestPath);
       if (page.indexed && page.canonical) {
         res.setHeader("Link", `<${page.canonical}>; rel="canonical"`);
       } else {

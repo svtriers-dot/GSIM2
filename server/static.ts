@@ -18,7 +18,10 @@ export function serveStatic(app: Express) {
   // Для известных SPA-маршрутов отдаём route-aware SEO. Неизвестные URL
   // получают тот же React-экран 404, но с корректным HTTP 404 и noindex.
   app.use("/{*path}", (req, res) => {
-    const { html, page, status } = renderSeoHtml(indexTemplate, req.path);
+    // В Express 5 req.path внутри смонтированного catch-all уже может быть "/".
+    // originalUrl сохраняет фактический клиентский маршрут.
+    const requestPath = new URL(req.originalUrl, "http://localhost").pathname;
+    const { html, page, status } = renderSeoHtml(indexTemplate, requestPath);
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.setHeader("Cache-Control", "no-cache");
     if (page.indexed && page.canonical) {
