@@ -44,7 +44,7 @@ export async function registerRoutes(
   // SEO: sitemap.xml — только публичные страницы.
   app.get("/sitemap.xml", (_req, res) => {
     const base = "https://toc.tesstech.ru";
-    const now = new Date().toISOString().split("T")[0];
+    const releaseDate = "2026-08-09";
     const urls = [
       { loc: "/", priority: "1.0", changefreq: "weekly" },
       { loc: "/play", priority: "0.8", changefreq: "monthly" },
@@ -60,7 +60,7 @@ export async function registerRoutes(
       urls
         .map(
           (u) =>
-            `  <url>\n    <loc>${base}${u.loc}</loc>\n    <lastmod>${now}</lastmod>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`,
+            `  <url>\n    <loc>${base}${u.loc}</loc>\n    <lastmod>${releaseDate}</lastmod>\n    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`,
         )
         .join("\n") +
       "\n</urlset>\n";

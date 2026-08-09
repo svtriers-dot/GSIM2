@@ -2,10 +2,12 @@ import { useState, useEffect, Fragment } from 'react';
 import { Link } from 'wouter';
 import {
   Target, TrendingUp, Factory, Brain, Briefcase, GraduationCap, Users,
-  ArrowRight, Clock, Wallet, Package, ChevronRight, Mail, Phone, MapPin,
+  ArrowRight, Clock, Wallet, Package, ChevronRight, Mail, Phone, MapPin, ExternalLink,
 } from 'lucide-react';
 import { SiTelegram, SiLinkedin } from 'react-icons/si';
 import tessLogo from '@assets/tess_logo-final_152_1773757415772.png';
+import CorporateBrandBar from '@/components/CorporateBrandBar';
+import { COMPANY_URL, CORPORATE_MASTERCLASS_URL, TOC_SERVICE_URL } from '@/lib/links';
 
 const palette = {
   bg: '#f0ebe0',
@@ -148,6 +150,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen" style={{ background: palette.bg, color: palette.fg, fontFamily: fontSans }}>
+      <CorporateBrandBar />
       {/* Header */}
       <header
         className="sticky top-0 z-20 backdrop-blur-md transition-all duration-300"
@@ -160,10 +163,10 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between transition-all duration-300" style={{ height: scrolled ? 56 : 72 }}>
           <Link href="/">
             <a className="flex items-center gap-3 transition-all">
-              <img src={tessLogo} alt="Tess Technology" className="transition-all duration-300" style={{ height: scrolled ? 28 : 36 }} />
+              <img src={tessLogo} alt="TessTOC" className="transition-all duration-300" style={{ height: scrolled ? 28 : 36 }} />
               <div className="hidden sm:block transition-all duration-300 overflow-hidden" style={{ maxHeight: scrolled ? 0 : 40, opacity: scrolled ? 0 : 1 }}>
-                <div className="text-sm font-semibold leading-tight">Tess Technology</div>
-                <div className="text-xs leading-tight" style={{ color: palette.muted }}>tesstech.ru</div>
+                <div className="text-sm font-semibold leading-tight">TessTOC</div>
+                <div className="text-xs leading-tight" style={{ color: palette.muted }}>Симулятор Теории ограничений</div>
               </div>
             </a>
           </Link>
@@ -472,6 +475,14 @@ export default function Landing() {
               </a>
             </Link>
           </div>
+          <a
+            href={CORPORATE_MASTERCLASS_URL}
+            className="inline-flex items-center gap-1.5 mt-6 text-sm font-semibold transition-opacity hover:opacity-70"
+            style={{ color: palette.fg }}
+          >
+            Для команд — корпоративный мастер-класс
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+          </a>
         </div>
       </section>
 
@@ -480,10 +491,10 @@ export default function Landing() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8 pb-10 mb-8" style={{ borderBottom: `1px solid ${palette.border}` }}>
             <div className="md:col-span-4">
-              <div className="flex items-center gap-2 mb-4">
+              <a href={COMPANY_URL} className="flex items-center gap-2 mb-4 w-fit transition-opacity hover:opacity-70">
                 <img src={tessLogo} alt="Tess Technology" className="h-7 w-auto" />
                 <div className="text-sm font-bold">Tess Technology</div>
-              </div>
+              </a>
               <p className="text-sm leading-relaxed mb-5" style={{ color: palette.muted, maxWidth: '22rem' }}>
                 Аналитическое агентство. Анализ технологических рынков, экономическое моделирование, ТОС-консалтинг.
               </p>
@@ -504,6 +515,7 @@ export default function Landing() {
             <div className="md:col-span-2">
               <h4 className="text-xs font-bold tracking-widest uppercase mb-5" style={{ color: palette.fg }}>Компания</h4>
               <ul className="space-y-3 text-sm" style={{ color: palette.muted }}>
+                <li><a href={COMPANY_URL} className="hover:underline">Сайт компании</a></li>
                 <li><a href="https://tesstech.ru/services/" className="hover:underline">Услуги</a></li>
                 <li><a href="https://tesstech.ru/blog/" className="hover:underline">Аналитика</a></li>
                 <li><a href="https://tesstech.ru/company/" className="hover:underline">О компании</a></li>
@@ -514,7 +526,8 @@ export default function Landing() {
               <h4 className="text-xs font-bold tracking-widest uppercase mb-5" style={{ color: palette.fg }}>Услуги</h4>
               <ul className="space-y-3 text-sm" style={{ color: palette.muted }}>
                 <li><a href="https://tesstech.ru/services/technology-market-analysis/" className="hover:underline">Анализ рынков</a></li>
-                <li><a href="https://tesstech.ru/services/the-theory-of-constraints-toc/" className="hover:underline">Операционная эффективность</a></li>
+                <li><a href={TOC_SERVICE_URL} className="hover:underline">Операционная эффективность</a></li>
+                <li><a href={CORPORATE_MASTERCLASS_URL} className="hover:underline">Корпоративный мастер-класс</a></li>
                 <li><a href="https://tesstech.ru/services/ai-transformation/" className="hover:underline">Системная ИИ трансформация</a></li>
                 <li><a href="https://tesstech.ru/services/mathematical-modeling-ml/" className="hover:underline">Матмоделирование</a></li>
                 <li><a href="https://tesstech.ru/services/databases/" className="hover:underline">Базы данных</a></li>

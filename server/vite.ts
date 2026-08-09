@@ -5,6 +5,7 @@ import viteConfig from "../vite.config";
 import fs from "fs";
 import path from "path";
 import { nanoid } from "nanoid";
+import { renderSeoHtml } from "./seo";
 
 const viteLogger = createLogger();
 
@@ -48,8 +49,14 @@ export async function setupVite(server: Server, app: Express) {
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
-      const page = await vite.transformIndexHtml(url, template);
-      res.status(200).set({ "Content-Type": "text/html" }).end(page);
+      const transformed = await vite.transformIndexHtml(url, template);
+      const { html, page, status } = renderSeoHtml(transformed, req.path);
+      if (page.indexed && page.canonical) {
+        res.setHeader("Link", `<${page.canonical}>; rel="canonical"`);
+      } else {
+        res.setHeader("X-Robots-Tag", "noindex, nofollow");
+      }
+      res.status(status).set({ "Content-Type": "text/html; charset=utf-8" }).end(html);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
       next(e);

@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ConfirmDialogProvider } from "@/components/ConfirmDialog";
 import { SkeletonCard } from "@/components/Skeleton";
+import SeoManager from "@/components/SeoManager";
 
 // Eager: лендинг, юр.страницы, login, простые экраны
 import NotFound from "@/pages/not-found";
@@ -95,6 +96,7 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <ConfirmDialogProvider>
+            <SeoManager />
             <Toaster />
             <Router />
           </ConfirmDialogProvider>

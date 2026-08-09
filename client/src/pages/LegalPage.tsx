@@ -2,6 +2,8 @@ import DOMPurify from "dompurify";
 import { Link } from 'wouter';
 import { ArrowLeft } from 'lucide-react';
 import tessLogo from '@assets/tess_logo-final_152_1773757415772.png';
+import CorporateBrandBar from '@/components/CorporateBrandBar';
+import { COMPANY_REQUISITES_URL, COMPANY_URL } from '@/lib/links';
 
 const palette = {
   bg: '#f0ebe0',
@@ -24,6 +26,7 @@ export interface LegalPageProps {
 export default function LegalPage({ title, subtitle, contentHtml }: LegalPageProps) {
   return (
     <div className="min-h-screen" style={{ background: palette.bg, color: palette.fg, fontFamily: fontSans }}>
+      <CorporateBrandBar />
       <style>{`
         .legal-content { font-size: 16px; line-height: 1.7; }
         .legal-content h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; margin: 2rem 0 0.75rem; padding-top: 1rem; border-top: 1px solid ${palette.border}; }
@@ -48,10 +51,10 @@ export default function LegalPage({ title, subtitle, contentHtml }: LegalPagePro
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link href="/">
             <a className="flex items-center gap-3 transition-opacity hover:opacity-80">
-              <img src={tessLogo} alt="Tess Technology" className="h-9 w-auto" />
+              <img src={tessLogo} alt="TessTOC" className="h-9 w-auto" />
               <div className="hidden sm:block">
-                <div className="text-sm font-semibold leading-tight">Tess Technology</div>
-                <div className="text-xs leading-tight" style={{ color: palette.muted }}>tesstech.ru</div>
+                <div className="text-sm font-semibold leading-tight">TessTOC</div>
+                <div className="text-xs leading-tight" style={{ color: palette.muted }}>Юридические документы</div>
               </div>
             </a>
           </Link>
@@ -76,7 +79,9 @@ export default function LegalPage({ title, subtitle, contentHtml }: LegalPagePro
       <footer className="py-8 mt-16" style={{ background: palette.card, borderTop: `1px solid ${palette.border}` }}>
         <div className="max-w-4xl mx-auto px-6 text-center text-xs" style={{ color: palette.muted }}>
           © 2026 ООО «ТЕСС ТЕХНОЛОДЖИ» · ОГРН 1177746806181 · ИНН 7702421130 ·
-          <a href="mailto:mail@tesstech.ru" className="ml-1 hover:underline" style={{ color: palette.primary }}>mail@tesstech.ru</a>
+          <a href="mailto:mail@tesstech.ru" className="ml-1 hover:underline" style={{ color: palette.primary }}>mail@tesstech.ru</a> ·
+          <a href={COMPANY_URL} className="ml-1 hover:underline" style={{ color: palette.primary }}>сайт компании</a> ·
+          <a href={COMPANY_REQUISITES_URL} className="ml-1 hover:underline" style={{ color: palette.primary }}>реквизиты</a>
         </div>
       </footer>
     </div>

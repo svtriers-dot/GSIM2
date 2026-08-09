@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
+import { renderSeoHtml } from "./seo";
 
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "public");
@@ -10,10 +11,21 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  app.use(express.static(distPath, { index: false }));
 
-  // fall through to index.html if the file doesn't exist
-  app.use("/{*path}", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+  const indexTemplate = fs.readFileSync(path.resolve(distPath, "index.html"), "utf8");
+
+  // Для известных SPA-маршрутов отдаём route-aware SEO. Неизвестные URL
+  // получают тот же React-экран 404, но с корректным HTTP 404 и noindex.
+  app.use("/{*path}", (req, res) => {
+    const { html, page, status } = renderSeoHtml(indexTemplate, req.path);
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache");
+    if (page.indexed && page.canonical) {
+      res.setHeader("Link", `<${page.canonical}>; rel="canonical"`);
+    } else {
+      res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    }
+    res.status(status).send(html);
   });
 }

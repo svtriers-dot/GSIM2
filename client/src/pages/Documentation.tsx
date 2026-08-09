@@ -1,6 +1,8 @@
 import { Link } from "wouter";
 import { ArrowLeft, CheckCircle2, ExternalLink } from "lucide-react";
 import tessLogo from "@assets/tess_logo-final_152_1773757415772.png";
+import CorporateBrandBar from "@/components/CorporateBrandBar";
+import { COMPANY_URL, CORPORATE_MASTERCLASS_URL, TOC_SERVICE_URL } from "@/lib/links";
 
 const palette = {
   bg: "#f0ebe0",
@@ -38,6 +40,7 @@ function BulletList({ items }: { items: string[] }) {
 export default function Documentation() {
   return (
     <div className="min-h-screen" style={{ background: palette.bg, color: palette.fg, fontFamily: fontSans }}>
+      <CorporateBrandBar />
       <header className="sticky top-0 z-10 backdrop-blur-sm" style={{ background: `${palette.bg}ee`, borderBottom: `1px solid ${palette.border}` }}>
         <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
           <Link href="/">
@@ -178,6 +181,8 @@ export default function Documentation() {
               ["Лицензионное соглашение", "/legal/eula"],
               ["Публичная оферта и стоимость", "/legal/oferta"],
               ["Политика обработки ПДн", "/legal/privacy"],
+              ["Услуги Tess Technology по ТОС", TOC_SERVICE_URL],
+              ["Корпоративный мастер-класс", CORPORATE_MASTERCLASS_URL],
             ].map(([label, href]) => (
               <a key={href} href={href} className="flex items-center justify-between gap-4 rounded-xl p-4 transition-opacity hover:opacity-70" style={{ background: palette.card, border: `1px solid ${palette.border}` }}>
                 <span className="font-semibold">{label}</span>
@@ -192,12 +197,15 @@ export default function Documentation() {
           <p style={{ color: palette.muted }}>
             ООО «ТЕСС ТЕХНОЛОДЖИ» · <a href="mailto:mail@tesstech.ru" className="underline" style={{ color: palette.primary }}>mail@tesstech.ru</a> · +7 (916) 729-07-16
           </p>
+          <p className="mt-2 text-sm" style={{ color: palette.muted }}>
+            <a href={TOC_SERVICE_URL} className="underline" style={{ color: palette.primary }}>Консалтинг и корпоративные программы по ТОС</a>
+          </p>
         </section>
       </main>
 
       <footer className="py-8 mt-8" style={{ background: palette.card, borderTop: `1px solid ${palette.border}` }}>
         <div className="max-w-5xl mx-auto px-6 text-center text-sm" style={{ color: palette.muted }}>
-          © 2026 ООО «ТЕСС ТЕХНОЛОДЖИ» · TessTOC 2.1
+          © 2026 ООО «ТЕСС ТЕХНОЛОДЖИ» · TessTOC 2.1 · <a href={COMPANY_URL} className="hover:underline">tesstech.ru</a>
         </div>
       </footer>
     </div>

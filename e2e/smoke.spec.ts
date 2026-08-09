@@ -8,6 +8,39 @@ test("лендинг рендерится", async ({ page }) => {
   expect(res?.status() ?? 200).toBeLessThan(400);
   await expect(page.locator("#root")).not.toBeEmpty();
   await expect(page.getByText("Войти по коду").first()).toBeVisible();
+  await expect(page.getByText("TessTOC — продукт Tess Technology")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Перейти на сайт компании Tess Technology" })).toHaveAttribute("href", "https://tesstech.ru/");
+  await expect(page.getByRole("link", { name: /корпоративный мастер-класс/i }).first()).toHaveAttribute("href", /tesstech\.ru\/services\/the-theory-of-constraints-toc/);
+});
+
+test("публичные страницы отдают маршрутный SEO", async ({ request }) => {
+  const docs = await request.get("/docs");
+  expect(docs.status()).toBe(200);
+  const html = await docs.text();
+  expect(html).toContain("<title>Документация TessTOC 2.1</title>");
+  expect(html).toContain('<link rel="canonical" href="https://toc.tesstech.ru/docs"');
+  expect(html).toContain('id="seo-structured-data"');
+  expect(docs.headers()["link"]).toContain("https://toc.tesstech.ru/docs");
+});
+
+test("неизвестная страница получает 404 и noindex", async ({ request }) => {
+  const res = await request.get("/definitely-missing");
+  expect(res.status()).toBe(404);
+  expect(res.headers()["x-robots-tag"]).toContain("noindex");
+  expect(await res.text()).toContain('name="robots" content="noindex,nofollow"');
+});
+
+test("служебные маршруты закрыты от индексации", async ({ request }) => {
+  const trainer = await request.get("/trainer/login");
+  expect(trainer.status()).toBe(200);
+  expect(trainer.headers()["x-robots-tag"]).toContain("noindex");
+
+  const sitemap = await request.get("/sitemap.xml");
+  expect(sitemap.status()).toBe(200);
+  const xml = await sitemap.text();
+  expect(xml).toContain("https://toc.tesstech.ru/docs");
+  expect(xml).not.toContain("/trainer");
+  expect(xml).not.toContain("/admin");
 });
 
 test("кабинет тренера: страница входа", async ({ page }) => {
