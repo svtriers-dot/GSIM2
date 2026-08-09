@@ -11,7 +11,7 @@ const palette = {
   muted: '#5a6478',
 };
 
-const fontSans = 'Inter, sans-serif';
+const fontSans = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
 export default function About() {
   return (
@@ -41,7 +41,7 @@ export default function About() {
           О программе TessTOC
         </h1>
         <p className="text-sm mb-10" style={{ color: palette.muted }}>
-          Карточка программного обеспечения · Версия 0.1.0 · 2026
+          Карточка программного обеспечения · Версия 0.2.0 · 2026
         </p>
 
         <section className="mb-10">
@@ -68,11 +68,11 @@ export default function About() {
         <section className="mb-10">
           <h2 className="text-xl mb-4" style={{ fontFamily: fontSans, fontWeight: 700 }}>Соответствие требованиям</h2>
           <ul className="space-y-2 text-sm leading-relaxed" style={{ color: palette.muted }}>
-            <li>· Класс программного обеспечения по классификатору Минцифры России: <strong>04.13 «Образовательное программное обеспечение»</strong>.</li>
-            <li>· Программа полностью разработана на территории Российской Федерации.</li>
-            <li>· Размещение: Yandex Cloud (Российская Федерация, зона ru-central1-d).</li>
-            <li>· Иностранные языковые модели и сторонние трекеры не используются.</li>
-            <li>· Используемые библиотеки распространяются по открытым лицензиям (MIT, Apache 2.0, BSD).</li>
+            <li>· Основной класс для подачи заявления в реестр российского ПО: <strong>12.17 «Программное обеспечение для решения отраслевых задач в области образования»</strong>.</li>
+            <li>· Правообладатель и разработчик: ООО «ТЕСС ТЕХНОЛОДЖИ».</li>
+            <li>· Продуктовая инфраструктура размещена в Yandex Cloud (Российская Федерация, зона ru-central1-d).</li>
+            <li>· Внешние шрифтовые CDN, языковые модели и клиентская веб-аналитика в штатной конфигурации не используются.</li>
+            <li>· Исходный код распространяется по проприетарной лицензии; перечень сторонних компонентов и их лицензий зафиксирован в файлах зависимостей.</li>
           </ul>
         </section>
 

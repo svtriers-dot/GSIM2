@@ -10,6 +10,7 @@ import { setupWebSocket } from "./ws";
 import { getActiveStats } from "./services/orchestrator";
 import { db } from "./db";
 import { sql } from "drizzle-orm";
+import packageMetadata from "../package.json";
 
 const SERVER_STARTED_AT = Date.now();
 
@@ -97,7 +98,7 @@ export async function registerRoutes(
     res.status(dbOk ? 200 : 503).json({
       status: dbOk ? "ok" : "degraded",
       uptimeSec: Math.round((Date.now() - SERVER_STARTED_AT) / 1000),
-      version: process.env.SENTRY_RELEASE || process.env.APP_VERSION || "dev",
+      version: process.env.SENTRY_RELEASE || process.env.APP_VERSION || packageMetadata.version,
       db: dbOk ? "ok" : "fail",
       activeSessions: stats.sessions,
       activeTeams: stats.teams,
@@ -111,7 +112,7 @@ export async function registerRoutes(
   app.get("/api/client-config", (_req, res) => {
     res.json({
       sentryDsn: process.env.SENTRY_DSN_CLIENT || null,
-      release: process.env.SENTRY_RELEASE || null,
+      release: process.env.SENTRY_RELEASE || process.env.APP_VERSION || packageMetadata.version,
       environment: process.env.NODE_ENV || "production",
     });
   });

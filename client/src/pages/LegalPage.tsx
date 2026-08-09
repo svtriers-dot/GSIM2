@@ -13,7 +13,7 @@ const palette = {
   muted: '#5a6478',
 };
 
-const fontSans = 'Inter, sans-serif';
+const fontSans = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
 export interface LegalPageProps {
   title: string;

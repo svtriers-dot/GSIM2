@@ -21,8 +21,8 @@ declare module "http" {
 }
 
 // Security headers (helmet) + CSP, унифицировано с tesstech.ru.
-// Источники TessTOC: self (Vite-бандл, без inline-скриптов), Google Fonts
-// (googleapis/gstatic), WebSocket wss://toc.tesstech.ru (тренер/команда),
+// Источники TessTOC: self (Vite-бандл и системные шрифты),
+// WebSocket wss://toc.tesstech.ru (тренер/команда),
 // внешние логотипы команд (img https:), inline-стили React (style-attr).
 app.use(
   helmet({
@@ -31,8 +31,8 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        fontSrc: ["'self'", "data:"],
         imgSrc: ["'self'", "data:", "blob:", "https:"],
         connectSrc: ["'self'", "wss://toc.tesstech.ru", "ws://toc.tesstech.ru"],
         workerSrc: ["'self'", "blob:"],
