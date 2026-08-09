@@ -49,6 +49,7 @@ export async function registerRoutes(
       { loc: "/", priority: "1.0", changefreq: "weekly" },
       { loc: "/play", priority: "0.8", changefreq: "monthly" },
       { loc: "/about", priority: "0.6", changefreq: "monthly" },
+      { loc: "/docs", priority: "0.7", changefreq: "monthly" },
       { loc: "/legal/eula", priority: "0.3", changefreq: "yearly" },
       { loc: "/legal/oferta", priority: "0.3", changefreq: "yearly" },
       { loc: "/legal/privacy", priority: "0.3", changefreq: "yearly" },

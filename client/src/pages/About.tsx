@@ -53,7 +53,7 @@ export default function About() {
         </section>
 
         <section className="mb-10">
-          <h2 className="text-xl mb-4" style={{ fontFamily: fontSans, fontWeight: 700 }}>Реквизиты правообладателя</h2>
+          <h2 className="text-xl mb-4" style={{ fontFamily: fontSans, fontWeight: 700 }}>Сведения о заявителе и операторе экземпляра</h2>
           <div className="rounded-lg p-6 space-y-2 text-sm" style={{ background: palette.card, border: `1px solid ${palette.border}` }}>
             <div><strong>Полное наименование:</strong> Общество с ограниченной ответственностью «ТЕСС ТЕХНОЛОДЖИ»</div>
             <div><strong>ОГРН:</strong> 1177746806181</div>
@@ -61,7 +61,7 @@ export default function About() {
             <div><strong>Юридический адрес:</strong> 129128, г. Москва, пр. Кадомцева, д. 15, цок. этаж, пом. III, комн. 18а, оф. 3</div>
             <div><strong>Телефон:</strong> +7 (916) 729-07-16</div>
             <div><strong>Электронная почта:</strong> <a href="mailto:mail@tesstech.ru" style={{ color: palette.primary }}>mail@tesstech.ru</a></div>
-            <div><strong>Сайт правообладателя:</strong> <a href="https://tesstech.ru" style={{ color: palette.primary }}>tesstech.ru</a></div>
+            <div><strong>Сайт заявителя:</strong> <a href="https://tesstech.ru" style={{ color: palette.primary }}>tesstech.ru</a></div>
           </div>
         </section>
 
@@ -69,7 +69,7 @@ export default function About() {
           <h2 className="text-xl mb-4" style={{ fontFamily: fontSans, fontWeight: 700 }}>Соответствие требованиям</h2>
           <ul className="space-y-2 text-sm leading-relaxed" style={{ color: palette.muted }}>
             <li>· Основной класс для подачи заявления в реестр российского ПО: <strong>12.17 «Программное обеспечение для решения отраслевых задач в области образования»</strong>.</li>
-            <li>· Правообладатель и разработчик: ООО «ТЕСС ТЕХНОЛОДЖИ».</li>
+            <li>· Заявитель и оператор опубликованного экземпляра: ООО «ТЕСС ТЕХНОЛОДЖИ».</li>
             <li>· Продуктовая инфраструктура размещена в Yandex Cloud (Российская Федерация, зона ru-central1-d).</li>
             <li>· Внешние шрифтовые CDN, языковые модели и клиентская веб-аналитика в штатной конфигурации не используются.</li>
             <li>· Исходный код распространяется по проприетарной лицензии; перечень сторонних компонентов и их лицензий зафиксирован в файлах зависимостей.</li>
@@ -91,9 +91,9 @@ export default function About() {
               <div className="font-semibold mb-1">Политика обработки ПДн</div>
               <div style={{ color: palette.muted }}>Соответствие 152-ФЗ</div>
             </a>
-            <a href="https://github.com/svtriers-dot/GSIM2/blob/main/LICENSE" className="rounded-lg p-4 transition-opacity hover:opacity-70" style={{ background: palette.card, border: `1px solid ${palette.border}` }}>
-              <div className="font-semibold mb-1">Лицензия на исходный код</div>
-              <div style={{ color: palette.muted }}>Условия проприетарного лицензирования</div>
+            <a href="/docs" className="rounded-lg p-4 transition-opacity hover:opacity-70" style={{ background: palette.card, border: `1px solid ${palette.border}` }}>
+              <div className="font-semibold mb-1">Техническая документация</div>
+              <div style={{ color: palette.muted }}>Функции, состав, установка и эксплуатация</div>
             </a>
           </div>
         </section>

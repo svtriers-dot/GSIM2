@@ -12,6 +12,7 @@ import { SkeletonCard } from "@/components/Skeleton";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/Landing";
 import About from "@/pages/About";
+import Documentation from "@/pages/Documentation";
 import Eula from "@/pages/Eula";
 import Oferta from "@/pages/Oferta";
 import Privacy from "@/pages/Privacy";
@@ -59,6 +60,7 @@ function Router() {
         <Route path="/play/session" component={PlaySessionGame} />
         <Route path="/play/result" component={PlayResult} />
         <Route path="/about" component={About} />
+        <Route path="/docs" component={Documentation} />
         <Route path="/legal/eula" component={Eula} />
         <Route path="/legal/oferta" component={Oferta} />
         <Route path="/legal/privacy" component={Privacy} />
