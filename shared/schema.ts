@@ -145,6 +145,9 @@ export const trainers = pgTable(
     practiceFinalCash: integer("practice_final_cash"),
     isCertified: boolean("is_certified").notNull().default(false),
     certifiedAt: timestamp("certified_at", { withTimezone: true }),
+    legalTermsVersion: varchar("legal_terms_version", { length: 32 }),
+    legalAcceptedAt: timestamp("legal_accepted_at", { withTimezone: true }),
+    publicProfileConsentAt: timestamp("public_profile_consent_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -198,6 +201,8 @@ export const teams = pgTable(
     color: varchar("color", { length: 20 }).notNull(),
     factoryState: jsonb("factory_state").$type<Record<string, unknown>>().notNull().default({}),
     deviceToken: uuid("device_token").notNull().defaultRandom(),
+    privacyVersion: varchar("privacy_version", { length: 32 }),
+    dataBasisConfirmedAt: timestamp("data_basis_confirmed_at", { withTimezone: true }),
     joinedAt: timestamp("joined_at", { withTimezone: true }).notNull().defaultNow(),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -545,6 +550,8 @@ export const trainerRegisterSchema = z.object({
   password: z.string().min(8).max(128),
   name: z.string().min(2).max(255),
   organization: z.string().max(255).optional(),
+  legalAccepted: z.literal(true),
+  publicProfileConsent: z.boolean().default(false),
 });
 export type TrainerRegisterInput = z.infer<typeof trainerRegisterSchema>;
 
@@ -572,6 +579,7 @@ export const teamJoinSchema = z.object({
     .array(z.object({ fullName: z.string().min(2).max(255) }))
     .min(1)
     .max(5),  // Лимит 5 человек на команду (физически за одним монитором)
+  dataBasisConfirmed: z.literal(true),
 });
 export type TeamJoinInput = z.infer<typeof teamJoinSchema>;
 

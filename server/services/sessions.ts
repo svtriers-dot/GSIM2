@@ -285,6 +285,8 @@ export async function joinSession(input: TeamJoinInput): Promise<TeamWithMembers
       name: input.teamName,
       color,
       factoryState: {},
+      privacyVersion: "2026-08-09",
+      dataBasisConfirmedAt: new Date(),
     })
     .returning();
 

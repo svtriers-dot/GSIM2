@@ -11,6 +11,8 @@ export default function TrainerLogin() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [organization, setOrganization] = useState("");
+  const [legalAccepted, setLegalAccepted] = useState(false);
+  const [publicProfileConsent, setPublicProfileConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +25,14 @@ export default function TrainerLogin() {
       const body =
         mode === "login"
           ? { email, password }
-          : { email, password, name, organization: organization || undefined };
+          : {
+              email,
+              password,
+              name,
+              organization: organization || undefined,
+              legalAccepted,
+              publicProfileConsent,
+            };
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -139,6 +148,36 @@ export default function TrainerLogin() {
               autoComplete="email"
             />
           </div>
+
+          {mode === "register" && (
+            <div className="space-y-3 text-sm">
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  required
+                  checked={legalAccepted}
+                  onChange={(e) => setLegalAccepted(e.target.checked)}
+                  className="mt-1"
+                />
+                <span>
+                  Я принимаю <a href="/legal/eula" target="_blank" className="underline">EULA</a> и
+                  ознакомлен(а) с <a href="/legal/privacy" target="_blank" className="underline">Политикой обработки персональных данных</a>.
+                </span>
+              </label>
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={publicProfileConsent}
+                  onChange={(e) => setPublicProfileConsent(e.target.checked)}
+                  className="mt-1"
+                />
+                <span>
+                  Разрешаю показывать мои ФИО и организацию на публичной странице проверки сертификата.
+                  Это согласие добровольное и не влияет на регистрацию.
+                </span>
+              </label>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium mb-1">Пароль</label>
             <input
@@ -160,7 +199,7 @@ export default function TrainerLogin() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (mode === "register" && !legalAccepted)}
             className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 disabled:opacity-50"
           >
             {loading ? "..." : mode === "login" ? "Войти" : "Зарегистрироваться"}

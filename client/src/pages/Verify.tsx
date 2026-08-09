@@ -90,6 +90,11 @@ export default function Verify() {
               {data.organization && (
                 <div className="text-sm text-muted-foreground">{data.organization}</div>
               )}
+              {!data.trainerName && (
+                <div className="text-sm text-muted-foreground">
+                  ФИО владельца сертификата не публикуется без отдельного согласия.
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">

@@ -380,15 +380,19 @@ export async function verifyCertification(publicId: string): Promise<PublicVerif
   if (!cert) return { valid: false };
 
   const [trainer] = await db
-    .select({ name: trainers.name, organization: trainers.organization })
+    .select({
+      name: trainers.name,
+      organization: trainers.organization,
+      publicProfileConsentAt: trainers.publicProfileConsentAt,
+    })
     .from(trainers)
     .where(eq(trainers.id, cert.trainerId))
     .limit(1);
 
   return {
     valid: !cert.revokedAt,
-    trainerName: trainer?.name,
-    organization: trainer?.organization ?? null,
+    trainerName: trainer?.publicProfileConsentAt ? trainer.name : undefined,
+    organization: trainer?.publicProfileConsentAt ? trainer.organization ?? null : null,
     issuedAt: cert.issuedAt.toISOString(),
     quizScore: cert.quizScore,
     practiceFinalCash: cert.practiceFinalCash,

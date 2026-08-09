@@ -14,6 +14,7 @@ export default function PlayJoin() {
   const [checking, setChecking] = useState(false);
   const [teamName, setTeamName] = useState("");
   const [members, setMembers] = useState<MemberRow[]>([{ fullName: "" }]);
+  const [dataBasisConfirmed, setDataBasisConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -82,6 +83,7 @@ export default function PlayJoin() {
           code: code.toUpperCase(),
           teamName: teamName.trim(),
           members: cleanMembers,
+          dataBasisConfirmed,
         }),
       });
       if (!res.ok) {
@@ -140,6 +142,7 @@ export default function PlayJoin() {
                 placeholder="12345"
               />
             </div>
+
 {error && (
               <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                 {error}
@@ -230,6 +233,20 @@ export default function PlayJoin() {
               </p>
             </div>
 
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                required
+                checked={dataBasisConfirmed}
+                onChange={(e) => setDataBasisConfirmed(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                Я ознакомлен(а) с <a href="/legal/privacy" target="_blank" className="underline">Политикой обработки персональных данных</a>,
+                ввожу ФИО участников с их ведома и подтверждаю наличие законного основания для передачи этих данных организатору мастер-класса.
+              </span>
+            </label>
+
             {error && (
               <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
                 {error}
@@ -238,7 +255,7 @@ export default function PlayJoin() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !dataBasisConfirmed}
               className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50"
             >
               {loading ? "..." : "Подключиться к мастер-классу"}

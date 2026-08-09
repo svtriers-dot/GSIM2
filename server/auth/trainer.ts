@@ -56,6 +56,9 @@ export async function registerTrainer(input: TrainerRegisterInput): Promise<Auth
       passwordHash,
       name: input.name,
       organization: input.organization ?? null,
+      legalTermsVersion: "2026-08-09",
+      legalAcceptedAt: new Date(),
+      publicProfileConsentAt: input.publicProfileConsent ? new Date() : null,
     })
     .returning();
 

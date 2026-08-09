@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # GSIM2 production setup script for Yandex Cloud Compute VM (Ubuntu 22.04 LTS)
-# Запускать ОДИН РАЗ при первой установке. Идемпотентный.
+# Основной сценарий — первая установка; повторный запуск сохраняет пароль из существующего .env.
 # Usage:
 #   sudo bash setup.sh
 set -euo pipefail
@@ -62,7 +62,17 @@ if ! command -v psql &>/dev/null; then
 fi
 
 echo "==> 5/9 Создать БД и пользователя"
-DB_PASS="$(openssl rand -hex 16)"
+if [[ -f "${APP_DIR}/.env" ]]; then
+    DB_PASS="$(sed -n "s#^DATABASE_URL=postgresql://${DB_USER}:\([^@]*\)@localhost:5432/${DB_NAME}$#\1#p" "${APP_DIR}/.env")"
+    if [[ -z "${DB_PASS}" ]]; then
+        echo "Не удалось безопасно извлечь пароль БД из ${APP_DIR}/.env; роль PostgreSQL не изменена."
+        exit 1
+    fi
+    echo "    использую пароль из существующего .env"
+else
+    DB_PASS="$(openssl rand -hex 16)"
+    echo "    создан новый пароль для первичной установки"
+fi
 sudo -u postgres psql <<SQL
 DO \$\$
 BEGIN
