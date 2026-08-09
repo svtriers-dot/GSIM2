@@ -5,6 +5,12 @@ const offerPath = fileURLToPath(new URL("../client/src/pages/legal/oferta.html",
 const offer = readFileSync(offerPath, "utf8");
 const privacyPath = fileURLToPath(new URL("../client/src/pages/legal/privacy.html", import.meta.url));
 const privacy = readFileSync(privacyPath, "utf8");
+const aboutPath = fileURLToPath(new URL("../client/src/pages/About.tsx", import.meta.url));
+const about = readFileSync(aboutPath, "utf8");
+const documentationPath = fileURLToPath(new URL("../client/src/pages/Documentation.tsx", import.meta.url));
+const documentation = readFileSync(documentationPath, "utf8");
+const packagePath = fileURLToPath(new URL("../package.json", import.meta.url));
+const packageJson = JSON.parse(readFileSync(packagePath, "utf8"));
 
 let pass = 0;
 let fail = 0;
@@ -27,6 +33,9 @@ ok("старый КПП отсутствует в оферте", !offer.includes
 ok("услуги отделены от лицензии", offer.includes("не входят в предмет настоящей Оферты"));
 ok("gzip не назван шифрованием", privacy.includes("gzip является форматом сжатия, а не средством шифрования"));
 ok("актуальный КПП в политике", privacy.includes("КПП 771601001"));
+ok("на странице о продукте указана версия 2.1", about.includes("Версия 2.1"));
+ok("в документации указана версия 2.1", documentation.includes("Версия 2.1") && documentation.includes("TessTOC 2.1"));
+ok("внутренняя SemVer-версия пакета соответствует выпуску 2.1", packageJson.version === "2.1.0");
 
 console.log(`\n===== LEGAL CONTENT: ${pass} passed, ${fail} failed =====`);
 if (failures.length) {

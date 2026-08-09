@@ -60,7 +60,7 @@ export default function Documentation() {
 
       <main className="max-w-5xl mx-auto px-6 py-12">
         <div className="mb-12">
-          <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: palette.primary }}>Версия 0.2.0 · редакция 9 августа 2026 года</p>
+          <p className="text-sm font-semibold uppercase tracking-widest mb-3" style={{ color: palette.primary }}>Версия 2.1 · редакция 9 августа 2026 года</p>
           <h1 className="text-3xl sm:text-5xl mb-5" style={{ fontWeight: 750, letterSpacing: "-0.025em" }}>Документация TessTOC</h1>
           <p className="text-lg max-w-3xl leading-relaxed" style={{ color: palette.muted }}>
             Описание функциональных характеристик, состава программы и информации, необходимой для установки и эксплуатации программного обеспечения.
@@ -197,7 +197,7 @@ export default function Documentation() {
 
       <footer className="py-8 mt-8" style={{ background: palette.card, borderTop: `1px solid ${palette.border}` }}>
         <div className="max-w-5xl mx-auto px-6 text-center text-sm" style={{ color: palette.muted }}>
-          © 2026 ООО «ТЕСС ТЕХНОЛОДЖИ» · TessTOC 0.2.0
+          © 2026 ООО «ТЕСС ТЕХНОЛОДЖИ» · TessTOC 2.1
         </div>
       </footer>
     </div>

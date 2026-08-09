@@ -41,7 +41,7 @@ export default function About() {
           О программе TessTOC
         </h1>
         <p className="text-sm mb-10" style={{ color: palette.muted }}>
-          Карточка программного обеспечения · Версия 0.2.0 · 2026
+          Карточка программного обеспечения · Версия 2.1 · 2026
         </p>
 
         <section className="mb-10">
