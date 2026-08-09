@@ -18,8 +18,8 @@ const palette = {
   muted: '#5a6478',
 };
 
-const fontSerif = 'Playfair Display, Georgia, serif';
-const fontSans = 'Inter, sans-serif';
+const fontSerif = 'Georgia, "Times New Roman", serif';
+const fontSans = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
 // SVG mockup игровой панели — с анимацией значений (#2)
 function FactoryIllustration() {
