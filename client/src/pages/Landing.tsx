@@ -553,6 +553,7 @@ export default function Landing() {
             <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-5 gap-y-2">
               <a href="/legal/privacy" className="hover:underline">Политика конфиденциальности</a>
               <a href="/legal/oferta" className="hover:underline">Публичная оферта</a>
+              <Link href="/docs"><a className="hover:underline">Документация</a></Link>
               <Link href="/about"><a className="hover:underline">Реквизиты</a></Link>
               <span className="hidden md:inline">ООО «ТЕСС ТЕХНОЛОДЖИ» · ИНН 7702421130 · ОКВЭД 73.20.1</span>
             </div>
