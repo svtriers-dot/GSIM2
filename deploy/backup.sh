@@ -13,7 +13,7 @@ chmod 700 "${BACKUP_DIR}"
 DATE=$(date +%Y-%m-%d_%H%M)
 FILE="${BACKUP_DIR}/gsim_${DATE}.sql.gz"
 
-sudo -u postgres pg_dump "${DB_NAME}" | gzip > "${FILE}"
+sudo -u postgres /usr/lib/postgresql/18/bin/pg_dump -p 5433 "${DB_NAME}" | gzip > "${FILE}"
 chmod 600 "${FILE}"
 
 # Удаляем старые
