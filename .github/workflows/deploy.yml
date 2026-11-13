@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm test
@@ -52,16 +52,17 @@ jobs:
           command_timeout: 12m
           script: |
             set -euo pipefail
+            test -x /opt/tesstech-node/24/bin/node
             cd /opt/gsim2/src
             sudo -u gsim git pull --ff-only origin main
-            sudo -u gsim npm ci --no-audit --no-fund
+            sudo -u gsim env PATH=/opt/tesstech-node/24/bin:/usr/local/bin:/usr/bin:/bin npm ci --no-audit --no-fund
 
             # Применяем миграции схемы (идемпотентно)
             DB_URL=$(sudo grep '^DATABASE_URL=' /opt/gsim2/.env | cut -d= -f2-)
             # db:push с автоответом '+' (create) на любые вопросы drizzle-kit чтобы избежать
             # ошибочных rename'ов в неинтерактивном режиме SSH
-            sudo -u gsim DATABASE_URL="$DB_URL" bash -c 'yes "" | npm run db:push' || \
-              sudo -u gsim DATABASE_URL="$DB_URL" npm run db:push
+            sudo -u gsim env PATH=/opt/tesstech-node/24/bin:/usr/local/bin:/usr/bin:/bin DATABASE_URL="$DB_URL" bash -c 'yes "" | npm run db:push' || \
+              sudo -u gsim env PATH=/opt/tesstech-node/24/bin:/usr/local/bin:/usr/bin:/bin DATABASE_URL="$DB_URL" npm run db:push
 
             # JWT_SECRET — добавляем если ещё не задан
             if ! sudo grep -q '^JWT_SECRET=' /opt/gsim2/.env; then
@@ -76,7 +77,7 @@ jobs:
             fi
 
 
-            sudo -u gsim npm run build
+            sudo -u gsim env PATH=/opt/tesstech-node/24/bin:/usr/local/bin:/usr/bin:/bin npm run build
 
             sudo cp -r /opt/gsim2/src/dist/* /opt/gsim2/dist/
             sudo cp -rT /opt/gsim2/src/node_modules /opt/gsim2/node_modules

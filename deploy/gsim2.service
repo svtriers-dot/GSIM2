@@ -9,7 +9,8 @@ Type=simple
 User=gsim
 WorkingDirectory=/opt/gsim2
 EnvironmentFile=/opt/gsim2/.env
-ExecStart=/usr/bin/node /opt/gsim2/dist/index.cjs
+Environment="PATH=/opt/tesstech-node/24/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/opt/tesstech-node/24/bin/node /opt/gsim2/dist/index.cjs
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal
