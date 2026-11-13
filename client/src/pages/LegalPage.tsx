@@ -29,6 +29,11 @@ export default function LegalPage({ title, subtitle, contentHtml }: LegalPagePro
       <CorporateBrandBar />
       <style>{`
         .legal-content { font-size: 16px; line-height: 1.7; }
+        @media (max-width: 640px) {
+          .legal-content { overflow-wrap: anywhere; }
+          .legal-content table { display: block; max-width: 100%; overflow-x: auto; overflow-wrap: normal; }
+          .legal-content td { min-width: 8rem; }
+        }
         .legal-content h2 { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; margin: 2rem 0 0.75rem; padding-top: 1rem; border-top: 1px solid ${palette.border}; }
         .legal-content h2:first-child { padding-top: 0; border-top: none; margin-top: 0; }
         .legal-content h3 { font-size: 18px; font-weight: 700; margin: 1.5rem 0 0.5rem; }
