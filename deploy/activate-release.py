@@ -77,6 +77,14 @@ def main(argv=None):
         shutil.rmtree(stage)
         raise
     assert (stage/'node_modules').is_dir()
+    # Private umask protects logs/config; published code must be readable by the
+    # existing non-root systemd service after the root-owned install.
+    for folder,dirs,files in os.walk(stage):
+        os.chmod(folder,0o755)
+        for name in files:
+            path=Path(folder)/name
+            if not path.is_symlink():os.chmod(path,0o755 if path.stat().st_mode & 0o111 else 0o644)
+
     live_public=(root/'dist/public' if args.project=='gsim' else root/'release/public')
     new_public=stage/cfg['public']
     # Keep immutable Vite URLs usable for clients that cached an earlier index.

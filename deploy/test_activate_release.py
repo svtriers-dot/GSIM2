@@ -13,7 +13,7 @@ class ActivationTest(unittest.TestCase):
  def fixture(self,project,malicious=False):
   self.project=project;self.root=self.base/project;self.root.mkdir()
   self.cfg=self.profiles[project];self.cfg['root']=str(self.root);self.cfg['user']=pwd.getpwuid(os.getuid()).pw_name
-  (self.root/'.env').write_text('SYNTHETIC_TEST_CONFIG=preserve\n')
+  (self.root/'.env').write_text('SYNTHETIC_TEST_CONFIG=preserve\n');(self.root/'.env').chmod(0o600)
   if project=='gsim':files={'dist/index.cjs':'old','dist/public/index.html':'old','node_modules/marker':'old'}
   else:files={'release/src/server.js':'old','release/public/index.html':'old','release/node_modules/marker':'old'}
   for name,value in files.items():
@@ -48,6 +48,9 @@ class ActivationTest(unittest.TestCase):
   self.fixture('gsim');self.activate()
   self.assertEqual(self.live().read_text(),'candidate');self.assertEqual((self.root/'.env').read_text(),'SYNTHETIC_TEST_CONFIG=preserve\n')
   self.assertEqual((self.base/'history/gsim'/self.release/'dist/index.cjs').read_text(),'old')
+  self.assertEqual((self.root/'node_modules').stat().st_mode & 0o777,0o755)
+  self.assertEqual((self.root/'node_modules/marker').stat().st_mode & 0o777,0o644)
+  self.assertEqual((self.root/'.env').stat().st_mode & 0o777,0o600)
  def test_registry_success_preserves_previous_release(self):
   self.fixture('registry');self.activate()
   self.assertEqual(self.live().read_text(),'candidate');self.assertEqual((self.base/'history/registry'/self.release/'release/src/server.js').read_text(),'old')
