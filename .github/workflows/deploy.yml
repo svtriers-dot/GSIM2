@@ -12,8 +12,27 @@ permissions:
 jobs:
   test:
     uses: ./.github/workflows/e2e.yml
-  deploy:
+  verify-release:
     needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Restore exact tested code
+        id: restore-release
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/release.tgz
+          key: ${{ needs.test.outputs.release_key }}
+          fail-on-cache-miss: true
+      - name: Validate tested code digest
+        env:
+          EXPECTED_RELEASE_SHA256: ${{ needs.test.outputs.release_digest }}
+        run: |
+          test "${{ steps.restore-release.outputs.cache-hit }}" = true
+          [[ "$EXPECTED_RELEASE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          printf '%s  %s\n' "$EXPECTED_RELEASE_SHA256" "$RUNNER_TEMP/release.tgz" | sha256sum -c - >/dev/null
+  deploy:
+    needs: [test, verify-release]
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -21,6 +40,7 @@ jobs:
       group: production-gsim
       cancel-in-progress: false
     env:
+      EXPECTED_RELEASE_SHA256: ${{ needs.test.outputs.release_digest }}
       DEPLOY_HOST: ${{ secrets.VM_HOST }}
       DEPLOY_USER: ${{ secrets.VM_USER }}
     steps:
@@ -31,17 +51,27 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: test "$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')" = "$GITHUB_SHA"
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+      - name: Restore exact tested code
+        id: restore-release
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          name: release-gsim
-          path: ${{ runner.temp }}/release
+          path: ${{ runner.temp }}/release.tgz
+          key: ${{ needs.test.outputs.release_key }}
+          fail-on-cache-miss: true
+      - name: Validate tested code digest
+        env:
+          EXPECTED_RELEASE_SHA256: ${{ needs.test.outputs.release_digest }}
+        run: |
+          test "${{ steps.restore-release.outputs.cache-hit }}" = true
+          [[ "$EXPECTED_RELEASE_SHA256" =~ ^[0-9a-f]{64}$ ]]
+          printf '%s  %s\n' "$EXPECTED_RELEASE_SHA256" "$RUNNER_TEMP/release.tgz" | sha256sum -c - >/dev/null
       - name: Verified SSH
         env:
           DEPLOY_KEY: ${{ secrets.VM_SSH_KEY }}
         run: bash deploy/ssh-setup.sh
       - name: Publish tested artifact with rollback
         env:
-          RELEASE_ARCHIVE: ${{ runner.temp }}/release/release.tgz
+          RELEASE_ARCHIVE: ${{ runner.temp }}/release.tgz
           RELEASE_ID: ${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
         run: bash deploy/publish.sh gsim "$RELEASE_ID"
       - name: Clear temporary SSH key

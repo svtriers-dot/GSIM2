@@ -9,6 +9,8 @@ archive=${RELEASE_ARCHIVE:?Missing tested code artifact}
 test -f "$archive"
 test "$(basename "$archive")" = release.tgz
 digest=$(sha256sum "$archive" | cut -d' ' -f1)
+[[ "${EXPECTED_RELEASE_SHA256:?Missing CI digest}" =~ ^[0-9a-f]{64}$ ]]
+test "$digest" = "$EXPECTED_RELEASE_SHA256"
 remote_dir="/tmp/tesstech-$project-$release_id"
 cleanup_transfer() {
   result=$?

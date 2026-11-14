@@ -1,16 +1,15 @@
 # Verified CI and code publication
 
 GitHub Actions are pinned to reviewed commits: checkout 7.0.1, setup-node 7.1.0,
-upload-artifact 7.0.2 and download-artifact 8.0.2. Jobs use contents:read and
+Actions Cache save/restore 6.1.0 and optional upload-artifact 7.0.2. Jobs use contents:read and
 checkout does not persist its token. Node.js is fixed at 24.22.3; CI uses the
 Docker Official Image postgres:18.7 and task-owned synthetic records only.
 
 A branch or pull request runs CI without production deployment. Only a main
 revision that passes CI and is still the current main can enter the deploy job.
-The deploy job downloads the artifact built and tested in that same workflow run.
+The deploy job restores the code bundle built and tested in that same workflow run, using an immutable unique cache key and a SHA-256 job output. An independent verification job checks the cross-job restore before publication.
 Artifacts contain whitelisted source/build files only, never .env, databases,
-production logs, user exports or SSH keys. Release artifacts expire after one day;
-Playwright HTML reports expire after seven days. Existing database artifacts are
+production logs, user exports or SSH keys. The official Actions Cache uses its existing separate capacity; unused caches are evicted by GitHub. Exact cache-hit and digest matching are mandatory; there are no fallback keys. A missing bundle blocks publication and requires rerunning CI. Optional HTML report upload is disabled unless the repository variable UPLOAD_PLAYWRIGHT_REPORTS is true; when enabled, reports expire after seven days. Existing database artifacts are
 not accessed or removed.
 
 Production publication never runs db:push, db:init, seed scripts, SQL migrations,
