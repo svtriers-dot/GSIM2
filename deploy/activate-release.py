@@ -69,8 +69,10 @@ def main(argv=None):
      os.chmod(folder,0o755)
     node='/opt/tesstech-node/24/bin/node';npm='/opt/tesstech-node/24/lib/node_modules/npm/bin/npm-cli.js'
     assert run([node,'--version'],'node-version').startswith('v24.')
+    user_config=record/'npm-user-config';user_config.write_text('')
+    global_config=record/'npm-global-config';global_config.write_text('')
     try:
-        run([node,'--max-old-space-size=192',npm,'ci','--prefix',str(stage),'--omit=dev','--ignore-scripts','--no-audit','--no-fund','--cache',str(NPM_CACHE_ROOT),'--userconfig=/dev/null','--globalconfig=/dev/null','--registry=https://registry.npmjs.org'],'production-dependencies',timeout=300)
+        run([node,'--max-old-space-size=192',npm,'ci','--prefix',str(stage),'--omit=dev','--ignore-scripts','--no-audit','--no-fund','--cache',str(NPM_CACHE_ROOT),'--userconfig='+str(user_config),'--globalconfig='+str(global_config),'--registry=https://registry.npmjs.org'],'production-dependencies',timeout=300)
     except Exception:
         shutil.rmtree(stage)
         raise

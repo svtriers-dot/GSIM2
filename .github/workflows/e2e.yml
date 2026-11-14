@@ -26,7 +26,6 @@ jobs:
       DATABASE_URL: postgres://gsim:ci-only@127.0.0.1:5432/gsim_ci
       JWT_SECRET: synthetic-ci-only-not-a-production-key
       PORT: "5000"
-      PG_CONTAINER: ${{ job.services.postgres.id }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -45,6 +44,8 @@ jobs:
       - name: Unit tests
         run: npm test
       - name: Prepare disposable PostgreSQL 18 database
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
         run: |
           set -euo pipefail
           docker exec "$PG_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 -c "CREATE ROLE gsim LOGIN PASSWORD 'ci-only';"
