@@ -2,6 +2,7 @@
 import {spawn} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import pg from 'pg';
+import {checkWebSockets} from './check-websockets.mjs';
 const url=new URL(process.env.DATABASE_URL||'http://missing');
 if(!['127.0.0.1','localhost'].includes(url.hostname)||url.pathname!=='/gsim_ci')throw Error('Only the disposable gsim_ci database is allowed');
 const base='http://127.0.0.1:5000';
@@ -42,6 +43,7 @@ try {
  check(joined.status===200,'team join');
  const badTeam=await request('/api/teams/join','POST',{code:session.accessCode,teamName:'No consent',members:[{fullName:'Synthetic participant'}],dataBasisConfirmed:false});
  check(badTeam.status===400&&badTeam.body.details?.dataBasisConfirmed?._errors?.length,'team consent denial');
+ await checkWebSockets({base,sessionId:session.id,trainerToken:token,deviceToken:joined.body.team.deviceToken});
  for(const action of ['start','pause','resume','end'])check((await request('/api/trainer/sessions/'+session.id+'/'+action,'POST',{},token)).status===200,action);
  check((await request('/api/trainer/sessions')).status===401,'unauthenticated denial');
  console.log(JSON.stringify({productionDependenciesVerified:true,syntheticApiChecks:count}));
