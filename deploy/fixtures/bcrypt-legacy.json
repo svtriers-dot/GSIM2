@@ -1,0 +1,54 @@
+{
+  "generatedBy": "official bcryptjs 2.4.3",
+  "syntheticOnly": true,
+  "fixtures": [
+    {
+      "name": "ascii10",
+      "password": "Synthetic O'Connor password-42",
+      "rounds": 10,
+      "hash": "$2a$10$v0qWTAzrXXC.azXrgHYzMuB8ZrfTr305dyh4p6Zb/3st0LaAjQ3pe"
+    },
+    {
+      "name": "unicode10",
+      "password": "Синтетический пароль 🔐-42",
+      "rounds": 10,
+      "hash": "$2a$10$1Pv/euYgC.x2rp9EP/LBx.NM4DTHNwI6WfIC2.40QLRHuLqZwi.86"
+    },
+    {
+      "name": "ascii12",
+      "password": "Synthetic trainer password-42",
+      "rounds": 12,
+      "hash": "$2a$12$O.m2xC8yJqATLMbYqJYBOegTbSFLvWFtU044nx7SkQ8j/doqfUEy2"
+    },
+    {
+      "name": "unicode12",
+      "password": "Пароль тренера 🔐-42",
+      "rounds": 12,
+      "hash": "$2a$12$9BU3D0CkCBYH8G4YqOEuwuabweN8NPYTqMUz1tMKCrap0pe3QaFka"
+    },
+    {
+      "name": "nul",
+      "password": "Synthetic\u0000password-42",
+      "rounds": 10,
+      "hash": "$2a$10$eIBQNtzWRcwhaG0RDkMfJOuygRQLi6FmuRWOs34VJfVwJri./qIPG"
+    },
+    {
+      "name": "bytes72",
+      "password": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "rounds": 10,
+      "hash": "$2a$10$K5SIJJzOcImePGxtq8LqReK9yGrnn1UgaEAcIWR1P2/KQZGucoin6"
+    },
+    {
+      "name": "long",
+      "password": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBsynthetic-tail",
+      "rounds": 10,
+      "hash": "$2a$10$lK5C.WGFnx4P2y.WVtQBj.7qozLGuEnEbpMRCiUlWxHr1hJh/DxAq"
+    },
+    {
+      "name": "utf8-boundary",
+      "password": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCя",
+      "rounds": 10,
+      "hash": "$2a$10$bF6m11LHofcvCxMAxQcnN.0l48u3vO1eLh5R9xdysywx8LAwTGhzi"
+    }
+  ]
+}
