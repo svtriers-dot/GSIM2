@@ -12,6 +12,9 @@ initSentry();
 installProcessHandlers();
 
 const app = express();
+// nginx connects over loopback and appends the actual peer to X-Forwarded-For.
+// Trust that local proxy, never arbitrary remote peers or a client-supplied prefix.
+app.set("trust proxy", "loopback");
 const httpServer = createServer(app);
 
 declare module "http" {

@@ -10,7 +10,7 @@ export const verifyRouter = Router();
 import rateLimit from "express-rate-limit";
 const verifyRateLimit = rateLimit({
   windowMs: 60 * 1000,
-  max: 60,
+  limit: 60,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "rate_limit_exceeded" },
