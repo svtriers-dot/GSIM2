@@ -4,6 +4,7 @@ import {randomUUID} from 'node:crypto';
 import pg from 'pg';
 import {checkWebSockets} from './check-websockets.mjs';
 import {verifyRateLimits} from './check-rate-limits.mjs';
+import {verifySecurityHeaders} from './check-security-headers.mjs';
 const url=new URL(process.env.DATABASE_URL||'http://missing');
 if(!['127.0.0.1','localhost'].includes(url.hostname)||url.pathname!=='/gsim_ci')throw Error('Only the disposable gsim_ci database is allowed');
 const base='http://127.0.0.1:5000';
@@ -48,5 +49,6 @@ try {
  for(const action of ['start','pause','resume','end'])check((await request('/api/trainer/sessions/'+session.id+'/'+action,'POST',{},token)).status===200,action);
  check((await request('/api/trainer/sessions')).status===401,'unauthenticated denial');
  await verifyRateLimits(base);
+ await verifySecurityHeaders(base);
  console.log(JSON.stringify({productionDependenciesVerified:true,syntheticApiChecks:count}));
 } finally {server.kill('SIGTERM');await pool.end();}

@@ -1,0 +1,15 @@
+{
+  "content-security-policy": "default-src 'self';script-src 'self';style-src 'self' 'unsafe-inline';font-src 'self' data:;img-src 'self' data: blob: https:;connect-src 'self' wss://toc.tesstech.ru ws://toc.tesstech.ru;worker-src 'self' blob:;frame-src 'none';frame-ancestors 'self';base-uri 'self';form-action 'self';object-src 'none';upgrade-insecure-requests;script-src-attr 'none'",
+  "strict-transport-security": "max-age=31536000; includeSubDomains",
+  "cross-origin-opener-policy": "same-origin",
+  "cross-origin-resource-policy": "same-origin",
+  "origin-agent-cluster": "?1",
+  "referrer-policy": "no-referrer",
+  "x-content-type-options": "nosniff",
+  "x-dns-prefetch-control": "off",
+  "x-download-options": "noopen",
+  "x-frame-options": "SAMEORIGIN",
+  "x-permitted-cross-domain-policies": "none",
+  "x-xss-protection": "0",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=()"
+}
