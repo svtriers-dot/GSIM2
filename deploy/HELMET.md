@@ -8,7 +8,8 @@ Node 18+ is required; CI/production already use Node 24.22.3.
 CI checks actual HTML, static JS/CSS, health, unauthorized and validation-error
 responses against the observed header contract. Expected CSP and security header
 values are captured from the previous public release, with only HSTS max-age
-updated. It checks nosniff-compatible script/style MIME types and absence of
+updated. CSP directive/source order is normalized; duplicate directives are
+rejected and all actual directives/sources must match. It checks nosniff-compatible script/style MIME types and absence of
 X-Powered-By, report-only CSP and an unintended embedder policy. The rehearsal is
 restricted to the disposable localhost CI database and sends no real account data.
 The existing API/RLS, pool, IPv6/quota, WebSocket and UI tests remain enabled.

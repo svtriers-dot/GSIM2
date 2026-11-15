@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const profile="gsim";
+function canonicalCsp(value){
+ assert.equal(typeof value,'string');
+ const entries=value.split(';').map(part=>part.trim()).filter(Boolean).map(part=>{const [name,...sources]=part.split(/\s+/);return [name.toLowerCase(),sources.sort()];});
+ assert.equal(new Set(entries.map(([name])=>name)).size,entries.length,'Duplicate CSP directives');
+ return entries.sort(([a],[b])=>a.localeCompare(b));
+}
 export async function verifySecurityHeaders(base){
  const database=new URL(process.env.DATABASE_URL||'http://missing');
  assert.ok(['localhost','127.0.0.1'].includes(database.hostname));
@@ -12,7 +18,10 @@ export async function verifySecurityHeaders(base){
  const paths=profile==='gsim'?[['/api/health',200],['/api/trainer/sessions',401],['/api/teams/check?code=invalid',400]]:[['/healthz',200],['/api/subscriptions',401],['/api/auth/login',400,'POST']];
  let routes=0;
  function check(response){
-  for(const [name,value] of Object.entries(expected))assert.equal(response.headers.get(name),value,profile+' '+name);
+  for(const [name,value] of Object.entries(expected)){
+   if(name==='content-security-policy')assert.deepEqual(canonicalCsp(response.headers.get(name)),canonicalCsp(value),profile+' CSP directives and sources');
+   else assert.equal(response.headers.get(name),value,profile+' '+name);
+  }
   for(const name of ['x-powered-by','content-security-policy-report-only','cross-origin-embedder-policy'])assert.equal(response.headers.get(name),null,name+' must not change');
   routes++;
  }
