@@ -26,6 +26,9 @@ try {
  await pool.query("UPDATE trainers SET role='active',is_certified=true WHERE id=$1",[registered.body.trainer.id]);
  const login=await request('/api/trainer/auth/login','POST',{email,password});check(login.status===200&&login.body.token,'login');const token=login.body.token;
  check((await request('/api/trainer/auth/me','GET',undefined,token)).status===200,'profile');
+ const tourDone=await request('/api/trainer/onboarding/tour-complete','POST',{},token);
+ const tourMark=await pool.query('SELECT tour_completed_at IS NOT NULL AS done FROM trainers WHERE id=$1',[registered.body.trainer.id]);
+ check(tourDone.status===200&&tourDone.body.ok&&tourMark.rows[0]?.done,'tour completion persisted');
  const publicId='CI-'+randomUUID().slice(0,8);
  await pool.query('INSERT INTO trainer_certifications (trainer_id,public_id,quiz_score,practice_final_cash) VALUES ($1,$2,7,14000)',[registered.body.trainer.id,publicId]);
  const pdf=await fetch(base+'/api/trainer/certification/pdf',{headers:{Authorization:'Bearer '+token}});
