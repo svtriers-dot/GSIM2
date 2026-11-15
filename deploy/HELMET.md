@@ -24,3 +24,10 @@ tesstech.ru contact submission plus actual mailbox delivery. No schema migration
 References:
 https://helmet.js.org/
 https://github.com/helmetjs/helmet/blob/main/CHANGELOG.md
+
+Production nginx serves /assets/ directly, bypassing the Express middleware.
+Add HSTS (31536000, includeSubDomains) and X-Content-Type-Options: nosniff there,
+including error responses with always. Keep the alias, expires and immutable
+cache policy. Back up the actual TLS vhost, apply only these two lines, run
+nginx -t and reload gracefully; never overwrite Certbot configuration with the
+provisioning template. Recheck JS/CSS MIME types and responses through TLS.
