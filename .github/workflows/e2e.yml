@@ -60,6 +60,8 @@ jobs:
           docker exec "$PG_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE gsim_ci OWNER gsim;"
           node -e 'const u=new URL(process.env.DATABASE_URL);if(u.hostname!=="127.0.0.1"||u.pathname!=="/gsim_ci")process.exit(1)'
           npm run db:push -- --force
+      - name: Database compatibility and transaction rollback
+        run: npx --no-install tsx script/check-db-compat.ts
       - name: Build tested code
         run: npm run build
       - name: Install pinned Playwright browser

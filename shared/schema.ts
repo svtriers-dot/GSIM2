@@ -564,7 +564,7 @@ export type TrainerLoginInput = z.infer<typeof trainerLoginSchema>;
 export const createSessionSchema = z.object({
   name: z.string().min(3).max(255),
   scenarioPreset: z.enum(["easy", "medium", "hard", "custom"]).default("medium"),
-  configOverrides: z.record(z.unknown()).optional(),
+  configOverrides: z.record(z.string(), z.unknown()).optional(),
   maxTeams: z.number().int().min(1).max(100).default(20),
   pin: z.string().regex(/^\d{4,6}$/).optional(),
   expiresInHours: z.number().int().min(1).max(168).default(24),
@@ -599,7 +599,7 @@ export const gameActionSchema = z.object({
     "stop_production",
     "set_buffer",
   ]),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), z.unknown()),
 });
 export type GameActionInput = z.infer<typeof gameActionSchema>;
 
@@ -663,7 +663,7 @@ export const auditLogQuerySchema = z.object({
 // Forced events
 export const triggerForcedEventSchema = z.object({
   type: z.enum(["machine_breakdown", "demand_spike", "demand_drop", "wage_increase"]),
-  payload: z.record(z.unknown()),
+  payload: z.record(z.string(), z.unknown()),
   durationMs: z.number().int().min(1000).max(600000).optional(),
 });
 export type TriggerForcedEventInput = z.infer<typeof triggerForcedEventSchema>;

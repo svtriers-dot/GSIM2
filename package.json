@@ -11,11 +11,11 @@
     "check": "tsc",
     "db:push": "drizzle-kit push",
     "grant-super-admin": "tsx script/grant-super-admin.ts",
-    "test": "tsx __tests__/engine.spec.ts && tsx __tests__/certificateRules.spec.ts && tsx __tests__/legalContent.spec.ts && tsx __tests__/seo.spec.ts",
-    "e2e": "playwright test"
+    "test": "tsx __tests__/engine.spec.ts && tsx __tests__/certificateRules.spec.ts && tsx __tests__/legalContent.spec.ts && tsx __tests__/seo.spec.ts && npm run test:validation",
+    "e2e": "playwright test",
+    "test:validation": "tsx __tests__/validation.spec.ts"
   },
   "dependencies": {
-    "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@radix-ui/react-accordion": "^1.2.4",
     "@radix-ui/react-alert-dialog": "^1.1.7",
@@ -54,8 +54,8 @@
     "connect-pg-simple": "^10.0.0",
     "date-fns": "^3.6.0",
     "dompurify": "3.4.17",
-    "drizzle-orm": "^0.39.3",
-    "drizzle-zod": "^0.7.0",
+    "drizzle-orm": "0.45.4",
+    "drizzle-zod": "0.8.3",
     "embla-carousel-react": "^8.6.0",
     "express": "5.3.0",
     "express-rate-limit": "^7.4.0",
@@ -87,8 +87,7 @@
     "vaul": "^1.1.2",
     "wouter": "^3.3.5",
     "ws": "^8.18.0",
-    "zod": "^3.24.2",
-    "zod-validation-error": "^3.4.0"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@playwright/test": "1.65.1",
@@ -110,7 +109,7 @@
     "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.20",
-    "drizzle-kit": "^0.31.8",
+    "drizzle-kit": "0.31.11",
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
