@@ -9,13 +9,14 @@ Production nginx connects over loopback and appends the peer with
 X-Forwarded-For $proxy_add_x_forwarded_for. Both apps trust only loopback proxies.
 TessTOC previously had no trusted-proxy setting, causing limits to aggregate on
 nginx. The registry previously trusted one hop; explicit trusted addresses also
-protect a direct non-loopback connection from forged forwarding headers.
+provide the correct trust boundary; direct non-loopback listeners are removed.
 Do not change this to trust proxy=true or a custom unmasked IP key generator.
 
 CI exercises actual HTTP endpoints against the disposable localhost database:
 all limit+1 boundaries, Retry-After and quota headers, unchanged error contracts,
 separate peers, changing fake XFF prefixes, IPv4/mapped aliases, IPv6 /56 grouping,
-and untrusted non-loopback requests with forged XFF. Payloads are empty and all
+and refusal of direct non-loopback connections. Both applications bind only to
+127.0.0.1; external traffic must use HTTPS nginx. Payloads are empty and all
 checks stop at validation or missing authorization, before database/email writes.
 The production dependency runtime and existing functional tests remain enabled.
 

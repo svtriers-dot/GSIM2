@@ -110,13 +110,11 @@ export async function verifyRateLimits(base) {
   for (let n = 0; n < policy.limit; n++) assert.equal((await request(policy, ipv6[n % ipv6.length])).status, policy.allowed);
   blocked(await request(policy, '2001:db8:abcd:12aa::3'), policy);
   assert.equal((await request(policy, '2001:db8:abcd:1301::1')).status, policy.allowed);
-  // Connect to this CI host over its non-loopback address: XFF is then untrusted.
+  // No direct non-loopback listener may bypass HTTPS nginx.
   const local = Object.values(networkInterfaces()).flat().find(value => value && value.family === 'IPv4' && !value.internal && /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(value.address));
-  assert.ok(local, 'A private local interface is required for the untrusted-peer test');
-  const untrusted = 'http://' + local.address + ':' + new URL(base).port;
-  for (let n = 0; n < policy.limit; n++) assert.equal((await request(policy, '203.0.113.' + (n + 1), untrusted)).status, policy.allowed);
-  blocked(await request(policy, '203.0.113.250', untrusted), policy);
-  const proof = { profile, httpRequests, policies: results, clientIsolation: true, spoofedPrefixIgnored: true, ipv4MappedAliasesShareQuota: true, ipv6Subnet56: true, nonLoopbackForwardingIgnored: true };
+  assert.ok(local, 'A private local interface is required for the listener test');
+  await assert.rejects(fetch('http://' + local.address + ':' + new URL(base).port + policy.path, { signal: AbortSignal.timeout(3000) }), error => error.cause?.code === 'ECONNREFUSED');
+  const proof = { profile, httpRequests, policies: results, clientIsolation: true, spoofedPrefixIgnored: true, ipv4MappedAliasesShareQuota: true, ipv6Subnet56: true, nonLoopbackListenerClosed: true };
   console.log(JSON.stringify({ rateLimitIntegration: proof }));
   return proof;
 }
