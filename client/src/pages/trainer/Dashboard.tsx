@@ -118,6 +118,7 @@ export default function TrainerDashboard() {
 
   async function load() {
     setLoading(true);
+    setError(null);
     try {
       const data = await authJson<{ sessions: SessionRow[] }>("/api/trainer/sessions");
       setSessions(data.sessions);
